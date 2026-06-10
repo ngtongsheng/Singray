@@ -1,8 +1,49 @@
-import { electronAPI } from '@electron-toolkit/preload'
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
+import type {
+  AudioTrack,
+  ImportProgress,
+  ImportRequest,
+  Lyrics,
+  ProbeResult,
+  Settings,
+  SingrayApi,
+  SongMeta
+} from '../shared/types'
 
-// Custom APIs for renderer — replaced by the typed IPC bridge in S0.2
-const api = {}
+const api: SingrayApi = {
+  library: {
+    list: () => ipcRenderer.invoke('library:list') as Promise<SongMeta[]>,
+    delete: (id) => ipcRenderer.invoke('library:delete', id) as Promise<void>,
+    updateMeta: (id, patch) =>
+      ipcRenderer.invoke('library:updateMeta', id, patch) as Promise<SongMeta>
+  },
+  lyrics: {
+    get: (id) => ipcRenderer.invoke('lyrics:get', id) as Promise<Lyrics | null>,
+    save: (id, lyrics) => ipcRenderer.invoke('lyrics:save', id, lyrics) as Promise<void>
+  },
+  import: {
+    probe: (url) => ipcRenderer.invoke('import:probe', url) as Promise<ProbeResult>,
+    start: (req: ImportRequest) => ipcRenderer.invoke('import:start', req) as Promise<string>,
+    retry: (id) => ipcRenderer.invoke('import:retry', id) as Promise<void>,
+    onProgress: (cb) => {
+      const listener = (_e: unknown, p: ImportProgress): void => cb(p)
+      ipcRenderer.on('import:progress', listener)
+      return () => ipcRenderer.removeListener('import:progress', listener)
+    }
+  },
+  settings: {
+    get: () => ipcRenderer.invoke('settings:get') as Promise<Settings>,
+    set: (patch) => ipcRenderer.invoke('settings:set', patch) as Promise<Settings>
+  },
+  audio: {
+    url: (id: string, track: AudioTrack) => `karaoke://${id}/${track}.m4a`,
+    thumbUrl: (id: string) => `karaoke://${id}/thumb.jpg`
+  },
+  onLibraryChanged: (cb) => {
+    const listener = (): void => cb()
+    ipcRenderer.on('library:changed', listener)
+    return () => ipcRenderer.removeListener('library:changed', listener)
+  }
+}
 
-contextBridge.exposeInMainWorld('electron', electronAPI)
-contextBridge.exposeInMainWorld('api', api)
+contextBridge.exposeInMainWorld('singray', api)

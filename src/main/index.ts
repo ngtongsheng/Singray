@@ -2,6 +2,10 @@ import { join } from 'node:path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, shell } from 'electron'
 import icon from '../../resources/icon.png?asset'
+import { registerIpc } from './ipc'
+import { registerKaraokeHandler, registerKaraokeScheme } from './protocol'
+
+registerKaraokeScheme()
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -38,6 +42,9 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.singray.app')
+
+  registerKaraokeHandler()
+  registerIpc()
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
