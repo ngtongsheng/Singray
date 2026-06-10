@@ -312,7 +312,7 @@ Lyric clock = audio engine's authoritative playback position (derived from `Audi
 
 ```ts
 // invoke/handle
-library.list(): SongMeta[]
+library.list(): SongListItem[]   // SongMeta + derived {hasLyrics, error} the cards need
 library.delete(id: string): void
 library.updateMeta(id: string, patch: Partial<SongMeta>): SongMeta
 lyrics.get(id: string): Lyrics | null

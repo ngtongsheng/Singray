@@ -20,6 +20,13 @@ export interface SongMeta {
   enrichment: null
 }
 
+/** Library listing payload: meta + per-song derived state the cards need. */
+export interface SongListItem extends SongMeta {
+  hasLyrics: boolean
+  /** Error message from a failed import (error.json), else null. */
+  error: string | null
+}
+
 export interface LyricUnit {
   text: string
   /** Unit start in seconds; null until stamped/aligned. */
@@ -81,7 +88,7 @@ export type AudioTrack = 'original' | 'instrumental' | 'vocals'
 /** Renderer-facing API exposed by the preload bridge. */
 export interface SingrayApi {
   library: {
-    list(): Promise<SongMeta[]>
+    list(): Promise<SongListItem[]>
     delete(id: string): Promise<void>
     updateMeta(id: string, patch: Partial<SongMeta>): Promise<SongMeta>
   }

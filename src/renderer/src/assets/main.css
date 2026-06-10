@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/noto-sans-sc";
 
 /* Design tokens — SPEC §10.2. Semantic tokens only; no raw hex in components. */
 @theme {
@@ -25,8 +27,8 @@
   --shadow-raised: 0 4px 24px rgb(0 0 0 / 0.45);
 
   /* Typography */
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-lyric: "Noto Sans SC", "Inter", system-ui, sans-serif;
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-lyric: "Noto Sans SC Variable", "Inter Variable", system-ui, sans-serif;
 }
 
 @layer base {

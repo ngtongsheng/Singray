@@ -25,6 +25,8 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "@fontsource-variable/inter": "^5.2.8",
+    "@fontsource-variable/noto-sans-sc": "^5.2.10",
     "lucide-react": "^1.17.0"
   },
   "devDependencies": {

@@ -7,12 +7,13 @@ import type {
   ProbeResult,
   Settings,
   SingrayApi,
+  SongListItem,
   SongMeta
 } from '../shared/types'
 
 const api: SingrayApi = {
   library: {
-    list: () => ipcRenderer.invoke('library:list') as Promise<SongMeta[]>,
+    list: () => ipcRenderer.invoke('library:list') as Promise<SongListItem[]>,
     delete: (id) => ipcRenderer.invoke('library:delete', id) as Promise<void>,
     updateMeta: (id, patch) =>
       ipcRenderer.invoke('library:updateMeta', id, patch) as Promise<SongMeta>
