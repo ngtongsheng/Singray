@@ -10,6 +10,7 @@
     "start": "electron-vite preview",
     "check": "biome check . && npm run typecheck",
     "check:fix": "biome check --write .",
+    "check:py": "pipeline\\.venv\\Scripts\\ruff check pipeline && pipeline\\.venv\\Scripts\\ruff format --check pipeline",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
