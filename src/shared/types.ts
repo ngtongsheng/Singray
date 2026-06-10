@@ -25,6 +25,8 @@ export interface SongListItem extends SongMeta {
   hasLyrics: boolean
   /** Error message from a failed import (error.json), else null. */
   error: string | null
+  /** True when original.m4a exists (import finished successfully at some point). */
+  ready: boolean
 }
 
 export interface LyricUnit {
@@ -64,7 +66,7 @@ export interface ProbeResult {
   thumbnailUrl: string
 }
 
-export type ImportStage = 'download' | 'separate' | 'convert' | 'done' | 'error'
+export type ImportStage = 'queued' | 'download' | 'separate' | 'convert' | 'done' | 'error'
 
 export interface ImportProgress {
   jobId: string
@@ -81,6 +83,8 @@ export interface ImportRequest {
   title: string
   artist: string
   language: Language
+  /** Raw YouTube title, kept in meta.json for future re-enrichment. */
+  youtubeTitle: string
 }
 
 export type AudioTrack = 'original' | 'instrumental' | 'vocals'

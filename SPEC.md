@@ -318,7 +318,7 @@ library.updateMeta(id: string, patch: Partial<SongMeta>): SongMeta
 lyrics.get(id: string): Lyrics | null
 lyrics.save(id: string, lyrics: Lyrics): void
 import.probe(url: string): ProbeResult
-import.start(req: {url, title, artist, language}): jobId
+import.start(req: {url, title, artist, language, youtubeTitle}): jobId
 import.retry(id: string): void
 settings.get(): Settings
 settings.set(patch: Partial<Settings>): Settings

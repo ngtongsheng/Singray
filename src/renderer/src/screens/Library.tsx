@@ -4,6 +4,7 @@ import type { Language, SongListItem } from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ImportDialog from '../components/ImportDialog'
 import SongCard from '../components/SongCard'
+import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
 
 const LANGUAGE_LABEL: Record<Language, string> = {
@@ -22,8 +23,16 @@ function chipClass(active: boolean): string {
   }`
 }
 
+const STRIP_LABEL: Record<string, string> = {
+  queued: 'Queued',
+  download: 'Downloading',
+  separate: 'Separating vocals',
+  convert: 'Converting'
+}
+
 function Library(): React.JSX.Element {
   const { songs } = useLibrary()
+  const imports = useImports()
   const [query, setQuery] = useState('')
   const [language, setLanguage] = useState<Language | null>(null)
   const [favoritesOnly, setFavoritesOnly] = useState(false)
@@ -87,6 +96,31 @@ function Library(): React.JSX.Element {
         </button>
       </header>
 
+      {imports.size > 0 &&
+        (() => {
+          const activeJob = [...imports.values()].find((p) => p.stage !== 'queued')
+          const job = activeJob ?? [...imports.values()][0]
+          if (!job) return null
+          const title = songs.find((s) => s.id === job.songId)?.title ?? job.songId
+          return (
+            <div className="relative border-border border-b bg-surface px-6 py-1.5">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-text-dim">
+                  {STRIP_LABEL[job.stage] ?? job.stage} · {title}
+                </span>
+                <span className="font-medium text-accent">{Math.round(job.progress * 100)}%</span>
+                {imports.size > 1 && (
+                  <span className="text-text-dim">· {imports.size - 1} more queued</span>
+                )}
+              </div>
+              <div
+                className="absolute bottom-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
+                style={{ width: `${job.progress * 100}%` }}
+              />
+            </div>
+          )
+        })()}
+
       <div className="flex items-center gap-2 px-6 py-3">
         {languages.map((lang) => (
           <button
@@ -129,7 +163,12 @@ function Library(): React.JSX.Element {
       ) : (
         <div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 overflow-y-auto px-6 pb-6">
           {filtered.map((song) => (
-            <SongCard key={song.id} song={song} onDelete={setPendingDelete} />
+            <SongCard
+              key={song.id}
+              song={song}
+              importing={imports.get(song.id)}
+              onDelete={setPendingDelete}
+            />
           ))}
           {filtered.length === 0 && (
             <p className="col-span-full py-12 text-center text-text-dim">No songs match.</p>
@@ -137,12 +176,7 @@ function Library(): React.JSX.Element {
         </div>
       )}
 
-      {showImport && (
-        <ImportDialog
-          onClose={() => setShowImport(false)}
-          onQueued={(jobId) => console.log('queued job', jobId)}
-        />
-      )}
+      {showImport && <ImportDialog onClose={() => setShowImport(false)} />}
 
       {pendingDelete && (
         <ConfirmDialog

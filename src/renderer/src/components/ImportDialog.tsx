@@ -5,7 +5,6 @@ import { parseYoutubeTitle } from '../lib/parseTitle'
 
 interface Props {
   onClose: () => void
-  onQueued: (jobId: string) => void
 }
 
 const LANGUAGES: { value: Language; label: string }[] = [
@@ -19,7 +18,7 @@ const LANGUAGES: { value: Language; label: string }[] = [
 const inputClass =
   'w-full rounded-control border border-border bg-surface px-3 py-2 text-sm placeholder:text-text-dim/60'
 
-function ImportDialog({ onClose, onQueued }: Props): React.JSX.Element {
+function ImportDialog({ onClose }: Props): React.JSX.Element {
   const [url, setUrl] = useState('')
   const [probing, setProbing] = useState(false)
   const [probeError, setProbeError] = useState<string | null>(null)
@@ -81,13 +80,13 @@ function ImportDialog({ onClose, onQueued }: Props): React.JSX.Element {
     if (!probed || !title.trim()) return
     setSubmitting(true)
     try {
-      const jobId = await window.singray.import.start({
+      await window.singray.import.start({
         url: url.trim(),
         title: title.trim(),
         artist: artist.trim(),
-        language
+        language,
+        youtubeTitle: probed.title
       })
-      onQueued(jobId)
       onClose()
     } finally {
       setSubmitting(false)
