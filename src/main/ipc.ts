@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron'
 import type { ImportRequest, Lyrics, Settings, SongMeta } from '../shared/types'
 import { cancelImport, retryImport, startImport } from './importQueue'
-import { deleteSong, listSongs, updateMeta } from './library'
+import { deleteSong, listSongs, openSongFolder, updateMeta } from './library'
 import { probe } from './pipeline'
 import { getSettings, setSettings } from './settings'
 
@@ -22,6 +22,7 @@ export function registerIpc(): void {
   ipcMain.handle('library:updateMeta', (_e, id: string, patch: Partial<SongMeta>) =>
     updateMeta(id, patch)
   )
+  ipcMain.handle('library:openFolder', (_e, id: string) => openSongFolder(id))
 
   ipcMain.handle('lyrics:get', (): Lyrics | null => null)
   ipcMain.handle('lyrics:save', (): void => notImplemented('lyrics:save'))

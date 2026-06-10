@@ -315,6 +315,7 @@ Lyric clock = audio engine's authoritative playback position (derived from `Audi
 library.list(): SongListItem[]   // SongMeta + derived {hasLyrics, error} the cards need
 library.delete(id: string): void
 library.updateMeta(id: string, patch: Partial<SongMeta>): SongMeta
+library.openFolder(id: string): void   // open song folder in Explorer
 lyrics.get(id: string): Lyrics | null
 lyrics.save(id: string, lyrics: Lyrics): void
 import.probe(url: string): ProbeResult

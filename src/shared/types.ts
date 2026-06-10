@@ -95,6 +95,7 @@ export interface SingrayApi {
     list(): Promise<SongListItem[]>
     delete(id: string): Promise<void>
     updateMeta(id: string, patch: Partial<SongMeta>): Promise<SongMeta>
+    openFolder(id: string): Promise<void>
   }
   lyrics: {
     get(id: string): Promise<Lyrics | null>

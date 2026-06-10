@@ -2,7 +2,7 @@
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → S1.6** (update this pointer whenever a story starts/finishes)
+> **Now → S2.1** (update this pointer whenever a story starts/finishes)
 
 Workflow: one story at a time, top to bottom. A story is done only when every "Done when" line passes by actually running the app/script. On finish: mark `[x]`, move the **Now** pointer, append one line to the Session Log.
 
@@ -44,7 +44,7 @@ Add Song → URL paste → `import.probe` → editable form (title/artist/langua
 Main-process FIFO queue spawning `pipeline.py process`, parsing stdout JSON-lines, `import:progress` events, `meta.json` write on done, `error.json` + retry/delete on failure. Renderer: card status badges (downloading/separating/converting/ready/error), progress strip under top bar.
 - **Done when:** paste URL → watch badges advance → song playable when ready; kill network mid-download → error badge → retry succeeds; queue 2 URLs → runs serially.
 
-### [ ] S1.6 Meta management
+### [x] S1.6 Meta management
 Edit meta dialog, favorite toggle, open-folder, settings screen v1 (library dir, python path + "test pipeline" button).
 - **Done when:** edits persist to meta.json and survive restart; settings round-trip works.
 
@@ -125,6 +125,7 @@ Key stepper ±6 (`[`/`]`), tempo 0.75–1.25 in overflow menu, lyric clock scale
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-11 · S1.6 · Edit-meta dialog (title/artist/language → updateMeta), heart favorite toggle on card, ⋯ card menu (edit/open folder/delete — delete moved off direct button per SPEC §10.8), Settings screen (App-level view switch, gear in header; Library + Pipeline fieldsets, save-on-blur, Test pipeline button reuses import.probe on known URL). SPEC CHANGE: library.openFolder(id) added to §8 (shell.openPath). Verified via CDP: edit→meta.json on disk→survives restart, favorite toggles round-trip, openFolder pops Explorer at song dir, probe test 1.8s success, libraryDir round-trips through settings.json. Gotcha: React onBlur = focusout event, plain blur dispatch does nothing (matters for CDP-driven tests).
 - 2026-06-11 · S1.5 · FIFO queue in main (importQueue.ts): spawns pipeline process, readline over stdout JSON-lines, broadcasts import:progress, meta.json written upfront at start (durationSec patched on done), error.json + badge on non-zero exit, retry re-enqueues, library:delete cancels/kills active job first. SongListItem gains `ready` (original.m4a exists) — error state derived from error.json OR not-ready, so killed-mid-import songs show Error after restart too. SPEC CHANGE: import.start req gains youtubeTitle (§8). Verified via CDP: dialog→Add→badges Queued/Separating/Converting advance, 2 URLs run serially ("1 more queued" strip), imported song plays via karaoke://, killed python mid-run → Error badge + error.json ("pipeline exited 4294967295") → Retry button → success with durationSec. Test songs deleted after.
 - 2026-06-10 · S1.4 · Import dialog: debounced probe (400ms, seq-guarded against stale results), prefill from track/artist fields else title heuristic (strips (Official Video)/【官方MV】 decoration, splits on dash family + 「」), language select, https thumb preview (CSP img-src widened with https:). import:start is a stub returning randomUUID until S1.5. Verified via CDP: prefill 3.5s, correct split, Add → jobId, dialog closes. main/pipeline.ts spawns venv python for probe.
 - 2026-06-10 · S1.3 · Library service (folder scan, meta as id-authority from folder name, sorted by addedAt) + live list/delete/updateMeta IPC. Renderer: card grid, search, language/favorites/needs-lyrics chips, confirm-delete dialog, empty state. SPEC CHANGE: library.list returns SongListItem[] (SongMeta + derived hasLyrics/error) — cards need them, §8 updated. Fonts bundled via @fontsource-variable (Inter + Noto Sans SC). Verified via screenshot + CDP-driven UI test (search/filters/delete all pass; delete removed folder on disk). Seeds: rick + nirv from S1.2 outputs. CDP test trick: launch dev with REMOTE_DEBUGGING_PORT=9222, drive via Runtime.evaluate.

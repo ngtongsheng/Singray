@@ -16,7 +16,8 @@ const api: SingrayApi = {
     list: () => ipcRenderer.invoke('library:list') as Promise<SongListItem[]>,
     delete: (id) => ipcRenderer.invoke('library:delete', id) as Promise<void>,
     updateMeta: (id, patch) =>
-      ipcRenderer.invoke('library:updateMeta', id, patch) as Promise<SongMeta>
+      ipcRenderer.invoke('library:updateMeta', id, patch) as Promise<SongMeta>,
+    openFolder: (id) => ipcRenderer.invoke('library:openFolder', id) as Promise<void>
   },
   lyrics: {
     get: (id) => ipcRenderer.invoke('lyrics:get', id) as Promise<Lyrics | null>,

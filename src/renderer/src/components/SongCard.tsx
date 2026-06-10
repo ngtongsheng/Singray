@@ -1,10 +1,22 @@
-import { AlertTriangle, Heart, Loader2, Mic2, Pencil, RotateCcw, Trash2 } from 'lucide-react'
+import {
+  AlertTriangle,
+  Folder,
+  Heart,
+  Loader2,
+  Mic2,
+  MoreHorizontal,
+  Pencil,
+  RotateCcw,
+  Trash2
+} from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import type { ImportProgress, SongListItem } from '../../../shared/types'
 
 interface Props {
   song: SongListItem
   importing: ImportProgress | undefined
   onDelete: (song: SongListItem) => void
+  onEdit: (song: SongListItem) => void
 }
 
 const STAGE_LABEL: Record<string, string> = {
@@ -14,7 +26,10 @@ const STAGE_LABEL: Record<string, string> = {
   convert: 'Converting'
 }
 
-function StatusBadge({ song, importing }: Omit<Props, 'onDelete'>): React.JSX.Element | null {
+function StatusBadge({
+  song,
+  importing
+}: Pick<Props, 'song' | 'importing'>): React.JSX.Element | null {
   if (importing) {
     return (
       <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-control bg-black/60 px-2 py-0.5 text-text text-xs">
@@ -44,12 +59,83 @@ function StatusBadge({ song, importing }: Omit<Props, 'onDelete'>): React.JSX.El
   return null
 }
 
-function SongCard({ song, importing, onDelete }: Props): React.JSX.Element {
+function CardMenu({ song, onDelete, onEdit }: Omit<Props, 'importing'>): React.JSX.Element {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent): void => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('mousedown', onDown)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('mousedown', onDown)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const itemClass =
+    'flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-surface-2'
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        title="More actions"
+        className="rounded-control border border-border bg-surface p-1.5 hover:bg-surface-2"
+      >
+        <MoreHorizontal className="size-4" strokeWidth={1.5} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-1/2 z-20 mt-1 w-40 -translate-x-1/2 overflow-hidden rounded-control border border-border bg-surface py-1 shadow-raised">
+          <button
+            type="button"
+            className={itemClass}
+            onClick={() => {
+              setOpen(false)
+              onEdit(song)
+            }}
+          >
+            <Pencil className="size-3.5" strokeWidth={1.5} /> Edit details
+          </button>
+          <button
+            type="button"
+            className={itemClass}
+            onClick={() => {
+              setOpen(false)
+              window.singray.library.openFolder(song.id)
+            }}
+          >
+            <Folder className="size-3.5" strokeWidth={1.5} /> Open folder
+          </button>
+          <button
+            type="button"
+            className={`${itemClass} text-danger`}
+            onClick={() => {
+              setOpen(false)
+              onDelete(song)
+            }}
+          >
+            <Trash2 className="size-3.5" strokeWidth={1.5} /> Delete
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SongCard({ song, importing, onDelete, onEdit }: Props): React.JSX.Element {
   const failed = !importing && (song.error !== null || !song.ready)
 
   return (
-    <div className="group overflow-hidden rounded-card border border-border bg-surface transition-colors hover:border-text-dim/40">
-      <div className="relative aspect-video bg-surface-2">
+    <div className="group rounded-card border border-border bg-surface transition-colors hover:border-text-dim/40">
+      <div className="relative aspect-video overflow-hidden rounded-t-card bg-surface-2">
         {song.ready && (
           <img
             src={window.singray.audio.thumbUrl(song.id)}
@@ -59,14 +145,21 @@ function SongCard({ song, importing, onDelete }: Props): React.JSX.Element {
           />
         )}
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/70 to-transparent" />
-        {song.favorite && (
+        <button
+          type="button"
+          onClick={() => window.singray.library.updateMeta(song.id, { favorite: !song.favorite })}
+          title={song.favorite ? 'Remove from favorites' : 'Add to favorites'}
+          className={`absolute top-2 right-2 rounded-control p-1 transition-opacity hover:scale-110 ${
+            song.favorite ? '' : 'opacity-0 group-hover:opacity-100'
+          }`}
+        >
           <Heart
-            className="absolute top-2 right-2 size-5 fill-accent text-accent"
+            className={`size-5 ${song.favorite ? 'fill-accent text-accent' : 'text-text'}`}
             strokeWidth={1.5}
           />
-        )}
+        </button>
         <StatusBadge song={song} importing={importing} />
-        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition-opacity duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
           {failed && (
             <button
               type="button"
@@ -97,14 +190,7 @@ function SongCard({ song, importing, onDelete }: Props): React.JSX.Element {
               </button>
             </>
           )}
-          <button
-            type="button"
-            onClick={() => onDelete(song)}
-            title="Delete song"
-            className="rounded-control border border-border bg-surface p-1.5 text-danger hover:bg-surface-2"
-          >
-            <Trash2 className="size-4" strokeWidth={1.5} />
-          </button>
+          <CardMenu song={song} onDelete={onDelete} onEdit={onEdit} />
         </div>
       </div>
       <div className="p-3">

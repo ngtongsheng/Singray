@@ -1,7 +1,8 @@
-import { Heart, Mic2, Plus, Search, Type } from 'lucide-react'
+import { Heart, Mic2, Plus, Search, Settings as SettingsIcon, Type } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Language, SongListItem } from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
+import EditMetaDialog from '../components/EditMetaDialog'
 import ImportDialog from '../components/ImportDialog'
 import SongCard from '../components/SongCard'
 import { useImports } from '../hooks/useImports'
@@ -30,7 +31,11 @@ const STRIP_LABEL: Record<string, string> = {
   convert: 'Converting'
 }
 
-function Library(): React.JSX.Element {
+interface Props {
+  onOpenSettings: () => void
+}
+
+function Library({ onOpenSettings }: Props): React.JSX.Element {
   const { songs } = useLibrary()
   const imports = useImports()
   const [query, setQuery] = useState('')
@@ -38,6 +43,7 @@ function Library(): React.JSX.Element {
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [needsLyricsOnly, setNeedsLyricsOnly] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<SongListItem | null>(null)
+  const [editing, setEditing] = useState<SongListItem | null>(null)
   const [showImport, setShowImport] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
@@ -93,6 +99,14 @@ function Library(): React.JSX.Element {
           className="flex items-center gap-1.5 rounded-control bg-accent px-4 py-2 font-medium text-sm text-text hover:bg-accent-soft"
         >
           <Plus className="size-4" strokeWidth={2} /> Add Song
+        </button>
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          title="Settings"
+          className="rounded-control border border-border p-2 text-text-dim hover:bg-surface hover:text-text"
+        >
+          <SettingsIcon className="size-4" strokeWidth={1.5} />
         </button>
       </header>
 
@@ -168,6 +182,7 @@ function Library(): React.JSX.Element {
               song={song}
               importing={imports.get(song.id)}
               onDelete={setPendingDelete}
+              onEdit={setEditing}
             />
           ))}
           {filtered.length === 0 && (
@@ -177,6 +192,8 @@ function Library(): React.JSX.Element {
       )}
 
       {showImport && <ImportDialog onClose={() => setShowImport(false)} />}
+
+      {editing && <EditMetaDialog song={editing} onClose={() => setEditing(null)} />}
 
       {pendingDelete && (
         <ConfirmDialog

@@ -1,7 +1,7 @@
 import type { Dirent } from 'node:fs'
 import { access, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { BrowserWindow } from 'electron'
+import { BrowserWindow, shell } from 'electron'
 import type { SongListItem, SongMeta } from '../shared/types'
 import { getSettings } from './settings'
 
@@ -65,6 +65,11 @@ export async function listSongs(): Promise<SongListItem[]> {
   }
   songs.sort((a, b) => b.addedAt.localeCompare(a.addedAt))
   return songs
+}
+
+export async function openSongFolder(id: string): Promise<void> {
+  const err = await shell.openPath(songDir(id))
+  if (err) throw new Error(err)
 }
 
 export async function deleteSong(id: string): Promise<void> {
