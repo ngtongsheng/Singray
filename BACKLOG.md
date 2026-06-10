@@ -2,7 +2,7 @@
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → S1.4** (update this pointer whenever a story starts/finishes)
+> **Now → S1.5** (update this pointer whenever a story starts/finishes)
 
 Workflow: one story at a time, top to bottom. A story is done only when every "Done when" line passes by actually running the app/script. On finish: mark `[x]`, move the **Now** pointer, append one line to the Session Log.
 
@@ -36,7 +36,7 @@ Full chain standalone (no Electron): download best audio + thumbnail → audio-s
 Main: scan library dir → `SongMeta[]`, `library.list/updateMeta/delete` IPC live. Renderer: card grid per SPEC §10.6, search (title/artist substring), filter chips (language, favorites, needs-lyrics), empty state. Seed 2–3 songs by hand-running S1.2 output + hand-written meta.json.
 - **Done when:** seeded songs render with thumbs; search and filters work; delete removes folder after confirm dialog.
 
-### [ ] S1.4 Import dialog
+### [x] S1.4 Import dialog
 Add Song → URL paste → `import.probe` → editable form (title/artist/language, thumb preview) per SPEC §5.1.
 - **Done when:** pasting real URL prefills form within a few seconds; Add button returns a jobId (queue may still be stub).
 
@@ -125,6 +125,7 @@ Key stepper ±6 (`[`/`]`), tempo 0.75–1.25 in overflow menu, lyric clock scale
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-10 · S1.4 · Import dialog: debounced probe (400ms, seq-guarded against stale results), prefill from track/artist fields else title heuristic (strips (Official Video)/【官方MV】 decoration, splits on dash family + 「」), language select, https thumb preview (CSP img-src widened with https:). import:start is a stub returning randomUUID until S1.5. Verified via CDP: prefill 3.5s, correct split, Add → jobId, dialog closes. main/pipeline.ts spawns venv python for probe.
 - 2026-06-10 · S1.3 · Library service (folder scan, meta as id-authority from folder name, sorted by addedAt) + live list/delete/updateMeta IPC. Renderer: card grid, search, language/favorites/needs-lyrics chips, confirm-delete dialog, empty state. SPEC CHANGE: library.list returns SongListItem[] (SongMeta + derived hasLyrics/error) — cards need them, §8 updated. Fonts bundled via @fontsource-variable (Inter + Noto Sans SC). Verified via screenshot + CDP-driven UI test (search/filters/delete all pass; delete removed folder on disk). Seeds: rick + nirv from S1.2 outputs. CDP test trick: launch dev with REMOTE_DEBUGGING_PORT=9222, drive via Runtime.evaluate.
 - 2026-06-10 · S1.2 · Full chain works standalone. Verified: dQw4w9WgXcQ + hTWKbfoikeg both → 4 files; JSON-lines progress streamed (download per-percent via yt-dlp hook, separate/convert coarse); stdout is pure JSON (audio-separator tqdm goes to stderr); both originals measured −14.1 LUFS after shared-gain normalization; stems plausible (vocals mean −23.6dB vs instrumental −20dB, distinct content). GPU separation ≈12s for 3.5min song on 5060 Ti. UVR model auto-downloads to pipeline/models (gitignored). Test outputs kept at Karaoke\_test-s12* as S1.3 seeds. Ear-check of stem quality still recommended.
 - 2026-06-10 · S1.1 · Probe via yt_dlp Python API (noplaylist; artists list joined, channel falls back to uploader). Verified: real URL → correct one-line JSON exit 0; bad URL → {"stage":"error"} exit 1 (yt-dlp also prints its own ERROR to stderr — harmless, stdout stays clean JSON). ruff green.

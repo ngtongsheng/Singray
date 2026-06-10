@@ -2,6 +2,7 @@ import { Heart, Mic2, Plus, Search, Type } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Language, SongListItem } from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
+import ImportDialog from '../components/ImportDialog'
 import SongCard from '../components/SongCard'
 import { useLibrary } from '../hooks/useLibrary'
 
@@ -28,6 +29,7 @@ function Library(): React.JSX.Element {
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [needsLyricsOnly, setNeedsLyricsOnly] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<SongListItem | null>(null)
+  const [showImport, setShowImport] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -78,9 +80,8 @@ function Library(): React.JSX.Element {
         <div className="flex-1" />
         <button
           type="button"
-          disabled
-          title="Add Song — coming in S1.4"
-          className="flex items-center gap-1.5 rounded-control bg-accent px-4 py-2 font-medium text-sm text-text disabled:opacity-50"
+          onClick={() => setShowImport(true)}
+          className="flex items-center gap-1.5 rounded-control bg-accent px-4 py-2 font-medium text-sm text-text hover:bg-accent-soft"
         >
           <Plus className="size-4" strokeWidth={2} /> Add Song
         </button>
@@ -119,9 +120,8 @@ function Library(): React.JSX.Element {
           <p className="text-text-dim">Paste a YouTube link to add your first song</p>
           <button
             type="button"
-            disabled
-            title="Add Song — coming in S1.4"
-            className="flex items-center gap-1.5 rounded-control bg-accent px-4 py-2 font-medium text-sm text-text disabled:opacity-50"
+            onClick={() => setShowImport(true)}
+            className="flex items-center gap-1.5 rounded-control bg-accent px-4 py-2 font-medium text-sm text-text hover:bg-accent-soft"
           >
             <Plus className="size-4" strokeWidth={2} /> Add Song
           </button>
@@ -135,6 +135,13 @@ function Library(): React.JSX.Element {
             <p className="col-span-full py-12 text-center text-text-dim">No songs match.</p>
           )}
         </div>
+      )}
+
+      {showImport && (
+        <ImportDialog
+          onClose={() => setShowImport(false)}
+          onQueued={(jobId) => console.log('queued job', jobId)}
+        />
       )}
 
       {pendingDelete && (

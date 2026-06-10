@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import type { ImportRequest, Lyrics, Settings, SongMeta } from '../shared/types'
 import { deleteSong, listSongs, updateMeta } from './library'
+import { probe } from './pipeline'
 import { getSettings, setSettings } from './settings'
 
 function notImplemented(channel: string): never {
@@ -21,7 +22,8 @@ export function registerIpc(): void {
   ipcMain.handle('lyrics:get', (): Lyrics | null => null)
   ipcMain.handle('lyrics:save', (): void => notImplemented('lyrics:save'))
 
-  ipcMain.handle('import:probe', (_e, _url: string) => notImplemented('import:probe'))
-  ipcMain.handle('import:start', (_e, _req: ImportRequest) => notImplemented('import:start'))
+  ipcMain.handle('import:probe', (_e, url: string) => probe(url))
+  // Stub queue (S1.5): returns a jobId without processing yet.
+  ipcMain.handle('import:start', (_e, _req: ImportRequest) => crypto.randomUUID())
   ipcMain.handle('import:retry', (_e, _id: string) => notImplemented('import:retry'))
 }
