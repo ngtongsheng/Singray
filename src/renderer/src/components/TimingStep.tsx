@@ -1,6 +1,8 @@
-import { Pause, Play, X } from 'lucide-react'
+import { Eye, Keyboard, Pause, Play, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Lyrics } from '../../../shared/types'
+import { inferEnds } from '../lib/inferEnds'
+import ReviewPane from './ReviewPane'
 
 interface Props {
   songId: string
@@ -35,6 +37,7 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
   const [duration, setDuration] = useState(0)
   const [rateIdx, setRateIdx] = useState(3)
   const [showKeys, setShowKeys] = useState(true)
+  const [review, setReview] = useState(false)
 
   const flatUnits = useMemo<UnitPos[]>(
     () => lyrics.lines.flatMap((l, line) => l.units.map((_, unit) => ({ line, unit }))),
@@ -52,12 +55,14 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const persist = useCallback(
     (next: Lyrics): void => {
-      onChange(next)
-      dirtyRef.current = next
+      // End inference (SPEC §6.4) on every write keeps lyrics.json valid after the last stamp.
+      const withEnds = inferEnds(next, audioRef.current?.duration || 0)
+      onChange(withEnds)
+      dirtyRef.current = withEnds
       if (timerRef.current) clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => {
         dirtyRef.current = null
-        void window.singray.lyrics.save(songId, next)
+        void window.singray.lyrics.save(songId, withEnds)
       }, 1000)
     },
     [songId, onChange]
@@ -165,16 +170,31 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
     [flatUnits, lyrics]
   )
 
+  /** SPEC §6.7: Space in review re-enters tap mode at the line currently playing. */
+  const exitReview = useCallback((): void => {
+    const t = audioRef.current?.currentTime ?? 0
+    let lineIdx = -1
+    lyrics.lines.forEach((l, li) => {
+      if (l.units.length > 0 && l.start !== null && l.start <= t) lineIdx = li
+    })
+    if (lineIdx === -1) lineIdx = lyrics.lines.findIndex((l) => l.units.length > 0)
+    const idx = flatUnits.findIndex((p) => p.line === lineIdx)
+    if (idx !== -1) setCursor(idx)
+    setReview(false)
+  }, [flatUnits, lyrics])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       switch (e.key) {
         case ' ':
           e.preventDefault()
-          if (!e.repeat) stamp()
+          if (e.repeat) break
+          if (review) exitReview()
+          else stamp()
           break
         case 'Backspace':
           e.preventDefault()
-          if (!e.repeat) undo()
+          if (!e.repeat && !review) undo()
           break
         case 'Enter':
           e.preventDefault()
@@ -200,7 +220,7 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [stamp, undo, togglePlay, seekTo, cycleRate])
+  }, [stamp, undo, togglePlay, seekTo, cycleRate, review, exitReview])
 
   const currentLine = flatUnits[cursor]?.line ?? flatUnits[flatUnits.length - 1]?.line ?? 0
 
@@ -258,75 +278,113 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
         <span className="rounded-control border border-border px-2 py-1 text-sm text-text-dim tabular-nums">
           {RATES[rateIdx]}×
         </span>
-      </div>
-
-      <div className="flex min-h-28 items-center justify-center px-6 py-6">
-        {done ? (
-          <p className="font-lyric text-2xl text-success">All units stamped — ready for review</p>
-        ) : (
-          <p className="max-w-full text-center font-lyric text-4xl leading-snug">
-            {lyrics.lines[currentLine]?.units.map((u, ui) => {
-              const idx = (lineStartIdx[currentLine] ?? 0) + ui
-              return (
-                <span
-                  // biome-ignore lint/suspicious/noArrayIndexKey: unit order is stable for a given line
-                  key={ui}
-                  className={
-                    idx < cursor
-                      ? 'text-lyric-sung'
-                      : idx === cursor
-                        ? 'border-accent border-b-2 text-lyric-active'
-                        : 'text-lyric-pending/50'
-                  }
-                >
-                  {u.text}
-                </span>
-              )
-            })}
-          </p>
-        )}
-      </div>
-
-      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-6 pb-4">
-        {lyrics.lines.map((line, li) =>
-          line.units.length === 0 ? (
-            // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable while timing
-            <div key={li} className="px-3 py-1 text-text-dim/40 tracking-widest">
-              · · ·
-            </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            if (review) exitReview()
+            else setReview(true)
+            e.currentTarget.blur()
+          }}
+          title={review ? 'Back to tap mode (Space)' : 'Review timing'}
+          className={`flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-sm ${
+            review
+              ? 'border-accent text-accent-soft hover:bg-surface'
+              : 'border-border text-text-dim hover:bg-surface hover:text-text'
+          }`}
+        >
+          {review ? (
+            <>
+              <Keyboard className="size-4" strokeWidth={1.5} /> Tap
+            </>
           ) : (
-            <button
-              // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable while timing
-              key={li}
-              type="button"
-              ref={(el) => {
-                if (el) lineRefs.current.set(li, el)
-                else lineRefs.current.delete(li)
-              }}
-              tabIndex={-1}
-              onClick={(e) => {
-                jumpToLine(li)
-                e.currentTarget.blur()
-              }}
-              className={`flex w-full items-baseline gap-3 rounded-control px-3 py-1 text-left font-lyric text-base hover:bg-surface ${
-                li === currentLine && !done ? '' : 'opacity-40'
-              }`}
-            >
-              <span className="w-14 shrink-0 text-text-dim text-xs tabular-nums">
-                {line.start !== null ? fmt(line.start) : '—'}
-              </span>
-              <span className={li === currentLine && !done ? 'text-lyric-active' : ''}>
-                {line.text}
-              </span>
-            </button>
-          )
-        )}
+            <>
+              <Eye className="size-4" strokeWidth={1.5} /> Review
+            </>
+          )}
+        </button>
       </div>
+
+      {review ? (
+        <ReviewPane lyrics={lyrics} audioRef={audioRef} onSeek={seekTo} />
+      ) : (
+        <>
+          <div className="flex min-h-28 items-center justify-center px-6 py-6">
+            {done ? (
+              <p className="font-lyric text-2xl text-success">
+                All units stamped — ready for review
+              </p>
+            ) : (
+              <p className="max-w-full text-center font-lyric text-4xl leading-snug">
+                {lyrics.lines[currentLine]?.units.map((u, ui) => {
+                  const idx = (lineStartIdx[currentLine] ?? 0) + ui
+                  return (
+                    <span
+                      // biome-ignore lint/suspicious/noArrayIndexKey: unit order is stable for a given line
+                      key={ui}
+                      className={
+                        idx < cursor
+                          ? 'text-lyric-sung'
+                          : idx === cursor
+                            ? 'border-accent border-b-2 text-lyric-active'
+                            : 'text-lyric-pending/50'
+                      }
+                    >
+                      {u.text}
+                    </span>
+                  )
+                })}
+              </p>
+            )}
+          </div>
+
+          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-6 pb-4">
+            {lyrics.lines.map((line, li) =>
+              line.units.length === 0 ? (
+                // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable while timing
+                <div key={li} className="px-3 py-1 text-text-dim/40 tracking-widest">
+                  · · ·
+                </div>
+              ) : (
+                <button
+                  // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable while timing
+                  key={li}
+                  type="button"
+                  ref={(el) => {
+                    if (el) lineRefs.current.set(li, el)
+                    else lineRefs.current.delete(li)
+                  }}
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    jumpToLine(li)
+                    e.currentTarget.blur()
+                  }}
+                  className={`flex w-full items-baseline gap-3 rounded-control px-3 py-1 text-left font-lyric text-base hover:bg-surface ${
+                    li === currentLine && !done ? '' : 'opacity-40'
+                  }`}
+                >
+                  <span className="w-14 shrink-0 text-text-dim text-xs tabular-nums">
+                    {line.start !== null ? fmt(line.start) : '—'}
+                  </span>
+                  <span className={li === currentLine && !done ? 'text-lyric-active' : ''}>
+                    {line.text}
+                  </span>
+                </button>
+              )
+            )}
+          </div>
+        </>
+      )}
 
       {showKeys && (
         <div className="flex items-center gap-5 border-border border-t bg-surface px-6 py-2 text-text-dim text-xs">
-          <Hint k="Space" label="stamp unit" />
-          <Hint k="⌫" label="undo" />
+          {review ? (
+            <Hint k="Space" label="back to tap" />
+          ) : (
+            <>
+              <Hint k="Space" label="stamp unit" />
+              <Hint k="⌫" label="undo" />
+            </>
+          )}
           <Hint k="Enter" label="play / pause" />
           <Hint k="← →" label="±5s" />
           <Hint k="↑ ↓" label="speed" />
