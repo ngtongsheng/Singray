@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Lyrics, SongListItem } from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
+import TimingStep from '../components/TimingStep'
 import { type BuildResult, buildLyrics, lyricsToText } from '../lib/lyricsText'
 
 interface Props {
@@ -95,7 +96,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
           />
         </div>
       ) : (
-        <TimingPlaceholder lyrics={saved} />
+        saved && <TimingStep songId={song.id} lyrics={saved} onChange={setSaved} />
       )}
 
       {pending && (
@@ -115,43 +116,6 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
 
 function parsedEmpty(text: string): boolean {
   return text.trim() === ''
-}
-
-/** Read-only tokenized preview until the tap-timing engine ships (S2.3). */
-function TimingPlaceholder({ lyrics }: { lyrics: Lyrics | null }): React.JSX.Element {
-  return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 py-4">
-      <p className="text-text-dim text-xs">
-        Draft saved. Tap timing comes next — tokenized units below.
-      </p>
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto rounded-card border border-border bg-surface p-4">
-        {lyrics?.lines.map((line, i) =>
-          line.units.length === 0 ? (
-            // biome-ignore lint/suspicious/noArrayIndexKey: static render of saved draft
-            <div key={i} className="flex items-center gap-1 py-1 text-text-dim">
-              <span className="tracking-widest">· · ·</span>
-              <span className="text-xs">break</span>
-            </div>
-          ) : (
-            // biome-ignore lint/suspicious/noArrayIndexKey: static render of saved draft
-            <div key={i} className="flex flex-wrap gap-1 font-lyric">
-              {line.units.map((u, j) => (
-                <span
-                  // biome-ignore lint/suspicious/noArrayIndexKey: static render of saved draft
-                  key={j}
-                  className={`rounded-control border px-1.5 py-0.5 text-sm ${
-                    u.t !== null ? 'border-accent/40 text-accent-soft' : 'border-border'
-                  }`}
-                >
-                  {u.text}
-                </span>
-              ))}
-            </div>
-          )
-        )}
-      </div>
-    </div>
-  )
 }
 
 export default LyricCreator
