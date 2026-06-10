@@ -17,6 +17,7 @@ interface Props {
   importing: ImportProgress | undefined
   onDelete: (song: SongListItem) => void
   onEdit: (song: SongListItem) => void
+  onEditLyrics: (song: SongListItem) => void
 }
 
 const STAGE_LABEL: Record<string, string> = {
@@ -59,7 +60,11 @@ function StatusBadge({
   return null
 }
 
-function CardMenu({ song, onDelete, onEdit }: Omit<Props, 'importing'>): React.JSX.Element {
+function CardMenu({
+  song,
+  onDelete,
+  onEdit
+}: Pick<Props, 'song' | 'onDelete' | 'onEdit'>): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -130,7 +135,7 @@ function CardMenu({ song, onDelete, onEdit }: Omit<Props, 'importing'>): React.J
   )
 }
 
-function SongCard({ song, importing, onDelete, onEdit }: Props): React.JSX.Element {
+function SongCard({ song, importing, onDelete, onEdit, onEditLyrics }: Props): React.JSX.Element {
   const failed = !importing && (song.error !== null || !song.ready)
 
   return (
@@ -183,7 +188,8 @@ function SongCard({ song, importing, onDelete, onEdit }: Props): React.JSX.Eleme
               <button
                 type="button"
                 disabled={!song.ready}
-                title="Edit Lyrics — coming in Phase 2"
+                onClick={() => onEditLyrics(song)}
+                title="Edit lyrics"
                 className="flex items-center gap-1.5 rounded-control border border-border bg-surface px-3 py-1.5 text-sm disabled:opacity-50"
               >
                 <Pencil className="size-4" strokeWidth={1.5} /> Lyrics
