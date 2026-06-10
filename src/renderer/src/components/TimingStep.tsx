@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Lyrics } from '../../../shared/types'
 import { inferEnds } from '../lib/inferEnds'
 import ReviewPane from './ReviewPane'
+import WaveformStrip from './WaveformStrip'
 
 interface Props {
   songId: string
@@ -41,6 +42,12 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
 
   const flatUnits = useMemo<UnitPos[]>(
     () => lyrics.lines.flatMap((l, line) => l.units.map((_, unit) => ({ line, unit }))),
+    [lyrics]
+  )
+
+  const stamps = useMemo<number[]>(
+    () =>
+      lyrics.lines.flatMap((l) => l.units.map((u) => u.t).filter((t): t is number => t !== null)),
     [lyrics]
   )
 
@@ -303,6 +310,8 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
           )}
         </button>
       </div>
+
+      <WaveformStrip songId={songId} audioRef={audioRef} stamps={stamps} onSeek={seekTo} />
 
       {review ? (
         <ReviewPane lyrics={lyrics} audioRef={audioRef} onSeek={seekTo} />

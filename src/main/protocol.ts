@@ -20,7 +20,13 @@ export function registerKaraokeScheme(): void {
   protocol.registerSchemesAsPrivileged([
     {
       scheme: 'karaoke',
-      privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true }
+      privileges: {
+        standard: true,
+        secure: true,
+        supportFetchAPI: true,
+        stream: true,
+        corsEnabled: true
+      }
     }
   ])
 }
@@ -51,7 +57,10 @@ export function registerKaraokeHandler(): void {
     const ext = fileName.slice(fileName.lastIndexOf('.')).toLowerCase()
     const baseHeaders: Record<string, string> = {
       'Content-Type': MIME[ext] ?? 'application/octet-stream',
-      'Accept-Ranges': 'bytes'
+      'Accept-Ranges': 'bytes',
+      // Renderer origin differs from karaoke:// (http://localhost in dev, file/app in prod),
+      // so renderer fetch() — e.g. waveform decode — needs CORS on top of supportFetchAPI.
+      'Access-Control-Allow-Origin': '*'
     }
 
     const range = request.headers.get('range')
