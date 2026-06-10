@@ -2,7 +2,7 @@ import type { Dirent } from 'node:fs'
 import { access, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { BrowserWindow, shell } from 'electron'
-import type { SongListItem, SongMeta } from '../shared/types'
+import type { Lyrics, SongListItem, SongMeta } from '../shared/types'
 import { getSettings } from './settings'
 
 const SONG_ID = /^[a-z0-9-]+$/i
@@ -86,6 +86,19 @@ export async function updateMeta(id: string, patch: Partial<SongMeta>): Promise<
   await writeFile(metaPath, JSON.stringify(next, null, 2), 'utf-8')
   notifyLibraryChanged()
   return next
+}
+
+export async function getLyrics(id: string): Promise<Lyrics | null> {
+  try {
+    return JSON.parse(await readFile(join(songDir(id), 'lyrics.json'), 'utf-8')) as Lyrics
+  } catch {
+    return null // missing or corrupt → no lyrics
+  }
+}
+
+export async function saveLyrics(id: string, lyrics: Lyrics): Promise<void> {
+  await writeFile(join(songDir(id), 'lyrics.json'), JSON.stringify(lyrics, null, 2), 'utf-8')
+  notifyLibraryChanged() // hasLyrics is derived from this file
 }
 
 export { notifyLibraryChanged }

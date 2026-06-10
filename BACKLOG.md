@@ -2,7 +2,7 @@
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → S2.1** (update this pointer whenever a story starts/finishes)
+> **Now → S2.2** (update this pointer whenever a story starts/finishes)
 
 Workflow: one story at a time, top to bottom. A story is done only when every "Done when" line passes by actually running the app/script. On finish: mark `[x]`, move the **Now** pointer, append one line to the Session Log.
 
@@ -50,7 +50,7 @@ Edit meta dialog, favorite toggle, open-folder, settings screen v1 (library dir,
 
 ## Phase 2 — Lyric Creator
 
-### [ ] S2.1 Tokenizer + lyrics IPC
+### [x] S2.1 Tokenizer + lyrics IPC
 Shared TS module per SPEC §4.4 (Intl.Segmenter, CJK char = unit, Latin word = unit, punctuation attaches). `lyrics.get/save` IPC.
 - **Done when:** dev-console check: `不是想怎么来` → 6 units, `But I wanna go home` → 5 units, mixed line splits sanely; lyrics.json round-trips.
 
@@ -125,6 +125,7 @@ Key stepper ±6 (`[`/`]`), tempo 0.75–1.25 in overflow menu, lyric clock scale
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-11 · S2.1 · src/shared/tokenize.ts: Intl.Segmenter grapheme walk, CJK regex (Han/Hiragana/Katakana/Hangul) = unit per char, \p{L}\p{N} runs = word units, punctuation/space appends to previous unit text (leading punct prefixes first unit, e.g. 「你). lyrics.get/save real in library.ts (save fires library:changed since hasLyrics derives from file). DEV-only window.__tokenize hook in main.tsx for console checks. Verified via CDP: 不是想怎么来→6, "But I wanna go home"→5 (spaces attach), mixed 我们 sing 一首 song→sane, round-trip exact JSON match, missing lyrics→null, hasLyrics flips true after save. Test lyrics.json removed from seed after.
 - 2026-06-11 · S1.6 · Edit-meta dialog (title/artist/language → updateMeta), heart favorite toggle on card, ⋯ card menu (edit/open folder/delete — delete moved off direct button per SPEC §10.8), Settings screen (App-level view switch, gear in header; Library + Pipeline fieldsets, save-on-blur, Test pipeline button reuses import.probe on known URL). SPEC CHANGE: library.openFolder(id) added to §8 (shell.openPath). Verified via CDP: edit→meta.json on disk→survives restart, favorite toggles round-trip, openFolder pops Explorer at song dir, probe test 1.8s success, libraryDir round-trips through settings.json. Gotcha: React onBlur = focusout event, plain blur dispatch does nothing (matters for CDP-driven tests).
 - 2026-06-11 · S1.5 · FIFO queue in main (importQueue.ts): spawns pipeline process, readline over stdout JSON-lines, broadcasts import:progress, meta.json written upfront at start (durationSec patched on done), error.json + badge on non-zero exit, retry re-enqueues, library:delete cancels/kills active job first. SongListItem gains `ready` (original.m4a exists) — error state derived from error.json OR not-ready, so killed-mid-import songs show Error after restart too. SPEC CHANGE: import.start req gains youtubeTitle (§8). Verified via CDP: dialog→Add→badges Queued/Separating/Converting advance, 2 URLs run serially ("1 more queued" strip), imported song plays via karaoke://, killed python mid-run → Error badge + error.json ("pipeline exited 4294967295") → Retry button → success with durationSec. Test songs deleted after.
 - 2026-06-10 · S1.4 · Import dialog: debounced probe (400ms, seq-guarded against stale results), prefill from track/artist fields else title heuristic (strips (Official Video)/【官方MV】 decoration, splits on dash family + 「」), language select, https thumb preview (CSP img-src widened with https:). import:start is a stub returning randomUUID until S1.5. Verified via CDP: prefill 3.5s, correct split, Add → jobId, dialog closes. main/pipeline.ts spawns venv python for probe.
