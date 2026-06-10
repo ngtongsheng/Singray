@@ -2,7 +2,7 @@
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → S1.2** (update this pointer whenever a story starts/finishes)
+> **Now → S1.3** (update this pointer whenever a story starts/finishes)
 
 Workflow: one story at a time, top to bottom. A story is done only when every "Done when" line passes by actually running the app/script. On finish: mark `[x]`, move the **Now** pointer, append one line to the Session Log.
 
@@ -28,7 +28,7 @@ Typed preload bridge (SPEC §8 surface, stub implementations), settings store (J
 `pipeline.py probe --url` → one-line JSON `{title, channel, track, artist, duration, thumbnailUrl}` via yt-dlp `--dump-json --no-download`.
 - **Done when:** real YouTube URL returns correct JSON in terminal; bad URL exits non-zero with `{"stage":"error",...}`.
 
-### [ ] S1.2 pipeline process
+### [x] S1.2 pipeline process
 Full chain standalone (no Electron): download best audio + thumbnail → audio-separator (6_HP-Karaoke-UVR, window 320, aggression 5, GPU) → loudness normalization (measure original at −14 LUFS, same linear gain on all three — SPEC §5.2) → ffmpeg AAC 256k ×3 (original/instrumental/vocals) → files into `--out`. JSON-lines progress per SPEC §5.2. Temp cleanup on success and failure.
 - **Done when:** one command produces 4 files in a target folder; progress lines stream during run; vocals/instrumental sound separated; two different-loudness songs come out level-matched.
 
@@ -125,6 +125,7 @@ Key stepper ±6 (`[`/`]`), tempo 0.75–1.25 in overflow menu, lyric clock scale
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-10 · S1.2 · Full chain works standalone. Verified: dQw4w9WgXcQ + hTWKbfoikeg both → 4 files; JSON-lines progress streamed (download per-percent via yt-dlp hook, separate/convert coarse); stdout is pure JSON (audio-separator tqdm goes to stderr); both originals measured −14.1 LUFS after shared-gain normalization; stems plausible (vocals mean −23.6dB vs instrumental −20dB, distinct content). GPU separation ≈12s for 3.5min song on 5060 Ti. UVR model auto-downloads to pipeline/models (gitignored). Test outputs kept at Karaoke\_test-s12* as S1.3 seeds. Ear-check of stem quality still recommended.
 - 2026-06-10 · S1.1 · Probe via yt_dlp Python API (noplaylist; artists list joined, channel falls back to uploader). Verified: real URL → correct one-line JSON exit 0; bad URL → {"stage":"error"} exit 1 (yt-dlp also prints its own ERROR to stderr — harmless, stdout stays clean JSON). ruff green.
 - 2026-06-10 · S0.3 · Venv built (Python 3.13). SPEC CHANGE: torch pinned 2.11.0+cu128 (not 2.12.0 — cu128 index tops out at 2.11.0; 2.12.0 resolves to PyPI CPU build). torchvision pinned 0.26.0+cu128 alongside since onnx2torch pulls it and unpinned resolve forced a CPU torch upgrade. setup.ps1 now hard-fails on pip exit codes + asserts CUDA at end. Verified: CUDA True on RTX 5060 Ti, pipeline.py --help shows probe/process, ruff check+format pass, check:py script added.
 - 2026-06-10 · S0.2 · Typed IPC bridge (`window.singray`, contract types in src/shared/types.ts shared by all three tsconfigs), settings store with defaults + JSON persistence in userData, `karaoke://<songId>/<file>` protocol with manual byte-range support (Readable.toWeb streams). Verified: settings get→set→file-write round-trip (settings.json appeared in %APPDATA%\singray), 30s test-tone M4A at Karaoke\test\original.m4a played via `<audio>` (screenshot, full duration shown). Temp smoke-test panel in App.tsx — replaced in S1.3.
