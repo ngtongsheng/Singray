@@ -2,7 +2,7 @@
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → S0.1** (update this pointer whenever a story starts/finishes)
+> **Now → S0.2** (update this pointer whenever a story starts/finishes)
 
 Workflow: one story at a time, top to bottom. A story is done only when every "Done when" line passes by actually running the app/script. On finish: mark `[x]`, move the **Now** pointer, append one line to the Session Log.
 
@@ -10,7 +10,7 @@ Workflow: one story at a time, top to bottom. A story is done only when every "D
 
 ## Phase 0 — Scaffold
 
-### [ ] S0.1 App skeleton
+### [x] S0.1 App skeleton
 Electron-vite scaffold (React + TS), Tailwind v4 with design tokens from SPEC §10.2, electron-builder config, git init. Quality tooling per SPEC §2.2: Biome (`biome.json`), strict tsconfig (`noUncheckedIndexedAccess`), `npm run check` script, `simple-git-hooks` pre-commit running it.
 - **Done when:** `npm run dev` opens a dark-themed window titled "Singray"; `npm run check` passes; a commit with a deliberate type error gets blocked by the hook; `git log` has initial commit.
 
@@ -125,4 +125,5 @@ Key stepper ±6 (`[`/`]`), tempo 0.75–1.25 in overflow menu, lyric clock scale
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-10 · S0.1 · Scaffolded with electron-vite 5 template (kept template combo vite 7 + TS 5.9 — electron-vite 5 peer-caps vite at ^7; bumped electron to ^42.4.0). Replaced ESLint/Prettier with Biome (tailwindDirectives enabled for @theme parsing). Tailwind v4 tokens in main.css, strict+noUncheckedIndexedAccess in both tsconfigs, simple-git-hooks pre-commit verified blocking a type error. Verified dev window dark-themed via screenshot. Gotcha: electron binary needed manual `node node_modules/electron/install.js` after npm install.
 - 2026-06-10 · — · Spec + backlog created. Nothing built yet.
