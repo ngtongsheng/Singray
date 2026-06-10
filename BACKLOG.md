@@ -2,7 +2,7 @@
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → S1.1** (update this pointer whenever a story starts/finishes)
+> **Now → S1.2** (update this pointer whenever a story starts/finishes)
 
 Workflow: one story at a time, top to bottom. A story is done only when every "Done when" line passes by actually running the app/script. On finish: mark `[x]`, move the **Now** pointer, append one line to the Session Log.
 
@@ -24,7 +24,7 @@ Typed preload bridge (SPEC §8 surface, stub implementations), settings store (J
 
 ## Phase 1 — Library + Import
 
-### [ ] S1.1 pipeline probe
+### [x] S1.1 pipeline probe
 `pipeline.py probe --url` → one-line JSON `{title, channel, track, artist, duration, thumbnailUrl}` via yt-dlp `--dump-json --no-download`.
 - **Done when:** real YouTube URL returns correct JSON in terminal; bad URL exits non-zero with `{"stage":"error",...}`.
 
@@ -125,6 +125,7 @@ Key stepper ±6 (`[`/`]`), tempo 0.75–1.25 in overflow menu, lyric clock scale
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-10 · S1.1 · Probe via yt_dlp Python API (noplaylist; artists list joined, channel falls back to uploader). Verified: real URL → correct one-line JSON exit 0; bad URL → {"stage":"error"} exit 1 (yt-dlp also prints its own ERROR to stderr — harmless, stdout stays clean JSON). ruff green.
 - 2026-06-10 · S0.3 · Venv built (Python 3.13). SPEC CHANGE: torch pinned 2.11.0+cu128 (not 2.12.0 — cu128 index tops out at 2.11.0; 2.12.0 resolves to PyPI CPU build). torchvision pinned 0.26.0+cu128 alongside since onnx2torch pulls it and unpinned resolve forced a CPU torch upgrade. setup.ps1 now hard-fails on pip exit codes + asserts CUDA at end. Verified: CUDA True on RTX 5060 Ti, pipeline.py --help shows probe/process, ruff check+format pass, check:py script added.
 - 2026-06-10 · S0.2 · Typed IPC bridge (`window.singray`, contract types in src/shared/types.ts shared by all three tsconfigs), settings store with defaults + JSON persistence in userData, `karaoke://<songId>/<file>` protocol with manual byte-range support (Readable.toWeb streams). Verified: settings get→set→file-write round-trip (settings.json appeared in %APPDATA%\singray), 30s test-tone M4A at Karaoke\test\original.m4a played via `<audio>` (screenshot, full duration shown). Temp smoke-test panel in App.tsx — replaced in S1.3.
 - 2026-06-10 · S0.1 · Scaffolded with electron-vite 5 template (kept template combo vite 7 + TS 5.9 — electron-vite 5 peer-caps vite at ^7; bumped electron to ^42.4.0). Replaced ESLint/Prettier with Biome (tailwindDirectives enabled for @theme parsing). Tailwind v4 tokens in main.css, strict+noUncheckedIndexedAccess in both tsconfigs, simple-git-hooks pre-commit verified blocking a type error. Verified dev window dark-themed via screenshot. Gotcha: electron binary needed manual `node node_modules/electron/install.js` after npm install.
