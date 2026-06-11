@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
+  AlignToken,
   AudioTrack,
   ImportProgress,
   ImportRequest,
@@ -21,7 +22,8 @@ const api: SingrayApi = {
   },
   lyrics: {
     get: (id) => ipcRenderer.invoke('lyrics:get', id) as Promise<Lyrics | null>,
-    save: (id, lyrics) => ipcRenderer.invoke('lyrics:save', id, lyrics) as Promise<void>
+    save: (id, lyrics) => ipcRenderer.invoke('lyrics:save', id, lyrics) as Promise<void>,
+    align: (id, text) => ipcRenderer.invoke('lyrics:align', id, text) as Promise<AlignToken[]>
   },
   import: {
     probe: (url) => ipcRenderer.invoke('import:probe', url) as Promise<ProbeResult>,

@@ -28,12 +28,15 @@ Write-Host "Creating venv with Python $base..."
 & $py -m pip install --upgrade pip
 
 # torch first from the cu128 index so audio-separator finds it already satisfied.
-# 2.11.0 is the newest version with cu128 wheels (2.12.0 exists only on PyPI as CPU).
-# torchvision pinned alongside: onnx2torch pulls it, and an unpinned resolve would
-# grab a version that forces a torch upgrade from PyPI.
-& $py -m pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu128
+# 2.8.0 because whisperx 3.8.6 pins torch~=2.8.0 (a newer torch would be
+# replaced by a PyPI CPU build during whisperx install). cu128 has 2.8.0
+# wheels and Blackwell (sm_120) support since 2.7.
+# torchvision/torchaudio pinned alongside: onnx2torch and whisperx pull them,
+# and an unpinned resolve would force a torch swap from PyPI.
+# +cu128 tag is load-bearing: a bare ==2.8.0 is "satisfied" by a CPU build.
+& $py -m pip install torch==2.8.0+cu128 torchvision==0.23.0+cu128 torchaudio==2.8.0+cu128 --index-url https://download.pytorch.org/whl/cu128
 if ($LASTEXITCODE -ne 0) { throw "torch install failed (exit $LASTEXITCODE)" }
-& $py -m pip install 'audio-separator[gpu]==0.44.2' yt-dlp==2026.6.9 ruff==0.15.16
+& $py -m pip install 'audio-separator[gpu]==0.44.2' yt-dlp==2026.6.9 ruff==0.15.16 whisperx==3.8.6
 if ($LASTEXITCODE -ne 0) { throw "deps install failed (exit $LASTEXITCODE)" }
 
 & $py -c "import torch; assert torch.cuda.is_available(), 'CUDA not available'; print('torch', torch.__version__, '| CUDA OK:', torch.cuda.get_device_name(0))"

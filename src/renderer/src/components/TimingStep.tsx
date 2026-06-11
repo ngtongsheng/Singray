@@ -177,6 +177,48 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
     [flatUnits, lyrics]
   )
 
+  /**
+   * Fix-up navigation (SPEC §6.6): Tab jumps to the next/previous untimed unit
+   * and seeks just before its context (last timed unit ahead of the gap), so
+   * post-alignment gaps can be filled without hunting.
+   */
+  const jumpGap = useCallback(
+    (dir: 1 | -1): void => {
+      let idx = -1
+      if (dir === 1) {
+        for (let k = cursor + 1; k < flatUnits.length; k++) {
+          const p = flatUnits[k]
+          if (p && unitT(lyrics, p) === null) {
+            idx = k
+            break
+          }
+        }
+      } else {
+        for (let k = Math.min(cursor, flatUnits.length) - 1; k >= 0; k--) {
+          const p = flatUnits[k]
+          if (p && unitT(lyrics, p) === null) {
+            idx = k
+            break
+          }
+        }
+      }
+      if (idx === -1) return
+      setCursor(idx)
+      let ref: number | null = null
+      for (let k = idx - 1; k >= 0; k--) {
+        const p = flatUnits[k]
+        const t = p ? unitT(lyrics, p) : null
+        if (t !== null) {
+          ref = t
+          break
+        }
+      }
+      const a = audioRef.current
+      if (a && ref !== null) a.currentTime = Math.max(ref - 1, 0)
+    },
+    [cursor, flatUnits, lyrics]
+  )
+
   /** SPEC §6.7: Space in review re-enters tap mode at the line currently playing. */
   const exitReview = useCallback((): void => {
     const t = audioRef.current?.currentTime ?? 0
@@ -223,11 +265,15 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
           e.preventDefault()
           cycleRate(-1)
           break
+        case 'Tab':
+          e.preventDefault()
+          if (!review) jumpGap(e.shiftKey ? -1 : 1)
+          break
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [stamp, undo, togglePlay, seekTo, cycleRate, review, exitReview])
+  }, [stamp, undo, togglePlay, seekTo, cycleRate, review, exitReview, jumpGap])
 
   const currentLine = flatUnits[cursor]?.line ?? flatUnits[flatUnits.length - 1]?.line ?? 0
 
@@ -392,6 +438,9 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
             <>
               <Hint k="Space" label="stamp unit" />
               <Hint k="⌫" label="undo" />
+              {stamps.length > 0 && stamps.length < flatUnits.length && (
+                <Hint k="Tab" label="next gap" />
+              )}
             </>
           )}
           <Hint k="Enter" label="play / pause" />

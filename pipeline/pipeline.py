@@ -1,7 +1,8 @@
-"""Singray media pipeline: YouTube download + UVR stem separation.
+"""Singray media pipeline: YouTube download + UVR stem separation + alignment.
 
 Contract (SPEC §5.2): JSON to stdout. `probe` prints one object; `process`
-streams JSON-lines progress. Non-zero exit + {"stage": "error"} on failure.
+and `align` stream JSON-lines progress. Non-zero exit + {"stage": "error"}
+on failure.
 """
 
 import argparse
@@ -35,9 +36,22 @@ VR_PARAMS = {
 AUDIO_EXTS = {".m4a", ".webm", ".opus", ".mp3", ".mp4", ".ogg", ".flac", ".wav"}
 IMAGE_EXTS = {".webp", ".jpg", ".jpeg", ".png"}
 
+# Languages where alignment is consumed per character (matches the app's
+# CJK-char-equals-unit tokenization rule, SPEC §4.4).
+CHAR_ALIGN_LANGS = {"zh", "ja", "ko"}
+WHISPERX_SAMPLE_RATE = 16000
+
+# Windows consoles default to cp1252; the JSON contract is UTF-8 (CJK lyrics).
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
+
+# Captured at import so emit() survives the stdout→stderr swap in cmd_align
+# (whisperx/transformers print to stdout, which would corrupt the JSON stream).
+_STDOUT = sys.stdout
+
 
 def emit(obj: dict) -> None:
-    print(json.dumps(obj, ensure_ascii=False), flush=True)
+    print(json.dumps(obj, ensure_ascii=False), file=_STDOUT, flush=True)
 
 
 def cmd_probe(args: argparse.Namespace) -> int:
@@ -229,6 +243,82 @@ def cmd_process(args: argparse.Namespace) -> int:
         return 1
 
 
+def _align_tokens(vocals: Path, text: str, lang: str) -> list[dict]:
+    """WhisperX forced alignment of `text` against the vocals stem (SPEC §6.6).
+
+    Returns ordered tokens {text, start, score}; start/score are None when the
+    aligner could not place that token. Char-level for CJK languages, else
+    word-level — mirrors the app's unit tokenization granularity.
+    """
+    import torch
+    import whisperx
+
+    audio = whisperx.load_audio(str(vocals))
+    duration = len(audio) / WHISPERX_SAMPLE_RATE
+    # Whole lyric as one segment spanning the song: real per-line times are
+    # exactly what alignment is being asked to discover.
+    segments = [{"text": text, "start": 0.0, "end": duration}]
+    char_mode = lang in CHAR_ALIGN_LANGS
+
+    def run(device: str) -> dict:
+        model, metadata = whisperx.load_align_model(language_code=lang, device=device)
+        emit({"stage": "align", "progress": 0.3})
+        return whisperx.align(
+            segments, model, metadata, audio, device, return_char_alignments=char_mode
+        )
+
+    try:
+        result = run("cuda" if torch.cuda.is_available() else "cpu")
+    except torch.cuda.OutOfMemoryError:
+        torch.cuda.empty_cache()
+        emit({"stage": "align", "progress": 0.3})
+        result = run("cpu")
+
+    tokens: list[dict] = []
+    for seg in result["segments"]:
+        if char_mode:
+            for ch in seg.get("chars", []):
+                t = (ch.get("char") or "").strip()
+                if t:
+                    tokens.append({"text": t, "start": ch.get("start"), "score": ch.get("score")})
+        else:
+            for w in seg.get("words", []):
+                t = (w.get("word") or "").strip()
+                if t:
+                    tokens.append({"text": t, "start": w.get("start"), "score": w.get("score")})
+    return tokens
+
+
+def cmd_align(args: argparse.Namespace) -> int:
+    """Forced alignment: lyric text vs vocals.m4a → token timestamps (SPEC §6.6)."""
+    try:
+        song_dir = Path(args.song)
+        vocals = song_dir / "vocals.m4a"
+        if not vocals.exists():
+            raise RuntimeError(f"vocals stem not found: {vocals}")
+
+        raw = Path(args.text).read_text(encoding="utf-8")
+        text = " ".join(line.strip() for line in raw.splitlines() if line.strip())
+        if not text:
+            raise RuntimeError("lyric text is empty")
+
+        meta = json.loads((song_dir / "meta.json").read_text(encoding="utf-8"))
+        lang = meta.get("language") or "en"
+        if lang == "unknown":
+            lang = "en"
+
+        emit({"stage": "align", "progress": 0.0})
+        sys.stdout = sys.stderr  # ML libs print to stdout; keep the JSON stream clean
+        tokens = _align_tokens(vocals, text, lang)
+        if not tokens:
+            raise RuntimeError("alignment produced no tokens")
+        emit({"stage": "done", "tokens": tokens})
+        return 0
+    except Exception as exc:  # noqa: BLE001 — any failure becomes the error contract
+        emit({"stage": "error", "message": str(exc)})
+        return 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="pipeline",
@@ -245,6 +335,11 @@ def main() -> int:
     process.add_argument("--out", required=True)
     process.add_argument("--model", default=DEFAULT_MODEL)
     process.set_defaults(func=cmd_process)
+
+    align = sub.add_parser("align", help="forced-align lyric text against the vocals stem")
+    align.add_argument("--song", required=True, help="song directory (vocals.m4a + meta.json)")
+    align.add_argument("--text", required=True, help="path to a UTF-8 lyric text file")
+    align.set_defaults(func=cmd_align)
 
     args = parser.parse_args()
     return int(args.func(args))

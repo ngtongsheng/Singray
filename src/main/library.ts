@@ -33,7 +33,7 @@ async function readImportError(songDir: string): Promise<string | null> {
   }
 }
 
-function songDir(id: string): string {
+export function songDir(id: string): string {
   if (!SONG_ID.test(id)) throw new Error(`invalid song id: ${id}`)
   return join(getSettings().libraryDir, id)
 }

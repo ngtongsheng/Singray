@@ -1,7 +1,11 @@
 import { spawn } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
+import { rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { createInterface } from 'node:readline'
 import { app } from 'electron'
-import type { ProbeResult } from '../shared/types'
+import type { AlignToken, ProbeResult } from '../shared/types'
+import { songDir } from './library'
 import { getSettings } from './settings'
 
 export function pipelineScript(): string {
@@ -34,4 +38,55 @@ export function probe(url: string): Promise<ProbeResult> {
       }
     })
   })
+}
+
+/**
+ * Runs `pipeline.py align --song <dir> --text <tmpfile>` (SPEC §6.6).
+ * Resolves with the token list from the final "done" line; rejects on any
+ * failure (caller treats alignment as best-effort and falls back to tap mode).
+ */
+export async function alignLyrics(id: string, text: string): Promise<AlignToken[]> {
+  const dir = songDir(id)
+  const tmp = join(app.getPath('temp'), `singray-align-${randomUUID()}.txt`)
+  await writeFile(tmp, text, 'utf-8')
+
+  try {
+    return await new Promise<AlignToken[]>((resolve, reject) => {
+      const proc = spawn(
+        getSettings().pythonPath,
+        [pipelineScript(), 'align', '--song', dir, '--text', tmp],
+        { windowsHide: true }
+      )
+      let tokens: AlignToken[] | null = null
+      let lastError = ''
+      let stderrTail = ''
+
+      const rl = createInterface({ input: proc.stdout })
+      rl.on('line', (line) => {
+        let msg: { stage: string; tokens?: AlignToken[]; message?: string }
+        try {
+          msg = JSON.parse(line)
+        } catch {
+          return // non-JSON noise, ignore
+        }
+        if (msg.stage === 'done' && msg.tokens) tokens = msg.tokens
+        else if (msg.stage === 'error') lastError = msg.message ?? 'alignment failed'
+      })
+      proc.stderr?.on('data', (d: Buffer) => {
+        stderrTail = (stderrTail + d.toString()).slice(-2000)
+      })
+      proc.on('error', reject)
+      proc.on('close', (code) => {
+        if (code === 0 && tokens) resolve(tokens)
+        else
+          reject(
+            new Error(
+              lastError || stderrTail.trim().split('\n').pop() || `align exited with code ${code}`
+            )
+          )
+      })
+    })
+  } finally {
+    await rm(tmp, { force: true })
+  }
 }

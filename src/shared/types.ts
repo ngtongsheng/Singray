@@ -87,6 +87,15 @@ export interface ImportRequest {
   youtubeTitle: string
 }
 
+/** One aligned token from `pipeline.py align` (SPEC §6.6): CJK char or Latin word. */
+export interface AlignToken {
+  text: string
+  /** Token start in seconds; null when the aligner could not place it. */
+  start: number | null
+  /** Aligner confidence 0..1; null when unaligned. */
+  score: number | null
+}
+
 export type AudioTrack = 'original' | 'instrumental' | 'vocals'
 
 /** Renderer-facing API exposed by the preload bridge. */
@@ -100,6 +109,8 @@ export interface SingrayApi {
   lyrics: {
     get(id: string): Promise<Lyrics | null>
     save(id: string, lyrics: Lyrics): Promise<void>
+    /** Forced alignment of lyric text against the vocals stem (SPEC §6.6). Slow; rejects on failure. */
+    align(id: string, text: string): Promise<AlignToken[]>
   }
   import: {
     probe(url: string): Promise<ProbeResult>

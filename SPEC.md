@@ -59,7 +59,7 @@ A personal-use desktop app: build a karaoke library from YouTube links (download
 | @biomejs/biome | ^2.4.16 |
 | yt-dlp (pip) | 2026.6.9 |
 | audio-separator[gpu] (pip) | 0.44.2 |
-| torch (pip, cu128 index) | 2.11.0 (+ torchvision 0.26.0; newest with cu128 wheels — 2.12.0 is PyPI CPU-only) |
+| torch (pip, cu128 index) | 2.8.0+cu128 (+ torchvision 0.23.0+cu128, torchaudio 2.8.0+cu128) — whisperx 3.8.6 pins torch~=2.8.0; the +cu128 tag is required or pip "satisfies" the pin with a CPU build |
 | whisperx (pip, Phase 2 alignment) | 3.8.6 |
 
 Policy: scaffold with these; npm deps use caret ranges, Python deps pinned exact in `setup.ps1` (torch/CUDA churn is the fragile axis). `setup.ps1 -Update` bumps yt-dlp only. Note TypeScript 6.x and Vite 8 are current majors — if electron-vite 5 templates lag behind either, prefer the template's working combination over forcing the newest major, then bump.
@@ -217,6 +217,7 @@ python pipeline.py align   --song <songDir> --text <lyrics.txt>     # forced ali
 {"stage": "error", "message": "..."}        // on failure, exit code != 0
 ```
 
+- `align`: streams JSON-lines like `process` (`{"stage": "align", "progress": …}`); final line `{"stage": "done", "tokens": [{"text", "start", "score"}]}` — one token per CJK char or Latin word, `start`/`score` null when the aligner could not place it. Language read from the song's `meta.json` (`unknown` → `en`). All pipeline stdout is UTF-8 (`sys.stdout.reconfigure` — Windows defaults to cp1252, which cannot encode CJK tokens).
 - Steps inside `process`: yt-dlp best-audio download (+ thumbnail) → audio-separator (VR arch, window 320, aggression 5, GPU) → **loudness normalization**: measure integrated loudness of the original (ffmpeg `loudnorm` print_format json, target −14 LUFS), apply the *same linear gain* to original + both stems (preserves vocal/instrumental balance — never per-file loudnorm on stems) → ffmpeg AAC 256k `-movflags +faststart` for all three → write files into `--out`.
 - Temp work in `%TEMP%`, cleaned on success and on failure.
 - Cookies: reuse the existing yt-dlp cookie setup if age-restricted videos fail; native Windows yt-dlp can use `--cookies-from-browser` directly (no WSL DPAPI workaround needed).
@@ -318,6 +319,7 @@ library.updateMeta(id: string, patch: Partial<SongMeta>): SongMeta
 library.openFolder(id: string): void   // open song folder in Explorer
 lyrics.get(id: string): Lyrics | null
 lyrics.save(id: string, lyrics: Lyrics): void
+lyrics.align(id: string, text: string): AlignToken[]  // forced alignment (§6.6), slow, rejects on failure
 import.probe(url: string): ProbeResult
 import.start(req: {url, title, artist, language, youtubeTitle}): jobId
 import.retry(id: string): void
