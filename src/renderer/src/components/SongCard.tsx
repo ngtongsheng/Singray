@@ -172,7 +172,7 @@ function SongCard({
           />
         </button>
         <StatusBadge song={song} importing={importing} />
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition-opacity duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition-opacity duration-200 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
           {failed && (
             <button
               type="button"

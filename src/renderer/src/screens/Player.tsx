@@ -1,5 +1,5 @@
-import { Loader2 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Loader2, Mic, MicOff, Pause, Play, Volume2 } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Lyrics, SongListItem } from '../../../shared/types'
 import LyricRenderer from '../components/LyricRenderer'
 import { AudioEngine } from '../lib/audioEngine'
@@ -9,15 +9,31 @@ interface Props {
   onExit: () => void
 }
 
+const HIDE_AFTER_MS = 3000
+
+function fmt(s: number): string {
+  const m = Math.floor(s / 60)
+  return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`
+}
+
 /**
- * Karaoke player (SPEC §7). S3.2 scope: background + lyric renderer on the engine
- * clock, Space play/pause + Esc exit. Control bar chrome lands in S3.3.
+ * Karaoke player (SPEC §7): blurred-art stage, lyric renderer on the engine clock,
+ * auto-hide control bar (§7.2). Space play/pause, V guide vocal, Esc exits.
  */
 function Player({ song, onExit }: Props): React.JSX.Element {
   const [engine, setEngine] = useState<AudioEngine | null>(null)
   const [lyrics, setLyrics] = useState<Lyrics | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [playing, setPlaying] = useState(false)
+  const [vocalOn, setVocalOn] = useState(true)
+  const [vocalVol, setVocalVol] = useState(1)
+  const [instrVol, setInstrVol] = useState(1)
+  const [position, setPosition] = useState(0)
+  const [barVisible, setBarVisible] = useState(true)
+  const hideTimer = useRef<number>(0)
 
+  // song.playCount intentionally not a dep: one increment per session, not per meta refresh.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useEffect(() => {
     let disposed = false
     let eng: AudioEngine | null = null
@@ -31,6 +47,10 @@ function Player({ song, onExit }: Props): React.JSX.Element {
         setEngine(e)
         setLyrics(l)
         e.play()
+        window.singray.library.updateMeta(song.id, {
+          playCount: song.playCount + 1,
+          lastPlayedAt: new Date().toISOString()
+        })
         if (import.meta.env.DEV) {
           ;(window as Window & { __playerEngine?: AudioEngine }).__playerEngine = e
         }
@@ -44,24 +64,67 @@ function Player({ song, onExit }: Props): React.JSX.Element {
     }
   }, [song.id])
 
+  // Coarse UI clock for the seek bar / timecode (the lyric wipe runs its own full-rate rAF).
+  useEffect(() => {
+    if (!engine) return
+    let raf = 0
+    const loop = (): void => {
+      setPosition(Math.round(engine.position * 4) / 4)
+      setPlaying(engine.playing)
+      raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(raf)
+  }, [engine])
+
+  // Auto-hide: any activity shows the bar and re-arms the 3s timer (SPEC §10.6).
+  const poke = useCallback(() => {
+    setBarVisible(true)
+    window.clearTimeout(hideTimer.current)
+    hideTimer.current = window.setTimeout(() => setBarVisible(false), HIDE_AFTER_MS)
+  }, [])
+
+  useEffect(() => {
+    poke()
+    window.addEventListener('mousemove', poke)
+    return () => {
+      window.removeEventListener('mousemove', poke)
+      window.clearTimeout(hideTimer.current)
+    }
+  }, [poke])
+
+  const togglePlay = useCallback(() => {
+    if (!engine) return
+    if (engine.playing) engine.pause()
+    else engine.play()
+  }, [engine])
+
+  const toggleVocal = useCallback(() => {
+    if (!engine) return
+    const next = !engine.vocalOn
+    engine.setVocal(next)
+    setVocalOn(next)
+  }, [engine])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
+      poke()
       if (e.key === 'Escape') onExit()
-      if (e.key === ' ' && engine) {
+      if (e.key === ' ') {
         e.preventDefault()
-        if (engine.playing) engine.pause()
-        else engine.play()
+        togglePlay()
       }
+      if (e.key === 'v' || e.key === 'V') toggleVocal()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [engine, onExit])
+  }, [onExit, togglePlay, toggleVocal, poke])
 
   const clock = useCallback(() => engine?.position ?? 0, [engine])
   const seek = useCallback((t: number) => engine?.seek(t), [engine])
 
   return (
-    <div className="relative h-full overflow-hidden bg-bg">
+    <div className={`relative h-full overflow-hidden bg-bg ${barVisible ? '' : 'cursor-none'}`}>
       {/* Blurred artwork under a scrim + bottom fade — lyric contrast independent of art (§10.6). */}
       <img
         src={window.singray.audio.thumbUrl(song.id)}
@@ -96,6 +159,92 @@ function Player({ song, onExit }: Props): React.JSX.Element {
           </div>
         )}
       </div>
+
+      {engine && (
+        <div
+          className={`absolute inset-x-0 bottom-0 z-10 transition-opacity duration-200 ${
+            barVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+        >
+          <div className="flex items-center gap-4 bg-gradient-to-t from-black/80 to-transparent px-6 pt-12 pb-5">
+            <button
+              type="button"
+              onClick={togglePlay}
+              title={playing ? 'Pause (Space)' : 'Play (Space)'}
+              className="flex size-11 items-center justify-center rounded-full bg-accent text-text hover:bg-accent-soft"
+            >
+              {playing ? (
+                <Pause className="size-5" strokeWidth={1.5} />
+              ) : (
+                <Play className="size-5 translate-x-0.5" strokeWidth={1.5} />
+              )}
+            </button>
+            <span className="text-sm text-text-dim tabular-nums">{fmt(position)}</span>
+            <input
+              type="range"
+              min={0}
+              max={engine.duration}
+              step={0.25}
+              value={position}
+              onChange={(e) => engine.seek(Number(e.target.value))}
+              title="Seek"
+              className="h-11 flex-1 cursor-pointer accent-accent"
+            />
+            <span className="text-sm text-text-dim tabular-nums">{fmt(engine.duration)}</span>
+
+            <button
+              type="button"
+              onClick={toggleVocal}
+              aria-pressed={vocalOn}
+              title="Guide vocal (V)"
+              className={`flex h-11 items-center gap-2 rounded-control border px-3 text-sm ${
+                vocalOn
+                  ? 'border-accent bg-accent/15 text-accent'
+                  : 'border-border text-text-dim hover:text-text'
+              }`}
+            >
+              {vocalOn ? (
+                <Mic className="size-4" strokeWidth={1.5} />
+              ) : (
+                <MicOff className="size-4" strokeWidth={1.5} />
+              )}
+              Guide {vocalOn ? 'on' : 'off'}
+            </button>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={vocalVol}
+              onChange={(e) => {
+                const v = Number(e.target.value)
+                setVocalVol(v)
+                engine.setVocalVolume(v)
+              }}
+              title="Guide vocal volume"
+              className="h-11 w-24 cursor-pointer accent-accent"
+            />
+
+            <span className="flex items-center gap-2 text-text-dim">
+              <Volume2 className="size-4" strokeWidth={1.5} />
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={instrVol}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  setInstrVol(v)
+                  engine.setInstrumentalVolume(v)
+                }}
+                title="Instrumental volume"
+                className="h-11 w-24 cursor-pointer accent-accent"
+              />
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
