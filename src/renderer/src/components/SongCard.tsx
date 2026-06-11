@@ -3,9 +3,7 @@ import {
   Folder,
   Heart,
   Loader2,
-  Mic2,
   MoreHorizontal,
-  Pencil,
   RotateCcw,
   Trash2
 } from 'lucide-react'
@@ -16,8 +14,6 @@ interface Props {
   song: SongListItem
   importing: ImportProgress | undefined
   onDelete: (song: SongListItem) => void
-  onEdit: (song: SongListItem) => void
-  onEditLyrics: (song: SongListItem) => void
   onSing: (song: SongListItem) => void
 }
 
@@ -61,11 +57,7 @@ function StatusBadge({
   return null
 }
 
-function CardMenu({
-  song,
-  onDelete,
-  onEdit
-}: Pick<Props, 'song' | 'onDelete' | 'onEdit'>): React.JSX.Element {
+function CardMenu({ song, onDelete }: Pick<Props, 'song' | 'onDelete'>): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -92,28 +84,24 @@ function CardMenu({
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={(e) => {
+          e.stopPropagation()
+          setOpen(!open)
+        }}
         title="More actions"
-        className="rounded-control border border-border bg-surface p-1.5 hover:bg-surface-2"
+        className={`rounded-control bg-black/50 p-1 transition-opacity hover:bg-black/70 ${
+          open ? '' : 'opacity-0 group-hover:opacity-100'
+        }`}
       >
         <MoreHorizontal className="size-4" strokeWidth={1.5} />
       </button>
       {open && (
-        <div className="absolute top-full left-1/2 z-20 mt-1 w-40 -translate-x-1/2 overflow-hidden rounded-control border border-border bg-surface py-1 shadow-raised">
+        <div className="absolute top-full left-0 z-20 mt-1 w-40 overflow-hidden rounded-control border border-border bg-surface py-1 shadow-raised">
           <button
             type="button"
             className={itemClass}
-            onClick={() => {
-              setOpen(false)
-              onEdit(song)
-            }}
-          >
-            <Pencil className="size-3.5" strokeWidth={1.5} /> Edit details
-          </button>
-          <button
-            type="button"
-            className={itemClass}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation()
               setOpen(false)
               window.singray.library.openFolder(song.id)
             }}
@@ -123,7 +111,8 @@ function CardMenu({
           <button
             type="button"
             className={`${itemClass} text-danger`}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation()
               setOpen(false)
               onDelete(song)
             }}
@@ -136,18 +125,26 @@ function CardMenu({
   )
 }
 
-function SongCard({
-  song,
-  importing,
-  onDelete,
-  onEdit,
-  onEditLyrics,
-  onSing
-}: Props): React.JSX.Element {
+function SongCard({ song, importing, onDelete, onSing }: Props): React.JSX.Element {
   const failed = !importing && (song.error !== null || !song.ready)
+  const openable = !importing && !failed
 
   return (
-    <div className="group rounded-card border border-border bg-surface transition-colors hover:border-text-dim/40">
+    // biome-ignore lint/a11y/useSemanticElements: card contains nested buttons (heart/menu/retry) — a real <button> can't nest them
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => openable && onSing(song)}
+      onKeyDown={(e) => {
+        if (openable && (e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+          e.preventDefault()
+          onSing(song)
+        }
+      }}
+      className={`group rounded-card border border-border bg-surface transition-colors hover:border-text-dim/40 ${
+        openable ? 'cursor-pointer' : ''
+      }`}
+    >
       <div className="relative aspect-video overflow-hidden rounded-t-card bg-surface-2">
         {song.ready && (
           <img
@@ -158,9 +155,15 @@ function SongCard({
           />
         )}
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/70 to-transparent" />
+        <div className="absolute top-2 left-2">
+          <CardMenu song={song} onDelete={onDelete} />
+        </div>
         <button
           type="button"
-          onClick={() => window.singray.library.updateMeta(song.id, { favorite: !song.favorite })}
+          onClick={(e) => {
+            e.stopPropagation()
+            window.singray.library.updateMeta(song.id, { favorite: !song.favorite })
+          }}
           title={song.favorite ? 'Remove from favorites' : 'Add to favorites'}
           className={`absolute top-2 right-2 rounded-control p-1 transition-opacity hover:scale-110 ${
             song.favorite ? '' : 'opacity-0 group-hover:opacity-100'
@@ -172,41 +175,21 @@ function SongCard({
           />
         </button>
         <StatusBadge song={song} importing={importing} />
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-black/55 opacity-0 transition-opacity duration-200 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
-          {failed && (
+        {failed && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/55">
             <button
               type="button"
-              onClick={() => window.singray.import.retry(song.id)}
+              onClick={(e) => {
+                e.stopPropagation()
+                window.singray.import.retry(song.id)
+              }}
               title="Retry import"
               className="flex items-center gap-1.5 rounded-control bg-accent px-3 py-1.5 font-medium text-sm text-text hover:bg-accent-soft"
             >
               <RotateCcw className="size-4" strokeWidth={1.5} /> Retry
             </button>
-          )}
-          {!failed && (
-            <>
-              <button
-                type="button"
-                disabled={!song.ready}
-                onClick={() => onSing(song)}
-                title="Sing"
-                className="flex items-center gap-1.5 rounded-control bg-accent px-3 py-1.5 font-medium text-sm text-text hover:bg-accent-soft disabled:opacity-50"
-              >
-                <Mic2 className="size-4" strokeWidth={1.5} /> Sing
-              </button>
-              <button
-                type="button"
-                disabled={!song.ready}
-                onClick={() => onEditLyrics(song)}
-                title="Edit lyrics"
-                className="flex items-center gap-1.5 rounded-control border border-border bg-surface px-3 py-1.5 text-sm disabled:opacity-50"
-              >
-                <Pencil className="size-4" strokeWidth={1.5} /> Lyrics
-              </button>
-            </>
-          )}
-          <CardMenu song={song} onDelete={onDelete} onEdit={onEdit} />
-        </div>
+          </div>
+        )}
       </div>
       <div className="p-3">
         <p className="truncate font-medium text-sm" title={song.title}>

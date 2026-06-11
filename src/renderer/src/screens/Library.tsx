@@ -2,7 +2,6 @@ import { Heart, Mic2, Plus, Search, Settings as SettingsIcon, Type } from 'lucid
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Language, SongListItem } from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
-import EditMetaDialog from '../components/EditMetaDialog'
 import ImportDialog from '../components/ImportDialog'
 import SongCard from '../components/SongCard'
 import { useImports } from '../hooks/useImports'
@@ -33,11 +32,10 @@ const STRIP_LABEL: Record<string, string> = {
 
 interface Props {
   onOpenSettings: () => void
-  onEditLyrics: (song: SongListItem) => void
   onSing: (song: SongListItem) => void
 }
 
-function Library({ onOpenSettings, onEditLyrics, onSing }: Props): React.JSX.Element {
+function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
   const { songs } = useLibrary()
   const imports = useImports()
   const [query, setQuery] = useState('')
@@ -45,7 +43,6 @@ function Library({ onOpenSettings, onEditLyrics, onSing }: Props): React.JSX.Ele
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [needsLyricsOnly, setNeedsLyricsOnly] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<SongListItem | null>(null)
-  const [editing, setEditing] = useState<SongListItem | null>(null)
   const [showImport, setShowImport] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
@@ -112,31 +109,6 @@ function Library({ onOpenSettings, onEditLyrics, onSing }: Props): React.JSX.Ele
         </button>
       </header>
 
-      {imports.size > 0 &&
-        (() => {
-          const activeJob = [...imports.values()].find((p) => p.stage !== 'queued')
-          const job = activeJob ?? [...imports.values()][0]
-          if (!job) return null
-          const title = songs.find((s) => s.id === job.songId)?.title ?? job.songId
-          return (
-            <div className="relative border-border border-b bg-surface px-6 py-1.5">
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-text-dim">
-                  {STRIP_LABEL[job.stage] ?? job.stage} · {title}
-                </span>
-                <span className="font-medium text-accent">{Math.round(job.progress * 100)}%</span>
-                {imports.size > 1 && (
-                  <span className="text-text-dim">· {imports.size - 1} more queued</span>
-                )}
-              </div>
-              <div
-                className="absolute bottom-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
-                style={{ width: `${job.progress * 100}%` }}
-              />
-            </div>
-          )
-        })()}
-
       <div className="flex items-center gap-2 px-6 py-3">
         {languages.map((lang) => (
           <button
@@ -184,8 +156,6 @@ function Library({ onOpenSettings, onEditLyrics, onSing }: Props): React.JSX.Ele
               song={song}
               importing={imports.get(song.id)}
               onDelete={setPendingDelete}
-              onEdit={setEditing}
-              onEditLyrics={onEditLyrics}
               onSing={onSing}
             />
           ))}
@@ -195,9 +165,32 @@ function Library({ onOpenSettings, onEditLyrics, onSing }: Props): React.JSX.Ele
         </div>
       )}
 
-      {showImport && <ImportDialog onClose={() => setShowImport(false)} />}
+      {imports.size > 0 &&
+        (() => {
+          const activeJob = [...imports.values()].find((p) => p.stage !== 'queued')
+          const job = activeJob ?? [...imports.values()][0]
+          if (!job) return null
+          const title = songs.find((s) => s.id === job.songId)?.title ?? job.songId
+          return (
+            <div className="relative border-border border-t bg-surface px-6 py-1.5">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-text-dim">
+                  {STRIP_LABEL[job.stage] ?? job.stage} · {title}
+                </span>
+                <span className="font-medium text-accent">{Math.round(job.progress * 100)}%</span>
+                {imports.size > 1 && (
+                  <span className="text-text-dim">· {imports.size - 1} more queued</span>
+                )}
+              </div>
+              <div
+                className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
+                style={{ width: `${job.progress * 100}%` }}
+              />
+            </div>
+          )
+        })()}
 
-      {editing && <EditMetaDialog song={editing} onClose={() => setEditing(null)} />}
+      {showImport && <ImportDialog onClose={() => setShowImport(false)} />}
 
       {pendingDelete && (
         <ConfirmDialog

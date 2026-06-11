@@ -1,12 +1,26 @@
-import { Gauge, Loader2, Mic, MicOff, Minus, Pause, Play, Plus, Volume2 } from 'lucide-react'
+import {
+  Gauge,
+  Loader2,
+  Mic,
+  MicOff,
+  Minus,
+  Pause,
+  Pencil,
+  Play,
+  Plus,
+  Type,
+  Volume2
+} from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Lyrics, SongListItem } from '../../../shared/types'
+import EditMetaDialog from '../components/EditMetaDialog'
 import LyricRenderer from '../components/LyricRenderer'
 import { AudioEngine } from '../lib/audioEngine'
 
 interface Props {
   song: SongListItem
   onExit: () => void
+  onEditLyrics: (song: SongListItem) => void
 }
 
 const HIDE_AFTER_MS = 3000
@@ -20,7 +34,7 @@ function fmt(s: number): string {
  * Karaoke player (SPEC §7): blurred-art stage, lyric renderer on the engine clock,
  * auto-hide control bar (§7.2). Space play/pause, V guide vocal, Esc exits.
  */
-function Player({ song, onExit }: Props): React.JSX.Element {
+function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
   const [engine, setEngine] = useState<AudioEngine | null>(null)
   const [lyrics, setLyrics] = useState<Lyrics | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -33,6 +47,7 @@ function Player({ song, onExit }: Props): React.JSX.Element {
   const [tempoVal, setTempoVal] = useState(1)
   const [tempoOpen, setTempoOpen] = useState(false)
   const [barVisible, setBarVisible] = useState(true)
+  const [editOpen, setEditOpen] = useState(false)
   const hideTimer = useRef<number>(0)
 
   // song.playCount intentionally not a dep: one increment per session, not per meta refresh.
@@ -140,6 +155,7 @@ function Player({ song, onExit }: Props): React.JSX.Element {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       poke()
+      if (editOpen) return // dialog owns the keyboard (its own Escape closes it)
       if (e.key === 'Escape') onExit()
       if (e.key === ' ') {
         e.preventDefault()
@@ -151,7 +167,7 @@ function Player({ song, onExit }: Props): React.JSX.Element {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onExit, togglePlay, toggleVocal, stepKey, poke])
+  }, [onExit, togglePlay, toggleVocal, stepKey, poke, editOpen])
 
   // Lyric clock follows what's audible: engine position minus shifter latency (§7.3).
   const clock = useCallback(() => engine?.displayPosition ?? 0, [engine])
@@ -193,6 +209,35 @@ function Player({ song, onExit }: Props): React.JSX.Element {
           </div>
         )}
       </div>
+
+      {!error && (
+        <div
+          className={`absolute top-0 right-0 z-10 transition-opacity duration-200 ${
+            barVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+        >
+          <div className="flex items-center gap-2 px-4 py-3">
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              title="Edit details"
+              className="flex items-center gap-1.5 rounded-control bg-black/50 px-3 py-1.5 text-sm text-text-dim hover:bg-black/70 hover:text-text"
+            >
+              <Pencil className="size-4" strokeWidth={1.5} /> Edit details
+            </button>
+            <button
+              type="button"
+              onClick={() => onEditLyrics(song)}
+              title={lyrics ? 'Edit lyrics' : 'Add lyrics'}
+              className="flex items-center gap-1.5 rounded-control bg-black/50 px-3 py-1.5 text-sm text-text-dim hover:bg-black/70 hover:text-text"
+            >
+              <Type className="size-4" strokeWidth={1.5} /> {lyrics ? 'Edit lyrics' : 'Add lyrics'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {editOpen && <EditMetaDialog song={song} onClose={() => setEditOpen(false)} />}
 
       {engine && (
         <div

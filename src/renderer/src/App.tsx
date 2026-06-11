@@ -18,11 +18,16 @@ function App(): React.JSX.Element {
   if (view.name === 'creator')
     return <LyricCreator song={view.song} onBack={() => setView({ name: 'library' })} />
   if (view.name === 'player')
-    return <Player song={view.song} onExit={() => setView({ name: 'library' })} />
+    return (
+      <Player
+        song={view.song}
+        onExit={() => setView({ name: 'library' })}
+        onEditLyrics={(song) => setView({ name: 'creator', song })}
+      />
+    )
   return (
     <Library
       onOpenSettings={() => setView({ name: 'settings' })}
-      onEditLyrics={(song) => setView({ name: 'creator', song })}
       onSing={(song) => setView({ name: 'player', song })}
     />
   )
