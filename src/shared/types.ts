@@ -14,8 +14,12 @@ export interface SongMeta {
   addedAt: string
   favorite: boolean
   tags: string[]
+  /** Legacy open-count from MVP (S3.3) — kept as a sort floor, no longer written. */
   playCount: number
+  /** Legacy — superseded by the last `sings` entry, no longer written. */
   lastPlayedAt: string | null
+  /** ISO timestamps, one appended per session that crosses ≥60% accumulated playback (R1.5). */
+  sings: string[]
   separationModel: string
   enrichment: null
 }

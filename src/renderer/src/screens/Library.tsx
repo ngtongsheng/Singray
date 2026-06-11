@@ -30,6 +30,12 @@ const STRIP_LABEL: Record<string, string> = {
   convert: 'Converting'
 }
 
+type SortMode = 'added' | 'mostSung' | 'recentSung'
+
+/** Sing count with the legacy MVP playCount as floor (R1.5 migration). */
+const singCount = (s: SongListItem): number => s.playCount + s.sings.length
+const lastSungAt = (s: SongListItem): string => s.sings.at(-1) ?? s.lastPlayedAt ?? ''
+
 interface Props {
   onOpenSettings: () => void
   onSing: (song: SongListItem) => void
@@ -42,6 +48,7 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
   const [language, setLanguage] = useState<Language | null>(null)
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [needsLyricsOnly, setNeedsLyricsOnly] = useState(false)
+  const [sort, setSort] = useState<SortMode>('added')
   const [pendingDelete, setPendingDelete] = useState<SongListItem | null>(null)
   const [showImport, setShowImport] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -61,7 +68,7 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return songs.filter((s) => {
+    const list = songs.filter((s) => {
       if (q && !s.title.toLowerCase().includes(q) && !s.artist.toLowerCase().includes(q))
         return false
       if (language && s.language !== language) return false
@@ -69,7 +76,11 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
       if (needsLyricsOnly && s.hasLyrics) return false
       return true
     })
-  }, [songs, query, language, favoritesOnly, needsLyricsOnly])
+    // 'added' keeps the listing order (addedAt desc from main)
+    if (sort === 'mostSung') list.sort((a, b) => singCount(b) - singCount(a))
+    else if (sort === 'recentSung') list.sort((a, b) => lastSungAt(b).localeCompare(lastSungAt(a)))
+    return list
+  }, [songs, query, language, favoritesOnly, needsLyricsOnly, sort])
 
   const confirmDelete = async (): Promise<void> => {
     if (!pendingDelete) return
@@ -134,6 +145,17 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
         >
           <Type className="size-3.5" strokeWidth={1.5} /> Needs lyrics
         </button>
+        <div className="flex-1" />
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortMode)}
+          title="Sort"
+          className="rounded-control border border-border bg-surface px-2 py-1 text-sm text-text-dim"
+        >
+          <option value="added">Recently added</option>
+          <option value="mostSung">Most sung</option>
+          <option value="recentSung">Recently sung</option>
+        </select>
       </div>
 
       {songs.length === 0 ? (

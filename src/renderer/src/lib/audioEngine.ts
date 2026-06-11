@@ -94,6 +94,10 @@ export class AudioEngine {
   private streamOffset = 0
   private streamStartedAt = 0
   private driftTimer: number | null = null
+  /** Accumulated seconds actually played this session — seeks don't add (R1.5 sing gate). */
+  private playedAccum = 0
+  /** Song position where the current playing stretch began. */
+  private stretchStart = 0
   private _playing = false
   private _vocalOn = true
   private _vocalVolume = 1
@@ -239,9 +243,22 @@ export class AudioEngine {
     return this._tempo
   }
 
+  /** Seconds of song content actually played this session. Position jumps from
+   *  seeking never inflate it: each playing stretch contributes position deltas only. */
+  get playedSeconds(): number {
+    if (!this._playing) return this.playedAccum
+    return this.playedAccum + Math.max(0, this.position - this.stretchStart)
+  }
+
+  /** Close the current playing stretch into the accumulator. */
+  private bankStretch(): void {
+    if (this._playing) this.playedAccum += Math.max(0, this.position - this.stretchStart)
+  }
+
   play(): void {
     if (this._playing) return
     if (this.offset >= this.duration) this.offset = 0
+    this.stretchStart = this.offset
     this.startSources(this.offset)
     this._playing = true
     this.startDriftWatchdog()
@@ -249,6 +266,7 @@ export class AudioEngine {
 
   pause(): void {
     if (!this._playing) return
+    this.bankStretch()
     this.offset = this.position
     this._playing = false
     this.stopDriftWatchdog()
@@ -257,7 +275,9 @@ export class AudioEngine {
 
   seek(t: number): void {
     const target = Math.min(Math.max(t, 0), this.duration)
+    this.bankStretch() // bank against the pre-seek position before offset moves
     this.offset = target
+    this.stretchStart = target
     if (this._playing) {
       this.stopSources()
       this.startSources(target)
@@ -414,6 +434,7 @@ export class AudioEngine {
     // from rebuilt sources are filtered by generation.
     this.srcInstr.onended = () => {
       if (gen !== this.generation || !this._playing) return
+      this.bankStretch()
       this.offset = this.duration
       this._playing = false
       this.stopDriftWatchdog()

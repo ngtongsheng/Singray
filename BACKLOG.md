@@ -4,7 +4,7 @@ Source: user feedback 2026-06-12 (`Some enhancement.md`), grilled + triaged. MVP
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → R1.5** (update this pointer whenever a story starts/finishes)
+> **Now → R2.1** (update this pointer whenever a story starts/finishes)
 >
 > R0.1 (ear batch) + R0.2 (AG06) are user-side, can run anytime in parallel with coding stories — they don't block the pointer.
 
@@ -57,7 +57,7 @@ Tokenizer: apostrophe (`'`/`’`) between letters is word-internal — "We're" =
 Blurred thumb background gets slow Ken Burns pan/zoom (transform-only, ~60s loop, paused when window hidden). Soundwave option: AnalyserNode on monitor context master → canvas wave/bars layered into stage (transform/paint only, no layout shift), toggle in player overflow, default off, persisted.
 - **Done when:** pan visibly drifts over a minute with 0 layout-shift entries; wave moves with the music and stops when paused; toggle state survives restart; lyric wipe perf trace unchanged.
 
-### [ ] R1.5 Sing history
+### [x] R1.5 Sing history
 Replace open-counts-as-play (S3.3 behavior): engine tracks accumulated playback time per session (seeks don't inflate it); when ≥60% of song duration → append ISO timestamp to `sings: []` in meta.json (once per session). `playCount`/`lastPlayedAt` migrate: existing playCount kept as legacy floor for sort, new sings array is source of truth going forward. Library: sort control (added / most sung / recently sung), card shows sing count.
 - **Done when:** play 30s and exit → no sing logged; play >60% with a few seeks → exactly one timestamp appended; sort by most sung and recently sung both reorder correctly; old songs without `sings` don't crash and sort sanely.
 
@@ -161,6 +161,7 @@ Release workflow adds macos job: electron-builder .dmg (unsigned), uploaded to s
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-12 · R1.5 · Engine `playedSeconds`: per-stretch position-delta accumulator (banked on pause/seek/natural end) — seeks can't inflate it. Player sing gate in the coarse rAF clock: ≥60% → append ISO timestamp to `sings`, once per session; entry playCount/lastPlayedAt writes removed. `sings: []` added to SongMeta + import; listSongs normalizes missing arrays. Library sort select (added/most sung/recently sung), card shows count = playCount floor + sings. Verified live: 20s play no sing; 10s+jump-to-92% no sing; full play at 1.25× with seeks → exactly one timestamp; both sorts reorder correctly on legacy metas. Test left one real sing on Never Gonna Give You Up.
 - 2026-06-12 · R1.4 · Ken Burns: CSS keyframes (transform-only, 60s loop) on blurred art, `animation-play-state: paused` on visibilitychange. Soundwave: `engine.createMonitorAnalyser()` (cached tap off both stem gains, audio path untouched) → canvas frequency bars (96 bars, accent token via getComputedStyle), draw loop gated on `playing`; toggle in player top chrome, persisted as `stageSoundwave` (default off). Verified: transform drifts, 0 layout-shift entries during 12s pan+wave, wave freezes on pause, worst rAF frame 17ms, toggle survives restart.
 - 2026-06-12 · R1.3 · Tokenizer: `'`/`’` joins word run only when flanked by letters (lookahead on segment list) — "We're don't I've gone" → 4 units; trailing/quoting apostrophes still attach as punctuation; merge verified 10/10 on contraction-heavy line (core() already strips apostrophes, so token match unaffected). Player no-lyrics state = single Add lyrics button → creator (verified opens on right song). Node `--experimental-strip-types` runs shared TS directly for logic checks.
 - 2026-06-12 · R1.2 · No autoplay (enter paused at 0:00, guide vocal off via `engine.setVocal(false)` post-load); new `playerBarPinned` setting (default true) + pin/unpin button at bar end — unpin restores 3s auto-hide; control order play → seek → instr vol → guide cluster (toggle+volume in one bordered unit) → key → tempo; ←/→ seek ±5s; Key span `w-14 whitespace-nowrap` fixes +n wrap; tempo slider → radio presets (0.75–1.25) + Reset. All done-when checks verified via playwright driver (full-song pinned check proxied at 4.5s idle; ear-grade wipe check stays in R0.1).

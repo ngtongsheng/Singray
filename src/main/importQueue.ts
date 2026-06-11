@@ -60,6 +60,7 @@ export async function startImport(req: ImportRequest): Promise<string> {
     tags: [],
     playCount: 0,
     lastPlayedAt: null,
+    sings: [],
     separationModel: '6_HP-Karaoke-UVR',
     enrichment: null
   }

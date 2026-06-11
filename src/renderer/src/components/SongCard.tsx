@@ -3,6 +3,7 @@ import {
   Folder,
   Heart,
   Loader2,
+  Mic2,
   MoreHorizontal,
   RotateCcw,
   Trash2
@@ -195,9 +196,18 @@ function SongCard({ song, importing, onDelete, onSing }: Props): React.JSX.Eleme
         <p className="truncate font-medium text-sm" title={song.title}>
           {song.title}
         </p>
-        <p className="truncate text-text-dim text-xs" title={song.artist}>
-          {song.artist}
-        </p>
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="truncate text-text-dim text-xs" title={song.artist}>
+            {song.artist}
+          </p>
+          <span
+            className="flex shrink-0 items-center gap-1 text-text-dim text-xs tabular-nums"
+            title="Times sung"
+          >
+            <Mic2 className="size-3" strokeWidth={1.5} />
+            {song.playCount + song.sings.length}
+          </span>
+        </div>
       </div>
     </div>
   )

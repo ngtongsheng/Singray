@@ -54,6 +54,7 @@ export async function listSongs(): Promise<SongListItem[]> {
       const meta = JSON.parse(await readFile(join(dir, 'meta.json'), 'utf-8')) as SongMeta
       songs.push({
         ...meta,
+        sings: meta.sings ?? [], // pre-R1.5 metas have no sings array
         id: entry.name, // folder name is the id authority
         hasLyrics: await exists(join(dir, 'lyrics.json')),
         error: await readImportError(dir),

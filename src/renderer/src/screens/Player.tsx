@@ -59,8 +59,6 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
   const [windowHidden, setWindowHidden] = useState(document.hidden)
   const hideTimer = useRef<number>(0)
 
-  // song.playCount intentionally not a dep: one increment per session, not per meta refresh.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useEffect(() => {
     let disposed = false
     let eng: AudioEngine | null = null
@@ -86,10 +84,6 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
         setEngine(e)
         setLyrics(l)
         if (e.routingWarning) console.warn(e.routingWarning)
-        window.singray.library.updateMeta(song.id, {
-          playCount: song.playCount + 1,
-          lastPlayedAt: new Date().toISOString()
-        })
         if (import.meta.env.DEV) {
           ;(window as Window & { __playerEngine?: AudioEngine }).__playerEngine = e
         }
@@ -104,12 +98,22 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
   }, [song.id])
 
   // Coarse UI clock for the seek bar / timecode (the lyric wipe runs its own full-rate rAF).
+  // Also hosts the sing gate (R1.5): ≥60% accumulated playback → one timestamp per session.
+  const singLogged = useRef(false)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: song fields read from the entry snapshot
   useEffect(() => {
     if (!engine) return
+    singLogged.current = false
     let raf = 0
     const loop = (): void => {
       setPosition(Math.round(engine.position * 4) / 4)
       setPlaying(engine.playing)
+      if (!singLogged.current && engine.playedSeconds >= 0.6 * engine.duration) {
+        singLogged.current = true
+        window.singray.library.updateMeta(song.id, {
+          sings: [...(song.sings ?? []), new Date().toISOString()]
+        })
+      }
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
