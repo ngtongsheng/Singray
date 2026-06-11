@@ -11,7 +11,7 @@ function defaults(): Settings {
     streamDeviceId: '',
     audioOutputMode: 'single',
     playerBarPinned: true,
-    stageSoundwave: false
+    stageVisual: 'off'
   }
 }
 

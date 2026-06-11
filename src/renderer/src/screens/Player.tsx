@@ -1,5 +1,6 @@
 import {
   AudioWaveform,
+  BarChart3,
   Gauge,
   Loader2,
   Mic,
@@ -15,10 +16,11 @@ import {
   Volume2
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Lyrics, SongListItem } from '../../../shared/types'
+import type { Lyrics, Settings, SongListItem } from '../../../shared/types'
 import EditMetaDialog from '../components/EditMetaDialog'
 import LyricRenderer from '../components/LyricRenderer'
 import Soundwave from '../components/Soundwave'
+import StageWaveform from '../components/StageWaveform'
 import { AudioEngine } from '../lib/audioEngine'
 
 interface Props {
@@ -29,6 +31,18 @@ interface Props {
 
 const HIDE_AFTER_MS = 3000
 const TEMPO_PRESETS = [0.75, 0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.25]
+
+type StageVisual = Settings['stageVisual']
+const STAGE_VISUAL_NEXT: Record<StageVisual, StageVisual> = {
+  off: 'waveform',
+  waveform: 'bars',
+  bars: 'off'
+}
+const STAGE_VISUAL_LABEL: Record<StageVisual, string> = {
+  off: 'Stage visual: off',
+  waveform: 'Stage visual: waveform',
+  bars: 'Stage visual: bars'
+}
 
 function fmt(s: number): string {
   const m = Math.floor(s / 60)
@@ -54,8 +68,9 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
   const [barVisible, setBarVisible] = useState(true)
   const [pinned, setPinned] = useState(true)
   const [editOpen, setEditOpen] = useState(false)
-  const [waveOn, setWaveOn] = useState(false)
+  const [stageVisual, setStageVisual] = useState<StageVisual>('off')
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
+  const [peaks, setPeaks] = useState<Float32Array | null>(null)
   const [windowHidden, setWindowHidden] = useState(document.hidden)
   const hideTimer = useRef<number>(0)
 
@@ -65,7 +80,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
     Promise.all([
       window.singray.settings.get().then((s) => {
         setPinned(s.playerBarPinned)
-        setWaveOn(s.stageSoundwave)
+        setStageVisual(s.stageVisual)
         return AudioEngine.load(song.id, {
           mode: s.audioOutputMode,
           monitorDeviceId: s.monitorDeviceId,
@@ -144,19 +159,20 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
     })
   }, [])
 
-  const toggleWave = useCallback(() => {
-    setWaveOn((w) => {
-      const next = !w
-      window.singray.settings.set({ stageSoundwave: next })
+  const cycleStageVisual = useCallback(() => {
+    setStageVisual((v) => {
+      const next = STAGE_VISUAL_NEXT[v]
+      window.singray.settings.set({ stageVisual: next })
       return next
     })
   }, [])
 
-  // Analyser is per-engine (its context dies with the engine) and only built when needed.
+  // Visual sources are per-engine (analyser dies with its context, peaks come
+  // from the decoded buffers) and only built for the active mode.
   useEffect(() => {
-    if (engine && waveOn) setAnalyser(engine.createMonitorAnalyser())
-    else setAnalyser(null)
-  }, [engine, waveOn])
+    setAnalyser(engine && stageVisual === 'bars' ? engine.createMonitorAnalyser() : null)
+    setPeaks(engine && stageVisual === 'waveform' ? engine.peaks() : null)
+  }, [engine, stageVisual])
 
   // Ken Burns pauses while the window is hidden.
   useEffect(() => {
@@ -232,7 +248,10 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
       />
       <div className="absolute inset-0 bg-black/55" />
       <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-bg to-transparent" />
-      {waveOn && analyser && <Soundwave analyser={analyser} playing={playing} />}
+      {stageVisual === 'bars' && analyser && <Soundwave analyser={analyser} playing={playing} />}
+      {stageVisual === 'waveform' && peaks && engine && (
+        <StageWaveform peaks={peaks} duration={engine.duration} clock={clock} />
+      )}
 
       <div className="absolute inset-0">
         {error ? (
@@ -274,20 +293,23 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
           <div className="flex items-center gap-2 px-4 py-3">
             <button
               type="button"
-              onClick={toggleWave}
-              aria-pressed={waveOn}
-              title={waveOn ? 'Hide soundwave' : 'Show soundwave'}
-              className={`flex items-center gap-1.5 rounded-control bg-black/50 px-3 py-1.5 text-sm hover:bg-black/70 ${
-                waveOn ? 'text-accent' : 'text-text-dim hover:text-text'
+              onClick={cycleStageVisual}
+              title={`${STAGE_VISUAL_LABEL[stageVisual]} — click to switch`}
+              className={`flex h-8 items-center gap-1.5 rounded-control bg-black/50 px-3 text-sm hover:bg-black/70 ${
+                stageVisual !== 'off' ? 'text-accent' : 'text-text-dim hover:text-text'
               }`}
             >
-              <AudioWaveform className="size-4" strokeWidth={1.5} />
+              {stageVisual === 'bars' ? (
+                <BarChart3 className="size-4" strokeWidth={1.5} />
+              ) : (
+                <AudioWaveform className="size-4" strokeWidth={1.5} />
+              )}
             </button>
             <button
               type="button"
               onClick={() => setEditOpen(true)}
               title="Edit details"
-              className="flex items-center gap-1.5 rounded-control bg-black/50 px-3 py-1.5 text-sm text-text-dim hover:bg-black/70 hover:text-text"
+              className="flex h-8 items-center gap-1.5 rounded-control bg-black/50 px-3 text-sm text-text-dim hover:bg-black/70 hover:text-text"
             >
               <Pencil className="size-4" strokeWidth={1.5} /> Edit details
             </button>
@@ -295,7 +317,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
               type="button"
               onClick={() => onEditLyrics(song)}
               title={lyrics ? 'Edit lyrics' : 'Add lyrics'}
-              className="flex items-center gap-1.5 rounded-control bg-black/50 px-3 py-1.5 text-sm text-text-dim hover:bg-black/70 hover:text-text"
+              className="flex h-8 items-center gap-1.5 rounded-control bg-black/50 px-3 text-sm text-text-dim hover:bg-black/70 hover:text-text"
             >
               <Type className="size-4" strokeWidth={1.5} /> {lyrics ? 'Edit lyrics' : 'Add lyrics'}
             </button>
@@ -422,33 +444,33 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
 
             <div className="relative">
               {tempoOpen && (
-                <div className="absolute right-0 bottom-full mb-2 w-44 rounded-control border border-border bg-surface py-2 shadow-lg">
-                  <p className="px-3 pb-1 text-text-dim text-xs">Tempo</p>
-                  {TEMPO_PRESETS.map((t) => (
-                    <label
-                      key={t}
-                      className="flex cursor-pointer items-center gap-2 px-3 py-1 text-sm hover:bg-surface-2"
-                    >
-                      <input
-                        type="radio"
-                        name="tempo"
-                        checked={tempoVal === t}
-                        onChange={() => changeTempo(t)}
-                        className="accent-accent"
-                      />
-                      <span className={`tabular-nums ${tempoVal === t ? 'text-accent' : ''}`}>
-                        {t.toFixed(2)}×{t === 1 ? ' (normal)' : ''}
-                      </span>
-                    </label>
-                  ))}
-                  <div className="mt-1 border-border border-t px-3 pt-2">
+                <div className="absolute right-0 bottom-full mb-2 rounded-control border border-border bg-surface p-3 shadow-lg">
+                  <div className="flex items-center justify-between pb-2">
+                    <span className="text-text-dim text-xs">Tempo</span>
                     <button
                       type="button"
                       onClick={() => changeTempo(1)}
-                      className="rounded-control border border-border px-2 py-1 text-text-dim text-xs hover:text-text"
+                      className="rounded-control border border-border px-2 py-0.5 text-text-dim text-xs hover:text-text"
                     >
                       Reset
                     </button>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1">
+                    {TEMPO_PRESETS.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        aria-pressed={tempoVal === t}
+                        onClick={() => changeTempo(t)}
+                        className={`rounded-control border px-2 py-1.5 text-sm tabular-nums ${
+                          tempoVal === t
+                            ? 'border-accent bg-accent/15 text-accent'
+                            : 'border-border text-text-dim hover:bg-surface-2 hover:text-text'
+                        }`}
+                      >
+                        {t.toFixed(2)}×
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
