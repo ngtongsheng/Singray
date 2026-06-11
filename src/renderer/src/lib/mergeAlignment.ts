@@ -90,7 +90,7 @@ export function mergeAlignment(lyrics: Lyrics, tokens: AlignToken[]): MergeResul
       }
     }
 
-    // One token = several units ("don't" tokenizes to units "don'" + "t").
+    // One token = several units (token granularity coarser than ours, e.g. hyphenated words).
     if (t.startsWith(u)) {
       let acc = u
       let k = i + 1

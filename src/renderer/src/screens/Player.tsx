@@ -219,8 +219,14 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
         ) : lyrics ? (
           <LyricRenderer lyrics={lyrics} clock={clock} onSeek={seek} />
         ) : (
-          <div className="flex h-full items-center justify-center text-text-dim">
-            No lyrics yet — time them in the lyric creator first.
+          <div className="flex h-full items-center justify-center">
+            <button
+              type="button"
+              onClick={() => onEditLyrics(song)}
+              className="flex items-center gap-2 rounded-control bg-accent px-4 py-2 font-medium text-sm text-text hover:bg-accent-soft"
+            >
+              <Type className="size-4" strokeWidth={1.5} /> Add lyrics
+            </button>
           </div>
         )}
       </div>
