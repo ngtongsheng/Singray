@@ -22,6 +22,10 @@ Triage decisions (from grilling session):
 - Repo: public, MIT.
 - Window: frameless + custom titlebar that doubles as persistent app header.
 - Motion: `motion` (framer-motion).
+- Sing history (added 2026-06-12): ≥60% accumulated playback = one sing; timestamped `sings: []` log in meta.json, not bare counter.
+- i18n (added 2026-06-12): i18next, locale folders for contributor PRs, follow OS locale with en fallback.
+- Stems (added 2026-06-12): flac default (lossless post-separation), m4a via setting; local-file import for anything ffmpeg decodes.
+- Record singing / effects / EQ: explicitly Round 2, recorded in candidates section.
 
 ---
 
@@ -53,6 +57,10 @@ Tokenizer: apostrophe (`'`/`’`) between letters is word-internal — "We're" =
 Blurred thumb background gets slow Ken Burns pan/zoom (transform-only, ~60s loop, paused when window hidden). Soundwave option: AnalyserNode on monitor context master → canvas wave/bars layered into stage (transform/paint only, no layout shift), toggle in player overflow, default off, persisted.
 - **Done when:** pan visibly drifts over a minute with 0 layout-shift entries; wave moves with the music and stops when paused; toggle state survives restart; lyric wipe perf trace unchanged.
 
+### [ ] R1.5 Sing history
+Replace open-counts-as-play (S3.3 behavior): engine tracks accumulated playback time per session (seeks don't inflate it); when ≥60% of song duration → append ISO timestamp to `sings: []` in meta.json (once per session). `playCount`/`lastPlayedAt` migrate: existing playCount kept as legacy floor for sort, new sings array is source of truth going forward. Library: sort control (added / most sung / recently sung), card shows sing count.
+- **Done when:** play 30s and exit → no sing logged; play >60% with a few seeks → exactly one timestamp appended; sort by most sung and recently sung both reorder correctly; old songs without `sings` don't crash and sort sanely.
+
 ## Phase 2 — App shell
 
 ### [ ] R2.1 Frameless window + unified titlebar
@@ -70,6 +78,10 @@ Add `motion`. View transitions library↔player↔creator↔settings (AnimatePre
 ### [ ] R2.4 Editable languages
 Settings: language list (code + label), add/remove, defaults zh + en. Drives import form select, library filter chips, alignment language passed to whisperx. Removing a language keeps existing songs intact (chip still renders from song meta).
 - **Done when:** add `ja` → appears in import form + filter chips; align on a ja song passes `ja`; remove `ja` → existing ja song still filterable; settings survive restart.
+
+### [ ] R2.5 Localisation (zh + en)
+i18next + react-i18next, locale JSON files under `src/renderer/locales/<lang>/` (contributor-friendly: one folder = one PR for a new language). All UI strings extracted; first run detects OS locale (zh* → zh, else en), override in settings. CONTRIBUTING gains a "add a translation" section (R4.1 if not landed yet, else amend).
+- **Done when:** every screen renders fully in both languages with no hardcoded strings left (grep for literals in JSX); switching language in settings is instant, persists; OS set to zh → first run comes up Chinese; adding a stub `ja` folder makes it appear in the language select with no code change.
 
 ## Phase 3 — Integrations (LLM + lyrics + search)
 
@@ -96,6 +108,14 @@ File picker in creator text step. Parse LRC: line timestamps → line starts; pe
 ### [ ] R3.6 LLM lyric cleanup
 "Clean up with AI" in text step: strips credits/section tags ([Chorus], 作詞: …), normalizes line breaks, preserves language. Diff preview before apply; re-edit guard still protects timed lines.
 - **Done when:** messy pasted lyric (credits + section tags + bad breaks) comes out clean on real model; apply after timing exists triggers existing invalidation dialog only for changed lines.
+
+### [ ] R3.7 Local file import
+Add Song dialog: "From file" alongside URL/search — picker accepts anything ffmpeg decodes (mp4, flac, wav, mp3, m4a, ogg, …). `pipeline.py process --file <path>` skips download stage (probe equivalent via ffprobe: duration, tags → title/artist prefill; embedded art or video frame → thumbnail, placeholder if none). Same separation/normalization/convert chain after.
+- **Done when:** an mp4 and a flac each import end-to-end and sing correctly; tags prefill the form when present; tagless file falls back to filename; unsupported/corrupt file errors cleanly with retry/delete.
+
+### [ ] R3.8 Stem output format setting
+Setting `stemFormat: flac | m4a`, default flac (lossless after separation — avoids second lossy encode; original stays source-quality as-is). Pipeline convert stage honors it; library scan + player + protocol + waveform accept both extensions per file (existing m4a songs untouched, mixed library fine). Loudness normalization unchanged.
+- **Done when:** new import lands flac stems that play in player and load in creator waveform; flipping setting to m4a → next import lands m4a; pre-existing m4a songs still play; meta/scan handles a library containing both.
 
 ## Phase 4 — Production + open source
 
@@ -125,6 +145,11 @@ Actions on push to `main`: electron-builder NSIS, version from package.json, tag
 Release workflow adds macos job: electron-builder .dmg (unsigned), uploaded to same Release. README labels mac builds community-tested.
 - **Done when:** Release contains .dmg alongside .exe; README section explains unsigned-app open steps + status.
 
+## Round 2 candidates (user-requested, explicitly NOT in Round 1)
+- [ ] Record singing (mic capture + mix-down to file)
+- [ ] Vocal effects (reverb/echo on monitor path)
+- [ ] EQ (per-output or master)
+
 ## Unscheduled
 - [ ] Playlists / up-next queue (dropped from R1 by user)
 - [ ] Fullscreen two-line stage mode (dropped)
@@ -136,4 +161,5 @@ Release workflow adds macos job: electron-builder .dmg (unsigned), uploaded to s
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-12 · — · Backlog additions: R1.5 sing history (≥60% gate, timestamped log, library sort), R2.5 localisation (i18next, OS-locale default), R3.7 local file import (ffmpeg-decodable formats), R3.8 flac stem default with m4a setting. Round 2 candidates section added: record singing, effects, EQ.
 - 2026-06-12 · — · Round 1 backlog created from `Some enhancement.md` feedback + grilling session; MVP backlog archived to `docs/rounds/00-mvp.md`. Key decisions recorded in Triage block above. Tokenizer apostrophe bug confirmed in code (`'` not in `\p{L}` word run). Dropped: nudge editor, fullscreen stage, playlists.
