@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import type { Lyrics, SongListItem } from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
 import TimingStep from '../components/TimingStep'
+import Titlebar from '../components/Titlebar'
 import { inferEnds } from '../lib/inferEnds'
 import { type BuildResult, buildLyrics, lyricsToText } from '../lib/lyricsText'
 import { mergeAlignment } from '../lib/mergeAlignment'
@@ -87,17 +88,17 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center gap-3 border-border border-b bg-bg px-6 py-3">
+      <Titlebar>
         <button
           type="button"
           onClick={onBack}
           title="Back to library"
-          className="rounded-control border border-border p-2 text-text-dim hover:bg-surface hover:text-text"
+          className="app-no-drag flex size-8 shrink-0 items-center justify-center rounded-control border border-border text-text-dim hover:bg-surface hover:text-text"
         >
           <ArrowLeft className="size-4" strokeWidth={1.5} />
         </button>
-        <div className="min-w-0">
-          <h1 className="truncate font-semibold text-base">{song.title}</h1>
+        <div className="flex min-w-0 items-baseline gap-2">
+          <h1 className="truncate font-semibold text-sm">{song.title}</h1>
           <p className="truncate text-text-dim text-xs">{song.artist} · Lyrics</p>
         </div>
         <div className="flex-1" />
@@ -108,7 +109,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
               onClick={onAlign}
               disabled={!loaded || parsedEmpty(text) || aligning}
               title="Auto-time units with forced alignment (whisperx on the vocals stem)"
-              className="flex items-center gap-1.5 rounded-control border border-border px-4 py-2 font-medium text-sm text-text-dim hover:bg-surface hover:text-text disabled:opacity-50"
+              className="app-no-drag flex h-8 items-center gap-1.5 rounded-control border border-border px-3 font-medium text-sm text-text-dim hover:bg-surface hover:text-text disabled:opacity-50"
             >
               {aligning ? (
                 <>
@@ -124,7 +125,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
               type="button"
               onClick={onContinue}
               disabled={!loaded || parsedEmpty(text) || aligning}
-              className="flex items-center gap-1.5 rounded-control bg-accent px-4 py-2 font-medium text-sm text-text hover:bg-accent-soft disabled:opacity-50"
+              className="app-no-drag flex h-8 items-center gap-1.5 rounded-control bg-accent px-3 font-medium text-sm text-text hover:bg-accent-soft disabled:opacity-50"
             >
               Continue <ArrowRight className="size-4" strokeWidth={2} />
             </button>
@@ -133,12 +134,12 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
           <button
             type="button"
             onClick={() => setStep('text')}
-            className="rounded-control border border-border px-4 py-2 text-sm hover:bg-surface"
+            className="app-no-drag flex h-8 items-center rounded-control border border-border px-3 text-sm hover:bg-surface"
           >
             Edit text
           </button>
         )}
-      </header>
+      </Titlebar>
 
       {step === 'text' ? (
         <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 py-4">

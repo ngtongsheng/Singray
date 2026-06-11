@@ -17,6 +17,10 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#0E0E12',
+    // Frameless (R2.1): renderer draws the titlebar; the native caption overlay
+    // keeps Windows snap layouts + min/max/close behavior intact.
+    titleBarStyle: 'hidden',
+    titleBarOverlay: { color: '#0E0E12', symbolColor: '#A0A0B0', height: 40 },
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

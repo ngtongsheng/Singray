@@ -4,6 +4,7 @@ import type { Language, SongListItem } from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ImportDialog from '../components/ImportDialog'
 import SongCard from '../components/SongCard'
+import Titlebar from '../components/Titlebar'
 import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
 
@@ -90,23 +91,23 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="sticky top-0 z-10 flex items-center gap-4 border-border border-b bg-bg px-6 py-3">
-        <h1 className="font-semibold text-lg">Singray</h1>
-        <div className="relative ml-4 w-72">
+      <Titlebar>
+        <h1 className="font-semibold text-base">Singray</h1>
+        <div className="app-no-drag relative ml-2 w-72">
           <Search className="-translate-y-1/2 absolute top-1/2 left-2.5 size-4 text-text-dim" />
           <input
             ref={searchRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search title or artist  ( / )"
-            className="w-full rounded-control border border-border bg-surface py-1.5 pr-3 pl-8 text-sm placeholder:text-text-dim/60"
+            className="h-8 w-full rounded-control border border-border bg-surface pr-3 pl-8 text-sm placeholder:text-text-dim/60"
           />
         </div>
         <div className="flex-1" />
         <button
           type="button"
           onClick={() => setShowImport(true)}
-          className="flex items-center gap-1.5 rounded-control bg-accent px-4 py-2 font-medium text-sm text-text hover:bg-accent-soft"
+          className="app-no-drag flex h-8 items-center gap-1.5 rounded-control bg-accent px-3 font-medium text-sm text-text hover:bg-accent-soft"
         >
           <Plus className="size-4" strokeWidth={2} /> Add Song
         </button>
@@ -114,11 +115,11 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
           type="button"
           onClick={onOpenSettings}
           title="Settings"
-          className="rounded-control border border-border p-2 text-text-dim hover:bg-surface hover:text-text"
+          className="app-no-drag flex size-8 items-center justify-center rounded-control border border-border text-text-dim hover:bg-surface hover:text-text"
         >
           <SettingsIcon className="size-4" strokeWidth={1.5} />
         </button>
-      </header>
+      </Titlebar>
 
       <div className="flex items-center gap-2 px-6 py-3">
         {languages.map((lang) => (

@@ -53,6 +53,16 @@
   }
 }
 
+/* Frameless window (R2.1): the titlebar is the drag region; interactive
+   children opt out so clicks reach them instead of moving the window. */
+.app-drag {
+  -webkit-app-region: drag;
+}
+
+.app-no-drag {
+  -webkit-app-region: no-drag;
+}
+
 /* Stage Ken Burns (R1.4): transform-only slow pan/zoom on the blurred art.
    Paused via animation-play-state when the window is hidden (Player toggles). */
 @keyframes ken-burns {

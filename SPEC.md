@@ -454,7 +454,9 @@ Both fonts bundled locally (offline app, no Google Fonts CDN). Type scale: 12 / 
 
 ### 10.6 Screen-level design notes
 
-**Library** — top bar: app name, search input (autofocus on `/`), Add Song primary button. Filter chips row under bar. Card: 16:9 thumb with bottom gradient scrim, title (1 line, ellipsis + tooltip), artist dim, ♥ top-right on hover, status badge bottom-left. Grid `repeat(auto-fill, minmax(220px, 1fr))`. Import progress: slim accent strip under top bar with stage label + percent. Empty state: centered mic icon + "Paste a YouTube link to add your first song" + Add button.
+**Titlebar (all screens, R2.1)** — frameless window (`titleBarStyle: hidden` + Windows `titleBarOverlay` so snap layouts and min/max/close stay native). Custom 40px drag-region bar doubles as the persistent app header: library = app name + search + Add Song + settings gear; player = back + song title/artist + stage chrome buttons; creator = back + song + step actions; settings = back + heading. Interactive children opt out of the drag region (`app-no-drag`); the bar reserves the native caption strip via `env(titlebar-area-*)`.
+
+**Library** — top bar (the titlebar): app name, search input (autofocus on `/`), Add Song primary button. Filter chips row under bar. Card: 16:9 thumb with bottom gradient scrim, title (1 line, ellipsis + tooltip), artist dim, ♥ top-right on hover, status badge bottom-left. Grid `repeat(auto-fill, minmax(220px, 1fr))`. Import progress: slim accent strip under top bar with stage label + percent. Empty state: centered mic icon + "Paste a YouTube link to add your first song" + Add button.
 
 **Import dialog** — modal over 50% black scrim, thumb preview left, fields right; labels above inputs (never placeholder-only), error text under field in `--color-danger`.
 

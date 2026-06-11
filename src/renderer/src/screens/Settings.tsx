@@ -1,6 +1,7 @@
 import { ArrowLeft, CheckCircle2, Loader2, Volume2, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Settings as SettingsModel } from '../../../shared/types'
+import Titlebar from '../components/Titlebar'
 
 /** Play a short sine tone on a specific output device ('' = system default). */
 async function playTestTone(deviceId: string, freq: number): Promise<void> {
@@ -110,17 +111,17 @@ function Settings({ onBack }: Props): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="sticky top-0 z-10 flex items-center gap-4 border-border border-b bg-bg px-6 py-3">
+      <Titlebar>
         <button
           type="button"
           onClick={onBack}
-          title="Back to library"
-          className="rounded-control border border-border p-1.5 hover:bg-surface"
+          title="Back to library (Esc)"
+          className="app-no-drag flex size-8 items-center justify-center rounded-control border border-border text-text-dim hover:bg-surface hover:text-text"
         >
           <ArrowLeft className="size-4" strokeWidth={1.5} />
         </button>
-        <h1 className="font-semibold text-lg">Settings</h1>
-      </header>
+        <h1 className="font-semibold text-base">Settings</h1>
+      </Titlebar>
 
       <div className="flex-1 overflow-y-auto px-6 py-6">
         <div className="mx-auto flex max-w-xl flex-col gap-8">

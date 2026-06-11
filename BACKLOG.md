@@ -4,7 +4,7 @@ Source: user feedback 2026-06-12 (`Some enhancement.md`), grilled + triaged. MVP
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → R2.1** (update this pointer whenever a story starts/finishes)
+> **Now → R2.2** (update this pointer whenever a story starts/finishes)
 >
 > R0.1 (ear batch) + R0.2 (AG06) are user-side, can run anytime in parallel with coding stories — they don't block the pointer.
 
@@ -64,7 +64,7 @@ Replace open-counts-as-play (S3.3 behavior): engine tracks accumulated playback 
 
 ## Phase 2 — App shell
 
-### [ ] R2.1 Frameless window + unified titlebar
+### [x] R2.1 Frameless window + unified titlebar
 `frame: false`, custom titlebar: drag region, min/max/close (Windows snap via titlebar overlay or manual handling), doubles as persistent app header on every screen. Library: app name + settings gear. Player: back button + song title/artist (closes "no visual way back" feedback). Esc still exits player.
 - **Done when:** window has no native frame; drag, double-click maximize, snap layouts, min/max/close all work; every screen shows the titlebar; player titlebar shows correct song + back returns to library; fullscreen behavior sane.
 
@@ -162,6 +162,7 @@ Release workflow adds macos job: electron-builder .dmg (unsigned), uploaded to s
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-12 · R2.1 · Frameless via `titleBarStyle: hidden` + Windows `titleBarOverlay` (native caption buttons keep snap layouts/min/max/close). New `Titlebar` component: 40px drag region (`app-drag`/`app-no-drag` CSS utilities), caption strip reserved via `env(titlebar-area-*)`; replaces per-screen headers — library merged name/search/Add Song/gear into it, player got back + title/artist + chrome buttons (floating top-right chrome removed, buttons no longer fade since titlebar is persistent), creator/settings converted (controls normalized to h-8). Verified with real OS input (SendInput from PowerShell — synthetic CDP events bypass non-client hit testing): titlebar drag moves window, double-click maximizes/restores, native min/max/close clicks work, snap-layouts flyout appears on maximize hover (desktop screenshot); `navigator.windowControlsOverlay` confirms frameless overlay; titlebar on all four screens; Esc and back button both exit player; fullscreen keeps titlebar, sane. Gotcha: maximized window moves to (0,0) — screen-coord tests must recompute.
 - 2026-06-12 · R1.4b/R1.2b · Ad-hoc user feedback after Phase 1: (1) soundwave meant the creator-style waveform — added `StageWaveform` (whole-song peaks from `engine.peaks()` off the decoded buffers, accent progress fill + playhead line), analyser bars kept; `stageSoundwave` → `stageVisual: off|waveform|bars`, chrome button cycles. (2) top-chrome buttons normalized to h-8 (icon-only button was shorter). (3) tempo popover native radios → segmented preset buttons (4×2 grid, aria-pressed) + Reset. All re-verified via driver.
 - 2026-06-12 · R1.5 · Engine `playedSeconds`: per-stretch position-delta accumulator (banked on pause/seek/natural end) — seeks can't inflate it. Player sing gate in the coarse rAF clock: ≥60% → append ISO timestamp to `sings`, once per session; entry playCount/lastPlayedAt writes removed. `sings: []` added to SongMeta + import; listSongs normalizes missing arrays. Library sort select (added/most sung/recently sung), card shows count = playCount floor + sings. Verified live: 20s play no sing; 10s+jump-to-92% no sing; full play at 1.25× with seeks → exactly one timestamp; both sorts reorder correctly on legacy metas. Test left one real sing on Never Gonna Give You Up.
 - 2026-06-12 · R1.4 · Ken Burns: CSS keyframes (transform-only, 60s loop) on blurred art, `animation-play-state: paused` on visibilitychange. Soundwave: `engine.createMonitorAnalyser()` (cached tap off both stem gains, audio path untouched) → canvas frequency bars (96 bars, accent token via getComputedStyle), draw loop gated on `playing`; toggle in player top chrome, persisted as `stageSoundwave` (default off). Verified: transform drifts, 0 layout-shift entries during 12s pan+wave, wave freezes on pause, worst rAF frame 17ms, toggle survives restart.

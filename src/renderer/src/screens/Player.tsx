@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   AudioWaveform,
   BarChart3,
   Gauge,
@@ -21,6 +22,7 @@ import EditMetaDialog from '../components/EditMetaDialog'
 import LyricRenderer from '../components/LyricRenderer'
 import Soundwave from '../components/Soundwave'
 import StageWaveform from '../components/StageWaveform'
+import Titlebar from '../components/Titlebar'
 import { AudioEngine } from '../lib/audioEngine'
 
 interface Props {
@@ -236,66 +238,28 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
   const seek = useCallback((t: number) => engine?.seek(t), [engine])
 
   return (
-    <div className={`relative h-full overflow-hidden bg-bg ${barVisible ? '' : 'cursor-none'}`}>
-      {/* Blurred artwork under a scrim + bottom fade — lyric contrast independent of art (§10.6). */}
-      <img
-        src={window.singray.audio.thumbUrl(song.id)}
-        alt=""
-        draggable={false}
-        className={`animate-ken-burns absolute inset-0 h-full w-full object-cover blur-3xl ${
-          windowHidden ? 'paused' : ''
-        }`}
-      />
-      <div className="absolute inset-0 bg-black/55" />
-      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-bg to-transparent" />
-      {stageVisual === 'bars' && analyser && <Soundwave analyser={analyser} playing={playing} />}
-      {stageVisual === 'waveform' && peaks && engine && (
-        <StageWaveform peaks={peaks} duration={engine.duration} clock={clock} />
-      )}
-
-      <div className="absolute inset-0">
-        {error ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3">
-            <p className="text-danger">{error}</p>
-            <button
-              type="button"
-              onClick={onExit}
-              className="rounded-control border border-border bg-surface px-4 py-2 text-sm hover:bg-surface-2"
-            >
-              Back to library
-            </button>
-          </div>
-        ) : !engine ? (
-          <div className="flex h-full items-center justify-center gap-2 text-text-dim">
-            <Loader2 className="size-5 animate-spin" /> Loading stems…
-          </div>
-        ) : lyrics ? (
-          <LyricRenderer lyrics={lyrics} clock={clock} onSeek={seek} />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <button
-              type="button"
-              onClick={() => onEditLyrics(song)}
-              className="flex items-center gap-2 rounded-control bg-accent px-4 py-2 font-medium text-sm text-text hover:bg-accent-soft"
-            >
-              <Type className="size-4" strokeWidth={1.5} /> Add lyrics
-            </button>
-          </div>
-        )}
-      </div>
-
-      {!error && (
-        <div
-          className={`absolute top-0 right-0 z-10 transition-opacity duration-200 ${
-            barVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
-          }`}
+    <div className="flex h-full flex-col">
+      <Titlebar>
+        <button
+          type="button"
+          onClick={onExit}
+          title="Back to library (Esc)"
+          className="app-no-drag flex size-8 shrink-0 items-center justify-center rounded-control border border-border text-text-dim hover:bg-surface hover:text-text"
         >
-          <div className="flex items-center gap-2 px-4 py-3">
+          <ArrowLeft className="size-4" strokeWidth={1.5} />
+        </button>
+        <div className="flex min-w-0 items-baseline gap-2">
+          <h1 className="truncate font-semibold text-sm">{song.title}</h1>
+          <p className="truncate text-text-dim text-xs">{song.artist}</p>
+        </div>
+        <div className="flex-1" />
+        {!error && (
+          <>
             <button
               type="button"
               onClick={cycleStageVisual}
               title={`${STAGE_VISUAL_LABEL[stageVisual]} — click to switch`}
-              className={`flex h-8 items-center gap-1.5 rounded-control bg-black/50 px-3 text-sm hover:bg-black/70 ${
+              className={`app-no-drag flex h-8 items-center rounded-control px-2.5 text-sm hover:bg-surface ${
                 stageVisual !== 'off' ? 'text-accent' : 'text-text-dim hover:text-text'
               }`}
             >
@@ -309,7 +273,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
               type="button"
               onClick={() => setEditOpen(true)}
               title="Edit details"
-              className="flex h-8 items-center gap-1.5 rounded-control bg-black/50 px-3 text-sm text-text-dim hover:bg-black/70 hover:text-text"
+              className="app-no-drag flex h-8 items-center gap-1.5 rounded-control px-2.5 text-sm text-text-dim hover:bg-surface hover:text-text"
             >
               <Pencil className="size-4" strokeWidth={1.5} /> Edit details
             </button>
@@ -317,197 +281,248 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
               type="button"
               onClick={() => onEditLyrics(song)}
               title={lyrics ? 'Edit lyrics' : 'Add lyrics'}
-              className="flex h-8 items-center gap-1.5 rounded-control bg-black/50 px-3 text-sm text-text-dim hover:bg-black/70 hover:text-text"
+              className="app-no-drag flex h-8 items-center gap-1.5 rounded-control px-2.5 text-sm text-text-dim hover:bg-surface hover:text-text"
             >
               <Type className="size-4" strokeWidth={1.5} /> {lyrics ? 'Edit lyrics' : 'Add lyrics'}
             </button>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Titlebar>
 
-      {editOpen && <EditMetaDialog song={song} onClose={() => setEditOpen(false)} />}
-
-      {engine && (
-        <div
-          className={`absolute inset-x-0 bottom-0 z-10 transition-opacity duration-200 ${
-            barVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
+      <div className={`relative flex-1 overflow-hidden bg-bg ${barVisible ? '' : 'cursor-none'}`}>
+        {/* Blurred artwork under a scrim + bottom fade — lyric contrast independent of art (§10.6). */}
+        <img
+          src={window.singray.audio.thumbUrl(song.id)}
+          alt=""
+          draggable={false}
+          className={`animate-ken-burns absolute inset-0 h-full w-full object-cover blur-3xl ${
+            windowHidden ? 'paused' : ''
           }`}
-        >
-          <div className="flex items-center gap-4 bg-gradient-to-t from-black/80 to-transparent px-6 pt-12 pb-5">
-            <button
-              type="button"
-              onClick={togglePlay}
-              title={playing ? 'Pause (Space)' : 'Play (Space)'}
-              className="flex size-11 items-center justify-center rounded-full bg-accent text-text hover:bg-accent-soft"
-            >
-              {playing ? (
-                <Pause className="size-5" strokeWidth={1.5} />
-              ) : (
-                <Play className="size-5 translate-x-0.5" strokeWidth={1.5} />
-              )}
-            </button>
-            <span className="text-sm text-text-dim tabular-nums">{fmt(position)}</span>
-            <input
-              type="range"
-              min={0}
-              max={engine.duration}
-              step={0.25}
-              value={position}
-              onChange={(e) => engine.seek(Number(e.target.value))}
-              title="Seek (←/→ ±5s)"
-              className="h-11 flex-1 cursor-pointer accent-accent"
-            />
-            <span className="text-sm text-text-dim tabular-nums">{fmt(engine.duration)}</span>
+        />
+        <div className="absolute inset-0 bg-black/55" />
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-bg to-transparent" />
+        {stageVisual === 'bars' && analyser && <Soundwave analyser={analyser} playing={playing} />}
+        {stageVisual === 'waveform' && peaks && engine && (
+          <StageWaveform peaks={peaks} duration={engine.duration} clock={clock} />
+        )}
 
-            <span className="flex items-center gap-2 text-text-dim">
-              <Volume2 className="size-4" strokeWidth={1.5} />
+        <div className="absolute inset-0">
+          {error ? (
+            <div className="flex h-full flex-col items-center justify-center gap-3">
+              <p className="text-danger">{error}</p>
+              <button
+                type="button"
+                onClick={onExit}
+                className="rounded-control border border-border bg-surface px-4 py-2 text-sm hover:bg-surface-2"
+              >
+                Back to library
+              </button>
+            </div>
+          ) : !engine ? (
+            <div className="flex h-full items-center justify-center gap-2 text-text-dim">
+              <Loader2 className="size-5 animate-spin" /> Loading stems…
+            </div>
+          ) : lyrics ? (
+            <LyricRenderer lyrics={lyrics} clock={clock} onSeek={seek} />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <button
+                type="button"
+                onClick={() => onEditLyrics(song)}
+                className="flex items-center gap-2 rounded-control bg-accent px-4 py-2 font-medium text-sm text-text hover:bg-accent-soft"
+              >
+                <Type className="size-4" strokeWidth={1.5} /> Add lyrics
+              </button>
+            </div>
+          )}
+        </div>
+
+        {editOpen && <EditMetaDialog song={song} onClose={() => setEditOpen(false)} />}
+
+        {engine && (
+          <div
+            className={`absolute inset-x-0 bottom-0 z-10 transition-opacity duration-200 ${
+              barVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
+            }`}
+          >
+            <div className="flex items-center gap-4 bg-gradient-to-t from-black/80 to-transparent px-6 pt-12 pb-5">
+              <button
+                type="button"
+                onClick={togglePlay}
+                title={playing ? 'Pause (Space)' : 'Play (Space)'}
+                className="flex size-11 items-center justify-center rounded-full bg-accent text-text hover:bg-accent-soft"
+              >
+                {playing ? (
+                  <Pause className="size-5" strokeWidth={1.5} />
+                ) : (
+                  <Play className="size-5 translate-x-0.5" strokeWidth={1.5} />
+                )}
+              </button>
+              <span className="text-sm text-text-dim tabular-nums">{fmt(position)}</span>
               <input
                 type="range"
                 min={0}
-                max={1}
-                step={0.01}
-                value={instrVol}
-                onChange={(e) => {
-                  const v = Number(e.target.value)
-                  setInstrVol(v)
-                  engine.setInstrumentalVolume(v)
-                }}
-                title="Instrumental volume"
-                className="h-11 w-24 cursor-pointer accent-accent"
+                max={engine.duration}
+                step={0.25}
+                value={position}
+                onChange={(e) => engine.seek(Number(e.target.value))}
+                title="Seek (←/→ ±5s)"
+                className="h-11 flex-1 cursor-pointer accent-accent"
               />
-            </span>
+              <span className="text-sm text-text-dim tabular-nums">{fmt(engine.duration)}</span>
 
-            <div
-              className={`flex h-11 items-center gap-2 rounded-control border px-2 ${
-                vocalOn ? 'border-accent' : 'border-border'
-              }`}
-            >
-              <button
-                type="button"
-                onClick={toggleVocal}
-                aria-pressed={vocalOn}
-                title="Guide vocal (V)"
-                className={`flex h-8 items-center gap-2 rounded-control px-2 text-sm ${
-                  vocalOn ? 'bg-accent/15 text-accent' : 'text-text-dim hover:text-text'
+              <span className="flex items-center gap-2 text-text-dim">
+                <Volume2 className="size-4" strokeWidth={1.5} />
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={instrVol}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    setInstrVol(v)
+                    engine.setInstrumentalVolume(v)
+                  }}
+                  title="Instrumental volume"
+                  className="h-11 w-24 cursor-pointer accent-accent"
+                />
+              </span>
+
+              <div
+                className={`flex h-11 items-center gap-2 rounded-control border px-2 ${
+                  vocalOn ? 'border-accent' : 'border-border'
                 }`}
               >
-                {vocalOn ? (
-                  <Mic className="size-4" strokeWidth={1.5} />
-                ) : (
-                  <MicOff className="size-4" strokeWidth={1.5} />
-                )}
-                Guide {vocalOn ? 'on' : 'off'}
-              </button>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={vocalVol}
-                onChange={(e) => {
-                  const v = Number(e.target.value)
-                  setVocalVol(v)
-                  engine.setVocalVolume(v)
-                }}
-                title="Guide vocal volume"
-                className="h-8 w-20 cursor-pointer accent-accent"
-              />
-            </div>
+                <button
+                  type="button"
+                  onClick={toggleVocal}
+                  aria-pressed={vocalOn}
+                  title="Guide vocal (V)"
+                  className={`flex h-8 items-center gap-2 rounded-control px-2 text-sm ${
+                    vocalOn ? 'bg-accent/15 text-accent' : 'text-text-dim hover:text-text'
+                  }`}
+                >
+                  {vocalOn ? (
+                    <Mic className="size-4" strokeWidth={1.5} />
+                  ) : (
+                    <MicOff className="size-4" strokeWidth={1.5} />
+                  )}
+                  Guide {vocalOn ? 'on' : 'off'}
+                </button>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={vocalVol}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    setVocalVol(v)
+                    engine.setVocalVolume(v)
+                  }}
+                  title="Guide vocal volume"
+                  className="h-8 w-20 cursor-pointer accent-accent"
+                />
+              </div>
 
-            <div
-              className={`flex h-11 items-center gap-1 rounded-control border px-2 ${
-                keyVal !== 0 ? 'border-accent text-accent' : 'border-border text-text-dim'
-              }`}
-            >
-              <button
-                type="button"
-                onClick={() => stepKey(-1)}
-                disabled={keyVal <= -6}
-                title="Key down ([)"
-                className="flex size-7 items-center justify-center rounded-control hover:bg-surface-2 disabled:opacity-30"
+              <div
+                className={`flex h-11 items-center gap-1 rounded-control border px-2 ${
+                  keyVal !== 0 ? 'border-accent text-accent' : 'border-border text-text-dim'
+                }`}
               >
-                <Minus className="size-4" strokeWidth={1.5} />
-              </button>
-              <span className="w-14 whitespace-nowrap text-center text-sm tabular-nums">
-                Key {keyVal > 0 ? `+${keyVal}` : keyVal}
-              </span>
-              <button
-                type="button"
-                onClick={() => stepKey(1)}
-                disabled={keyVal >= 6}
-                title="Key up (])"
-                className="flex size-7 items-center justify-center rounded-control hover:bg-surface-2 disabled:opacity-30"
-              >
-                <Plus className="size-4" strokeWidth={1.5} />
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => stepKey(-1)}
+                  disabled={keyVal <= -6}
+                  title="Key down ([)"
+                  className="flex size-7 items-center justify-center rounded-control hover:bg-surface-2 disabled:opacity-30"
+                >
+                  <Minus className="size-4" strokeWidth={1.5} />
+                </button>
+                <span className="w-14 whitespace-nowrap text-center text-sm tabular-nums">
+                  Key {keyVal > 0 ? `+${keyVal}` : keyVal}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => stepKey(1)}
+                  disabled={keyVal >= 6}
+                  title="Key up (])"
+                  className="flex size-7 items-center justify-center rounded-control hover:bg-surface-2 disabled:opacity-30"
+                >
+                  <Plus className="size-4" strokeWidth={1.5} />
+                </button>
+              </div>
 
-            <div className="relative">
-              {tempoOpen && (
-                <div className="absolute right-0 bottom-full mb-2 rounded-control border border-border bg-surface p-3 shadow-lg">
-                  <div className="flex items-center justify-between pb-2">
-                    <span className="text-text-dim text-xs">Tempo</span>
-                    <button
-                      type="button"
-                      onClick={() => changeTempo(1)}
-                      className="rounded-control border border-border px-2 py-0.5 text-text-dim text-xs hover:text-text"
-                    >
-                      Reset
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-4 gap-1">
-                    {TEMPO_PRESETS.map((t) => (
+              <div className="relative">
+                {tempoOpen && (
+                  <div className="absolute right-0 bottom-full mb-2 rounded-control border border-border bg-surface p-3 shadow-lg">
+                    <div className="flex items-center justify-between pb-2">
+                      <span className="text-text-dim text-xs">Tempo</span>
                       <button
-                        key={t}
                         type="button"
-                        aria-pressed={tempoVal === t}
-                        onClick={() => changeTempo(t)}
-                        className={`rounded-control border px-2 py-1.5 text-sm tabular-nums ${
-                          tempoVal === t
-                            ? 'border-accent bg-accent/15 text-accent'
-                            : 'border-border text-text-dim hover:bg-surface-2 hover:text-text'
-                        }`}
+                        onClick={() => changeTempo(1)}
+                        className="rounded-control border border-border px-2 py-0.5 text-text-dim text-xs hover:text-text"
                       >
-                        {t.toFixed(2)}×
+                        Reset
                       </button>
-                    ))}
+                    </div>
+                    <div className="grid grid-cols-4 gap-1">
+                      {TEMPO_PRESETS.map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          aria-pressed={tempoVal === t}
+                          onClick={() => changeTempo(t)}
+                          className={`rounded-control border px-2 py-1.5 text-sm tabular-nums ${
+                            tempoVal === t
+                              ? 'border-accent bg-accent/15 text-accent'
+                              : 'border-border text-text-dim hover:bg-surface-2 hover:text-text'
+                          }`}
+                        >
+                          {t.toFixed(2)}×
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+                <button
+                  type="button"
+                  onClick={() => setTempoOpen((o) => !o)}
+                  aria-expanded={tempoOpen}
+                  title="Tempo"
+                  className={`flex h-11 items-center gap-2 rounded-control border px-3 text-sm tabular-nums ${
+                    tempoVal !== 1
+                      ? 'border-accent text-accent'
+                      : 'border-border text-text-dim hover:text-text'
+                  }`}
+                >
+                  <Gauge className="size-4" strokeWidth={1.5} />
+                  {tempoVal.toFixed(2)}×
+                </button>
+              </div>
+
               <button
                 type="button"
-                onClick={() => setTempoOpen((o) => !o)}
-                aria-expanded={tempoOpen}
-                title="Tempo"
-                className={`flex h-11 items-center gap-2 rounded-control border px-3 text-sm tabular-nums ${
-                  tempoVal !== 1
+                onClick={togglePin}
+                aria-pressed={pinned}
+                title={pinned ? 'Unpin bar (auto-hide)' : 'Pin bar (always visible)'}
+                className={`flex h-11 items-center rounded-control border px-3 ${
+                  pinned
                     ? 'border-accent text-accent'
                     : 'border-border text-text-dim hover:text-text'
                 }`}
               >
-                <Gauge className="size-4" strokeWidth={1.5} />
-                {tempoVal.toFixed(2)}×
+                {pinned ? (
+                  <Pin className="size-4" strokeWidth={1.5} />
+                ) : (
+                  <PinOff className="size-4" strokeWidth={1.5} />
+                )}
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={togglePin}
-              aria-pressed={pinned}
-              title={pinned ? 'Unpin bar (auto-hide)' : 'Pin bar (always visible)'}
-              className={`flex h-11 items-center rounded-control border px-3 ${
-                pinned ? 'border-accent text-accent' : 'border-border text-text-dim hover:text-text'
-              }`}
-            >
-              {pinned ? (
-                <Pin className="size-4" strokeWidth={1.5} />
-              ) : (
-                <PinOff className="size-4" strokeWidth={1.5} />
-              )}
-            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
