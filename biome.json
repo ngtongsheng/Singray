@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!out", "!dist", "!pipeline"]
+    "includes": ["**", "!out", "!dist", "!pipeline", "!src/renderer/public/worklets/soundtouch.js"]
   },
   "css": {
     "parser": {

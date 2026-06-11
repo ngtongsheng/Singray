@@ -375,9 +375,11 @@ Fallback if `AudioContext.setSinkId` misbehaves with ASIO-ish devices: render st
 
 ### 9.4 SoundTouch integration
 
-- AudioWorklet wrapping SoundTouch WASM; parameters: `pitchSemitones`, `tempo`.
-- At `pitch=0, tempo=1` the worklet bypasses processing (clean path, zero artifacts).
-- Phase 5 delivers this; until then sources connect directly to gains and the key/tempo controls are hidden.
+- AudioWorklet wrapping `soundtouchjs` (pure-JS port — pinned in §2.1; vendored into `public/worklets/` because Vite doesn't bundle worklet module graphs). Engine-level parameters: `pitchSemitones` (±6), `tempo` (0.75–1.25).
+- The worklet itself does **pitch shifting only** (frame-count 1:1, so the push model from a live source can't underrun). Tempo is implemented as `AudioBufferSourceNode.playbackRate = tempo` plus a compensating pitch offset of `−12·log2(tempo)` semitones in the worklet; the user's key change adds on top. Master clock scales: position advances at `tempo ×` wall rate, which also keeps the lyric clock in sync for free.
+- At effective pitch 0 (key 0, tempo 1) the worklet copies input to output verbatim — bit-transparent bypass, zero artifacts.
+- Engaging/disengaging the shifter mid-song has a short (~latency) warm-up where the worklet outputs silence; acceptable for a manual key/tempo change.
+- Phase 5 delivers this; until then the key/tempo controls are hidden.
 
 ### 9.5 External routing (documented in README, one-time setup)
 

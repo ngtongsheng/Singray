@@ -6,7 +6,15 @@
 // same wall-clock instant (getOutputTimestamp correlation), a 5s watchdog
 // estimates inter-context drift and hard-resyncs the stream side past 25ms.
 // Pause/seek tears down and rebuilds sources at the target position on both
-// contexts (§9.3.4 — sources are cheap; key changes will reuse this path).
+// contexts (§9.3.4 — sources are cheap; tempo changes reuse this path).
+//
+// Pitch & tempo (§9.4): every stem routes through a SoundTouch AudioWorklet
+// (true bypass at neutral). The worklet is push-model and therefore must stay
+// 1:1 in frame count, so tempo is implemented as source.playbackRate (which
+// also transposes by 12·log2(tempo) semitones) plus a compensating pitch
+// offset in the worklet — net effect: tempo change at constant pitch. The
+// user's key change adds on top. Master clock scales: position advances at
+// tempo × wall rate.
 
 /** Seconds of gain ramp on vocal toggle / volume moves — click-free, still feels instant. */
 const RAMP = 0.03
@@ -20,6 +28,14 @@ const RESYNC_DELAY = 0.05
 const DRIFT_CHECK_MS = 5000
 /** Hard-resync threshold (§9.3.3). */
 const DRIFT_LIMIT_MS = 25
+/** Tempo bounds (SPEC §9.1 / S5.2 control range). */
+const TEMPO_MIN = 0.75
+const TEMPO_MAX = 1.25
+/** Key change bounds, semitones. */
+const PITCH_MIN = -6
+const PITCH_MAX = 6
+/** AudioWorklet module path — relative to index.html (public/ is served verbatim). */
+const WORKLET_URL = 'worklets/soundtouch-processor.js'
 
 export interface AudioRouting {
   mode: 'single' | 'dual'
@@ -29,6 +45,14 @@ export interface AudioRouting {
 
 interface SinkableContext extends AudioContext {
   setSinkId(id: string): Promise<void>
+}
+
+/** State echo from the worklet (see soundtouch-processor.js). */
+export interface WorkletState {
+  type: 'state'
+  pitch: number
+  bypass: boolean
+  latencyFrames: number
 }
 
 /** Map a performance.now() instant onto a context's timeline (uses the output
@@ -51,6 +75,9 @@ export class AudioEngine {
   private gainInstr: GainNode
   private gainVocal: GainNode
   private gainInstrStream: GainNode | null = null
+  private stInstr: AudioWorkletNode
+  private stVocal: AudioWorkletNode
+  private stInstrStream: AudioWorkletNode | null = null
   private srcInstr: AudioBufferSourceNode | null = null
   private srcVocal: AudioBufferSourceNode | null = null
   private srcInstrStream: AudioBufferSourceNode | null = null
@@ -67,6 +94,8 @@ export class AudioEngine {
   private _vocalOn = true
   private _vocalVolume = 1
   private _instrVolume = 1
+  private _pitchSemitones = 0
+  private _tempo = 1
   /** Fired once when playback reaches the end of the song naturally. */
   onEnded: (() => void) | null = null
   /** Non-fatal routing problem (e.g. saved stream device gone → degraded to single). */
@@ -91,10 +120,27 @@ export class AudioEngine {
     this.gainVocal = ctx.createGain()
     this.gainInstr.connect(ctx.destination)
     this.gainVocal.connect(ctx.destination)
+    // Per-stem SoundTouch worklets sit between source and gain; they idle in
+    // true bypass until pitch/tempo leaves neutral (§9.4). Persistent across
+    // source rebuilds — only sources are torn down.
+    this.stInstr = AudioEngine.createWorklet(ctx)
+    this.stVocal = AudioEngine.createWorklet(ctx)
+    this.stInstr.connect(this.gainInstr)
+    this.stVocal.connect(this.gainVocal)
     if (streamCtx) {
       this.gainInstrStream = streamCtx.createGain()
       this.gainInstrStream.connect(streamCtx.destination)
+      this.stInstrStream = AudioEngine.createWorklet(streamCtx)
+      this.stInstrStream.connect(this.gainInstrStream)
     }
+  }
+
+  private static createWorklet(ctx: AudioContext): AudioWorkletNode {
+    return new AudioWorkletNode(ctx, 'soundtouch-processor', {
+      numberOfInputs: 1,
+      numberOfOutputs: 1,
+      outputChannelCount: [2]
+    })
   }
 
   /** Fetch + decode both stems (decoded once; sources are built per play/seek).
@@ -127,6 +173,8 @@ export class AudioEngine {
           return ctx.decodeAudioData(await res.arrayBuffer())
         })
       )
+      await ctx.audioWorklet.addModule(WORKLET_URL)
+      if (streamCtx) await streamCtx.audioWorklet.addModule(WORKLET_URL)
       if (instrBuf === undefined || vocalBuf === undefined) throw new Error('decode failed')
       const engine = new AudioEngine(ctx, streamCtx, instrBuf, vocalBuf)
       engine.routingWarning = warning
@@ -150,11 +198,12 @@ export class AudioEngine {
     return this.streamCtx !== null
   }
 
-  /** Authoritative playback position in seconds (master clock = monitor context, SPEC §7.3/§9.3.1). */
+  /** Authoritative playback position in seconds (master clock = monitor context, SPEC §7.3/§9.3.1).
+   *  Song position advances at tempo × wall rate (playbackRate drives the sources). */
   get position(): number {
     if (!this._playing) return this.offset
     const elapsed = Math.max(0, this.ctx.currentTime - this.startedAt)
-    return Math.min(this.offset + elapsed, this.duration)
+    return Math.min(this.offset + elapsed * this._tempo, this.duration)
   }
 
   get vocalOn(): boolean {
@@ -167,6 +216,14 @@ export class AudioEngine {
 
   get instrumentalVolume(): number {
     return this._instrVolume
+  }
+
+  get pitchSemitones(): number {
+    return this._pitchSemitones
+  }
+
+  get tempo(): number {
+    return this._tempo
   }
 
   play(): void {
@@ -210,6 +267,65 @@ export class AudioEngine {
     if (this.gainInstrStream) this.ramp(this.gainInstrStream, this._instrVolume, this.streamCtx)
   }
 
+  /** Key change in semitones, clamped ±6 (§9.1). Applied to every stem worklet in both contexts. */
+  setPitchSemitones(n: number): void {
+    this._pitchSemitones = Math.min(Math.max(Math.round(n), PITCH_MIN), PITCH_MAX)
+    this.pushWorkletParams()
+  }
+
+  /** Playback tempo, clamped [0.75, 1.25]. Rebuilds sources (playbackRate is baked
+   *  into position bookkeeping at start) and re-compensates worklet pitch. */
+  setTempo(t: number): void {
+    const tempo = Math.min(Math.max(t, TEMPO_MIN), TEMPO_MAX)
+    if (tempo === this._tempo) return
+    if (this._playing) {
+      this.offset = this.position
+      this.stopSources()
+      this._tempo = tempo
+      this.pushWorkletParams()
+      this.startSources(this.offset)
+    } else {
+      this._tempo = tempo
+      this.pushWorkletParams()
+    }
+  }
+
+  /** Effective worklet pitch: user key change minus the transposition playbackRate causes. */
+  private get effectivePitch(): number {
+    const compensation = this._tempo === 1 ? 0 : -12 * Math.log2(this._tempo)
+    return this._pitchSemitones + compensation
+  }
+
+  private pushWorkletParams(): void {
+    const msg = { pitch: this.effectivePitch }
+    this.stInstr.port.postMessage(msg)
+    this.stVocal.port.postMessage(msg)
+    this.stInstrStream?.port.postMessage(msg)
+  }
+
+  /** Round-trip state from every worklet (diagnostics/verification). */
+  pingWorklets(): Promise<WorkletState[]> {
+    const nodes = [this.stInstr, this.stVocal, this.stInstrStream].filter(
+      (n): n is AudioWorkletNode => n !== null
+    )
+    return Promise.all(
+      nodes.map(
+        (node) =>
+          new Promise<WorkletState>((resolve) => {
+            const onMsg = (e: MessageEvent): void => {
+              if ((e.data as WorkletState).type === 'state') {
+                node.port.removeEventListener('message', onMsg)
+                resolve(e.data as WorkletState)
+              }
+            }
+            node.port.addEventListener('message', onMsg)
+            node.port.start()
+            node.port.postMessage({ type: 'ping' })
+          })
+      )
+    )
+  }
+
   /** Tear down everything; the engine is unusable afterwards. */
   dispose(): void {
     this.stopDriftWatchdog()
@@ -223,9 +339,9 @@ export class AudioEngine {
   measureDrift(): number | null {
     if (!this.streamCtx || !this._playing) return null
     const now = performance.now()
-    const monitorPos = this.offset + (ctxTimeAtWall(this.ctx, now) - this.startedAt)
+    const monitorPos = this.offset + (ctxTimeAtWall(this.ctx, now) - this.startedAt) * this._tempo
     const streamPos =
-      this.streamOffset + (ctxTimeAtWall(this.streamCtx, now) - this.streamStartedAt)
+      this.streamOffset + (ctxTimeAtWall(this.streamCtx, now) - this.streamStartedAt) * this._tempo
     return (streamPos - monitorPos) * 1000
   }
 
@@ -239,10 +355,12 @@ export class AudioEngine {
     const when = Math.max(ctxTimeAtWall(this.ctx, startWall), this.ctx.currentTime)
     this.srcInstr = this.ctx.createBufferSource()
     this.srcInstr.buffer = this.instrBuf
-    this.srcInstr.connect(this.gainInstr)
+    this.srcInstr.playbackRate.value = this._tempo
+    this.srcInstr.connect(this.stInstr)
     this.srcVocal = this.ctx.createBufferSource()
     this.srcVocal.buffer = this.vocalBuf
-    this.srcVocal.connect(this.gainVocal)
+    this.srcVocal.playbackRate.value = this._tempo
+    this.srcVocal.connect(this.stVocal)
     // Natural end of the (longer) instrumental stem ends playback; stale handlers
     // from rebuilt sources are filtered by generation.
     this.srcInstr.onended = () => {
@@ -262,10 +380,11 @@ export class AudioEngine {
   }
 
   private startStreamSource(streamCtx: AudioContext, offset: number, startWall: number): void {
-    if (!this.gainInstrStream) return
+    if (!this.stInstrStream) return
     const src = streamCtx.createBufferSource()
     src.buffer = this.instrBuf
-    src.connect(this.gainInstrStream)
+    src.playbackRate.value = this._tempo
+    src.connect(this.stInstrStream)
     const when = Math.max(ctxTimeAtWall(streamCtx, startWall), streamCtx.currentTime)
     src.start(when, offset)
     this.srcInstrStream = src
@@ -291,7 +410,8 @@ export class AudioEngine {
     }
     const startWall = performance.now() + RESYNC_DELAY * 1000
     // Master position at the instant the new stream source will actually start.
-    const masterAtStart = this.offset + (ctxTimeAtWall(this.ctx, startWall) - this.startedAt)
+    const masterAtStart =
+      this.offset + (ctxTimeAtWall(this.ctx, startWall) - this.startedAt) * this._tempo
     if (masterAtStart >= this.duration) return
     this.startStreamSource(streamCtx, masterAtStart, startWall)
     this.resyncCount++
