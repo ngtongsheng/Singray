@@ -55,6 +55,8 @@ export interface Settings {
   monitorDeviceId: string
   streamDeviceId: string
   audioOutputMode: 'single' | 'dual'
+  /** Player control bar: pinned (always visible) vs auto-hide after inactivity. */
+  playerBarPinned: boolean
 }
 
 export interface ProbeResult {

@@ -4,7 +4,7 @@ Source: user feedback 2026-06-12 (`Some enhancement.md`), grilled + triaged. MVP
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → R1.2** (update this pointer whenever a story starts/finishes)
+> **Now → R1.3** (update this pointer whenever a story starts/finishes)
 >
 > R0.1 (ear batch) + R0.2 (AG06) are user-side, can run anytime in parallel with coding stories — they don't block the pointer.
 
@@ -45,7 +45,7 @@ Ex-S4.3 verbatim: routing per SPEC §9.5, AG06 TO PC = INPUT MIX, end-to-end wit
 Remove hover action overlay (Sing/Lyrics/edit) from cards — whole card click → player. Heart (favorite) stays on card; fix favorite toggle bug (currently not toggling — diagnose, likely click swallowed by card-level handler). Edit-details + Lyrics entry points move into player (header menu or chrome — placement finalized with R2.1 titlebar in mind). Import progress strip moves from under top bar to a thin bottom status bar.
 - **Done when:** clicking anywhere on card opens player; heart toggles + persists + survives restart; no hover overlay remains; edit-meta dialog and lyric creator both reachable from inside player; URL import shows progress in bottom status bar.
 
-### [ ] R1.2 Player chrome rework
+### [x] R1.2 Player chrome rework
 No autoplay on enter (explicit play). Bar pinned/visible by default; new unpin toggle switches to current auto-hide behavior (preference persists in settings). Control order: play → seek bar → instrumental volume → guide cluster → pitch → tempo. Guide cluster = vocal toggle + vocal volume grouped as one visual unit; guide vocal OFF by default. ←/→ seek ±5s. Fix pitch stepper wrap bug (`+n` text drops to second line — fixed width/tabular nums). Tempo popover: slider → radio preset list (0.75 / 0.85 / 0.9 / 0.95 / 1 / 1.05 / 1.1 / 1.25) + Reset.
 - **Done when:** entering player is paused at 0:00; bar stays visible through a full song when pinned; unpin → 3s auto-hide returns; arrows seek ±5s; first play of any song has guide off; control order matches spec above; +6 pitch renders one line; tempo set via radio updates clock/wipe same as before.
 
@@ -161,6 +161,7 @@ Release workflow adds macos job: electron-builder .dmg (unsigned), uploaded to s
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-12 · R1.2 · No autoplay (enter paused at 0:00, guide vocal off via `engine.setVocal(false)` post-load); new `playerBarPinned` setting (default true) + pin/unpin button at bar end — unpin restores 3s auto-hide; control order play → seek → instr vol → guide cluster (toggle+volume in one bordered unit) → key → tempo; ←/→ seek ±5s; Key span `w-14 whitespace-nowrap` fixes +n wrap; tempo slider → radio presets (0.75–1.25) + Reset. All done-when checks verified via playwright driver (full-song pinned check proxied at 4.5s idle; ear-grade wipe check stays in R0.1).
 - 2026-06-12 · R1.1 · Whole card click → player; hover overlay removed — overlay was the favorite-bug root cause (its `absolute inset-0` div sat over the heart and swallowed clicks). Card keeps heart + small ⋯ menu (Open folder / Delete); Edit details + Edit/Add lyrics moved to player top-right chrome (EditMetaDialog renders in player; Esc guard added so closing dialog doesn't exit player). Import strip moved to bottom status bar. All done-when checks verified by driving the built app with playwright-core `_electron` (scripts in `%TEMP%\singray-drive`, reusable pattern for future UI verification).
 - 2026-06-12 · — · Backlog additions: R1.5 sing history (≥60% gate, timestamped log, library sort), R2.5 localisation (i18next, OS-locale default), R3.7 local file import (ffmpeg-decodable formats), R3.8 flac stem default with m4a setting. Round 2 candidates section added: record singing, effects, EQ.
 - 2026-06-12 · — · Round 1 backlog created from `Some enhancement.md` feedback + grilling session; MVP backlog archived to `docs/rounds/00-mvp.md`. Key decisions recorded in Triage block above. Tokenizer apostrophe bug confirmed in code (`'` not in `\p{L}` word run). Dropped: nudge editor, fullscreen stage, playlists.

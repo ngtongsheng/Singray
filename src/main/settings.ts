@@ -9,7 +9,8 @@ function defaults(): Settings {
     pythonPath: join(app.getAppPath(), 'pipeline', '.venv', 'Scripts', 'python.exe'),
     monitorDeviceId: '',
     streamDeviceId: '',
-    audioOutputMode: 'single'
+    audioOutputMode: 'single',
+    playerBarPinned: true
   }
 }
 
