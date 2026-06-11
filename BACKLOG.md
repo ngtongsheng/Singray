@@ -1,144 +1,139 @@
-# Singray — Story Backlog
+# Singray — Story Backlog (Round 1: Enhancement)
+
+Source: user feedback 2026-06-12 (`Some enhancement.md`), grilled + triaged. MVP backlog archived at `docs/rounds/00-mvp.md`.
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → ear-check batch, then S4.3** (update this pointer whenever a story starts/finishes)
+> **Now → R1.1** (update this pointer whenever a story starts/finishes)
 >
-> Ear-check batch (user deferred to end of backlog): S4.1 test tones per device · S4.2 dual-output audible drift + first real sing-through (S3 sync/click/wipe checks piggyback here too) · S5.1 ±2 semitones clean on both outputs · S5.2 eyeball wipe during the sing-through at −2 and 0.85×.
-> S4.3 blocked on user-side setup: install VB-Cable + VoiceMeeter, AG06 connected (TO PC = INPUT MIX).
+> R0.1 (ear batch) + R0.2 (AG06) are user-side, can run anytime in parallel with coding stories — they don't block the pointer.
 
-Workflow: one story at a time, top to bottom. A story is done only when every "Done when" line passes by actually running the app/script. On finish: mark `[x]`, move the **Now** pointer, append one line to the Session Log.
+Workflow: one story at a time, top to bottom. A story is done only when every "Done when" line passes by actually running the app/script. On finish: mark `[x]`, move the **Now** pointer, append one line to the Session Log. Commit subjects: `R<story>: <what>`.
+
+Triage decisions (from grilling session):
+- Dropped: per-unit timing nudge editor, fullscreen two-line stage mode, playlists/up-next queue → Unscheduled.
+- Tempo UI: radio presets inside existing popover (Gauge button stays).
+- "Progress bar to bottom" = import progress strip → bottom status bar.
+- Soundwave = AnalyserNode on monitor output mix (no mic capture).
+- LLM: one OpenAI-compatible client (covers Ollama); triggers = probe prefill + edit-meta button + lyric cleanup.
+- Lyrics: LRCLIB finder paired with LRC import (synced hit = auto-timed song).
+- Python deps: first-run bootstrapper (no giant installer).
+- macOS: CI build only, labeled community-tested.
+- Repo: public, MIT.
+- Window: frameless + custom titlebar that doubles as persistent app header.
+- Motion: `motion` (framer-motion).
 
 ---
 
-## Phase 0 — Scaffold
+## Phase 0 — MVP carry-over (user-side)
 
-### [x] S0.1 App skeleton
-Electron-vite scaffold (React + TS), Tailwind v4 with design tokens from SPEC §10.2, electron-builder config, git init. Quality tooling per SPEC §2.2: Biome (`biome.json`), strict tsconfig (`noUncheckedIndexedAccess`), `npm run check` script, `simple-git-hooks` pre-commit running it.
-- **Done when:** `npm run dev` opens a dark-themed window titled "Singray"; `npm run check` passes; a commit with a deliberate type error gets blocked by the hook; `git log` has initial commit.
+### [ ] R0.1 Ear-check batch
+From MVP: S4.1 test tone audibly from each chosen device · S4.2 dual-output 5-min song no audible drift + first real sing-through (S3 sync/click-free/wipe-vs-voice piggyback) · S5.1 ±2 semitones clean on both outputs · S5.2 eyeball wipe during sing-through at −2 key and 0.85× tempo.
+- **Done when:** all four checks confirmed by ear; failures spawn fix stories in this round.
 
-### [x] S0.2 IPC + settings + media protocol
-Typed preload bridge (SPEC §8 surface, stub implementations), settings store (JSON in `userData`, defaults from SPEC §4.5), `karaoke://` protocol serving range-requested files from library dir.
-- **Done when:** renderer round-trips `settings.get/set`; an `<audio>` tag plays a manually placed M4A via `karaoke://test/original.m4a`.
+### [!] R0.2 Live AG06 validation (blocked: VB-Cable + VoiceMeeter install + AG06 session — user-side setup)
+Ex-S4.3 verbatim: routing per SPEC §9.5, AG06 TO PC = INPUT MIX, end-to-end with singing website, write `docs/ROUTING.md`.
+- **Done when:** recording from website side has voice + instrumental, zero guide vocal, while monitor phones had vocal on.
 
-### [x] S0.3 Python env
-`pipeline/setup.ps1` creates `.venv` (pinned: yt-dlp 2026.6.9, audio-separator[gpu] 0.44.2, torch 2.11.0 cu128), checks ffmpeg on PATH, `-Update` flag bumps yt-dlp. Skeleton `pipeline.py` with argparse (`probe`/`process` subcommands, stubbed). ruff 0.15.16 in venv + `check:py` script.
-- **Done when:** `setup.ps1` completes; `.venv\Scripts\python.exe pipeline.py --help` shows both subcommands; torch reports CUDA available; `ruff check pipeline` passes.
+## Phase 1 — UX fixes (library + player)
 
-## Phase 1 — Library + Import
+### [ ] R1.1 Card + navigation simplification
+Remove hover action overlay (Sing/Lyrics/edit) from cards — whole card click → player. Heart (favorite) stays on card; fix favorite toggle bug (currently not toggling — diagnose, likely click swallowed by card-level handler). Edit-details + Lyrics entry points move into player (header menu or chrome — placement finalized with R2.1 titlebar in mind). Import progress strip moves from under top bar to a thin bottom status bar.
+- **Done when:** clicking anywhere on card opens player; heart toggles + persists + survives restart; no hover overlay remains; edit-meta dialog and lyric creator both reachable from inside player; URL import shows progress in bottom status bar.
 
-### [x] S1.1 pipeline probe
-`pipeline.py probe --url` → one-line JSON `{title, channel, track, artist, duration, thumbnailUrl}` via yt-dlp `--dump-json --no-download`.
-- **Done when:** real YouTube URL returns correct JSON in terminal; bad URL exits non-zero with `{"stage":"error",...}`.
+### [ ] R1.2 Player chrome rework
+No autoplay on enter (explicit play). Bar pinned/visible by default; new unpin toggle switches to current auto-hide behavior (preference persists in settings). Control order: play → seek bar → instrumental volume → guide cluster → pitch → tempo. Guide cluster = vocal toggle + vocal volume grouped as one visual unit; guide vocal OFF by default. ←/→ seek ±5s. Fix pitch stepper wrap bug (`+n` text drops to second line — fixed width/tabular nums). Tempo popover: slider → radio preset list (0.75 / 0.85 / 0.9 / 0.95 / 1 / 1.05 / 1.1 / 1.25) + Reset.
+- **Done when:** entering player is paused at 0:00; bar stays visible through a full song when pinned; unpin → 3s auto-hide returns; arrows seek ±5s; first play of any song has guide off; control order matches spec above; +6 pitch renders one line; tempo set via radio updates clock/wipe same as before.
 
-### [x] S1.2 pipeline process
-Full chain standalone (no Electron): download best audio + thumbnail → audio-separator (6_HP-Karaoke-UVR, window 320, aggression 5, GPU) → loudness normalization (measure original at −14 LUFS, same linear gain on all three — SPEC §5.2) → ffmpeg AAC 256k ×3 (original/instrumental/vocals) → files into `--out`. JSON-lines progress per SPEC §5.2. Temp cleanup on success and failure.
-- **Done when:** one command produces 4 files in a target folder; progress lines stream during run; vocals/instrumental sound separated; two different-loudness songs come out level-matched.
+### [ ] R1.3 Lyric fixes
+Tokenizer: apostrophe (`'`/`’`) between letters is word-internal — "We're" = 1 unit, "don't" = 1 unit (fix in `src/shared/tokenize.ts` word-run logic; existing saved lyrics untouched, only new tokenization). Player no-lyrics state: drop the "No lyrics yet — time them in the lyric creator first" copy, show just an Add lyrics button (same affordance R1.1 adds).
+- **Done when:** dev-console check `We're don't I've gone` → 4 units; alignment merge still works on a contraction-heavy English line; lyric-less song in player shows single button that opens creator on the right song.
 
-### [x] S1.3 Library screen
-Main: scan library dir → `SongMeta[]`, `library.list/updateMeta/delete` IPC live. Renderer: card grid per SPEC §10.6, search (title/artist substring), filter chips (language, favorites, needs-lyrics), empty state. Seed 2–3 songs by hand-running S1.2 output + hand-written meta.json.
-- **Done when:** seeded songs render with thumbs; search and filters work; delete removes folder after confirm dialog.
+### [ ] R1.4 Stage visuals
+Blurred thumb background gets slow Ken Burns pan/zoom (transform-only, ~60s loop, paused when window hidden). Soundwave option: AnalyserNode on monitor context master → canvas wave/bars layered into stage (transform/paint only, no layout shift), toggle in player overflow, default off, persisted.
+- **Done when:** pan visibly drifts over a minute with 0 layout-shift entries; wave moves with the music and stops when paused; toggle state survives restart; lyric wipe perf trace unchanged.
 
-### [x] S1.4 Import dialog
-Add Song → URL paste → `import.probe` → editable form (title/artist/language, thumb preview) per SPEC §5.1.
-- **Done when:** pasting real URL prefills form within a few seconds; Add button returns a jobId (queue may still be stub).
+## Phase 2 — App shell
 
-### [x] S1.5 Import queue
-Main-process FIFO queue spawning `pipeline.py process`, parsing stdout JSON-lines, `import:progress` events, `meta.json` write on done, `error.json` + retry/delete on failure. Renderer: card status badges (downloading/separating/converting/ready/error), progress strip under top bar.
-- **Done when:** paste URL → watch badges advance → song playable when ready; kill network mid-download → error badge → retry succeeds; queue 2 URLs → runs serially.
+### [ ] R2.1 Frameless window + unified titlebar
+`frame: false`, custom titlebar: drag region, min/max/close (Windows snap via titlebar overlay or manual handling), doubles as persistent app header on every screen. Library: app name + settings gear. Player: back button + song title/artist (closes "no visual way back" feedback). Esc still exits player.
+- **Done when:** window has no native frame; drag, double-click maximize, snap layouts, min/max/close all work; every screen shows the titlebar; player titlebar shows correct song + back returns to library; fullscreen behavior sane.
 
-### [x] S1.6 Meta management
-Edit meta dialog, favorite toggle, open-folder, settings screen v1 (library dir, python path + "test pipeline" button).
-- **Done when:** edits persist to meta.json and survive restart; settings round-trip works.
+### [ ] R2.2 Motion pass
+Add `motion`. View transitions library↔player↔creator↔settings (AnimatePresence), card grid entrance stagger, dialog/popover spring in/out, control bar pin/unpin slide. Respect `prefers-reduced-motion`.
+- **Done when:** all four view switches animate smoothly; lyric wipe trace shows no added jank during/after transitions; reduced-motion OS setting disables them.
 
-## Phase 2 — Lyric Creator
+### [ ] R2.3 Design system components
+`src/renderer/components/ui/`: Button, IconButton, Input, Select, Slider, Toggle, Chip, Dialog, Popover, Menu — semantic tokens only, variants via props. Migrate all screens; visual parity or better.
+- **Done when:** grep finds no raw `<button>`/`<input>`/`<select>` outside `ui/`; every screen screenshot-compared sane; `npm run check` green.
 
-### [x] S2.1 Tokenizer + lyrics IPC
-Shared TS module per SPEC §4.4 (Intl.Segmenter, CJK char = unit, Latin word = unit, punctuation attaches). `lyrics.get/save` IPC.
-- **Done when:** dev-console check: `不是想怎么来` → 6 units, `But I wanna go home` → 5 units, mixed line splits sanely; lyrics.json round-trips.
+### [ ] R2.4 Editable languages
+Settings: language list (code + label), add/remove, defaults zh + en. Drives import form select, library filter chips, alignment language passed to whisperx. Removing a language keeps existing songs intact (chip still renders from song meta).
+- **Done when:** add `ja` → appears in import form + filter chips; align on a ja song passes `ja`; remove `ja` → existing ja song still filterable; settings survive restart.
 
-### [x] S2.2 Text step
-Textarea one-line-per-row, empty row = break marker, continue → tokenized draft saved (`t: null`). Re-edit guard: line-diff keeps timing on unchanged lines, warns on timed-line edits.
-- **Done when:** paste full song text → draft lyrics.json written with correct units/breaks; editing one line after timing exists only invalidates that line.
+## Phase 3 — Integrations (LLM + lyrics + search)
 
-### [x] S2.3 Tap timing engine
-Timing step UI per SPEC §6.3 + §10.6: transport on original.m4a, Space stamps unit start, Backspace undo (cross-line), Enter play/pause, ←/→ seek ±5s with cursor follow, ↑/↓ rate cycle (preservesPitch), click line to jump, break auto-skip, 1s-debounced autosave, keyboard cheat-sheet strip.
-- **Done when:** full Chinese song tapped end-to-end at 0.7×; quit mid-way, reopen, cursor resumes at first unstamped unit.
+### [ ] R3.1 LLM client + settings
+Settings fieldset: base URL (default `http://localhost:11434/v1`), model, optional API key, Test button. Main-process OpenAI-compatible chat client (plain fetch, no SDK), timeout + friendly errors. SPEC §12 updated to match.
+- **Done when:** Test round-trips against local Ollama AND one hosted OpenAI-compatible endpoint; wrong URL/model shows readable error, never hangs UI.
 
-### [x] S2.4 End inference + review mode
-End inference per SPEC §6.4 (MAX_TAIL 5s, breaks, song end). Review toggle plays with real player renderer inline; Space re-enters tap mode at current line.
-- **Done when:** lyrics.json ends valid (every line start<end, monotonic); review shows believable highlight against singing.
+### [ ] R3.2 Metadata enrichment
+Probe → LLM cleans title/artist before form prefill (local-name-first artist: "Khalil Fong (方大同)" → 方大同; strip decoration: "黑洞裡 Official Music Video" → 黑洞裡), heuristic fallback when LLM unreachable/slow (~3s budget, race). Edit-meta dialog: "Clean up with AI" button for existing songs (preview before apply).
+- **Done when:** both example cases from feedback produce the expected clean values via real local model; LLM stopped → import prefill still works via heuristic at normal speed; existing song cleaned via button with confirm.
 
-### [x] S2.5 Vocals waveform strip
-Waveform of `vocals.m4a` under transport per SPEC §6.5: peaks rendered to canvas once, playhead + stamped-unit ticks overlaid, click = seek.
-- **Done when:** vocal phrases visibly map to waveform bumps; click-seek lands where expected; no per-frame jank (canvas redraw is playhead-only).
+### [ ] R3.3 YouTube search in Add Song
+`pipeline.py search --query` → `ytsearch10` JSON-lines (title/channel/duration/thumb/url). Add Song dialog: search box alongside URL paste → result list → pick → existing probe/prefill flow.
+- **Done when:** real query returns ~10 results with thumbs in <5s; picking one lands in prefilled form; URL paste path unchanged; bad query/no network handled.
 
-### [x] S2.6 Forced alignment
-Add whisperx 3.8.6 to `setup.ps1` + venv. `pipeline.py align --song <dir> --text <file>` per SPEC §6.6: WhisperX alignment on vocals stem → JSON word/char timestamps. App: "Align" button in text step, merge into lyrics.json (`t` for confident matches, null otherwise), timing step opens in fix-up mode jumping between null/suspect units. Alignment failure non-fatal → pure tap mode.
-- **Done when:** English song ≥90% units auto-timed and review mode looks right with zero taps; Chinese song aligns partially with graceful fix-up; pipeline failure path leaves creator fully usable.
+### [ ] R3.4 LRC import
+File picker in creator text step. Parse LRC: line timestamps → line starts; per-unit times linearly interpolated within line (marked estimated); enhanced LRC word timestamps used when present. End inference reused. Re-edit guard rules apply.
+- **Done when:** plain LRC file → review mode shows line-accurate highlight; enhanced LRC shows believable per-word wipe; malformed file rejected with message, creator unharmed.
 
-## Phase 3 — Player (single output)
+### [ ] R3.5 LRCLIB lyric finder
+"Find lyrics" in creator text step: LRCLIB API by title/artist/duration (free, keyless). Synced hit → R3.4 import path (auto-timed); plain hit → fills textarea. Multiple candidates → small picker.
+- **Done when:** a known song fetches synced lyrics and plays believably in review with zero taps; plain-only song fills text step; no-hit shows graceful empty state; works for zh and en songs.
 
-### [x] S3.1 Audio engine v1
-One AudioContext, two buffer sources (instrumental + vocals) sample-synced, gain nodes, master clock API (`position`, `play/pause/seek`), vocal toggle/volume.
-- **Done when:** stems play in perfect sync; toggling vocal mid-song is click-free (short gain ramp); seek keeps both aligned.
+### [ ] R3.6 LLM lyric cleanup
+"Clean up with AI" in text step: strips credits/section tags ([Chorus], 作詞: …), normalizes line breaks, preserves language. Diff preview before apply; re-edit guard still protects timed lines.
+- **Done when:** messy pasted lyric (credits + section tags + bad breaks) comes out clean on real model; apply after timing exists triggers existing invalidation dialog only for changed lines.
 
-### [x] S3.2 Lyric renderer
-Scrolling centered list per SPEC §7.1 + §10.6: current line enlarged, per-unit linear wipe driven by master clock (rAF, transform/clip only), auto-scroll, click-to-seek, dimmed past lines, break dot-countdown, blurred-thumb background with scrim.
-- **Done when:** wipe matches the S2 song's vocal exactly; clicking any line seeks; 0 layout-shift warnings in devtools performance trace.
+## Phase 4 — Production + open source
 
-### [x] S3.3 Player chrome
-Auto-hide control bar: play/pause (Space), seek bar, vocal toggle (V) + sliders, Esc exits, play count increment, "Sing" wired from library card, review-mode reuses this renderer (close S2.4 loop if stubbed).
-- **Done when:** full karaoke session start-to-finish from library and back, mouse untouched.
+### [ ] R4.1 OSS prep
+README (what/screenshots/features/install/dev-setup/architecture pointer to SPEC), MIT LICENSE, CONTRIBUTING.md (story workflow, check commands), issue/PR templates, yt-dlp/UVR usage disclaimer.
+- **Done when:** fresh clone on another machine reaches `npm run dev` + pipeline setup using README alone; license/contributing render correctly on GitHub.
 
-## Phase 4 — Dual-mix routing
+### [ ] R4.2 Public repo + branch protection + CI checks
+Repo public on GitHub. Branch protection on `main`: PRs required, owner-only merge. Actions workflow: `npm run check` + `ruff check`/`format --check` on every PR.
+- **Done when:** direct push to `main` rejected; PR from feature branch shows both checks green and red appropriately (test one deliberate failure); only owner can merge.
 
-### [~] S4.1 Device plumbing
-`enumerateDevices` output pickers in settings (monitor/stream), per-device test tone, `audioOutputMode: single|dual`.
-- **Done when:** test tone audibly comes out of the chosen physical device for both pickers.
+### [ ] R4.3 Python first-run bootstrapper
+App-managed pipeline env: on first run / Settings button, download embeddable Python (or uv standalone) into `userData`, create venv, install pinned deps with GPU detect (nvidia-smi → cu128, else CPU torch), fetch static ffmpeg if not on PATH, JSON progress → install UI. Python-path setting becomes advanced override. `setup.ps1` stays for dev.
+- **Done when:** machine state with no venv + no manual python config: first run → guided install → URL import → song separates and plays, zero manual steps; GPU box gets CUDA torch, install survives app restart mid-download (resume or clean retry).
 
-### [~] S4.2 Dual-context engine
-Second AudioContext with `setSinkId`, mirrored graph (instrumental only), aligned start, 5s drift check + >25ms hard resync, vocal toggle scoped to monitor context, pause/seek rebuilds both. Fallback path: MediaStreamDestination → `<audio>.setSinkId` (build only if primary misbehaves).
-- **Done when:** 5-minute song shows no audible drift between two outputs (record both, compare); vocal toggle never affects stream sink.
+### [ ] R4.4 Release pipeline
+Actions on push to `main`: electron-builder NSIS, version from package.json, tag + GitHub Release with .exe artifact. Release notes from merged PR titles.
+- **Done when:** merging a PR produces a downloadable Release; installing that .exe on a clean machine + R4.3 bootstrap → full import + sing smoke passes.
 
-### [!] S4.3 Live AG06 validation (blocked: needs VB-Cable + VoiceMeeter install and AG06 hardware session — user-side setup)
-VB-Cable + VoiceMeeter setup per SPEC §9.5, AG06 TO PC = INPUT MIX, end-to-end test with singing website. Write `docs/ROUTING.md` with the exact working configuration + screenshots.
-- **Done when:** recording from the website side has voice + instrumental, zero guide vocal, while monitor phones had vocal on.
+## Phase 5 — macOS (CI-built, community-tested)
 
-## Phase 5 — Pitch & tempo
+### [ ] R5.1 Pipeline mac support
+`pipeline/setup.sh`, torch device select (MPS → CPU fallback) in separate step, platform-aware paths in bootstrapper (R4.3) + ffmpeg fetch for darwin.
+- **Done when:** GitHub Actions macos runner: setup.sh completes, `pipeline.py probe` real URL succeeds, separation smoke on a short file completes on CPU within runner limits.
 
-### [~] S5.1 SoundTouch worklet
-AudioWorklet wrapping SoundTouch WASM, params `pitchSemitones`/`tempo`, true bypass at neutral, inserted per-stem in both contexts, params mirrored.
-- **Done when:** ±2 semitones sounds clean on both outputs; neutral position is bit-transparent (null test vs Phase 3 path).
+### [ ] R5.2 mac build in release
+Release workflow adds macos job: electron-builder .dmg (unsigned), uploaded to same Release. README labels mac builds community-tested.
+- **Done when:** Release contains .dmg alongside .exe; README section explains unsigned-app open steps + status.
 
-### [x] S5.2 Key/tempo controls
-Key stepper ±6 (`[`/`]`), tempo 0.75–1.25 in overflow menu, lyric clock scales with tempo, settings persist per song? (no — per session).
-- **Done when:** −2 key full song with lyrics still in sync; tempo 0.85 practice run with wipe still accurate.
-
-## Phase 6 — Backlog (unscheduled)
-- [ ] Per-unit timing nudge editor
-- [ ] LRC + legacy `karaoke.add` import
-- [ ] LLM metadata enrichment (SPEC §12)
-- [ ] Lyric web fetch + LLM cleanup
-- [ ] Fullscreen two-line stage mode
-- [ ] Playlists / up-next queue
-- [ ] macOS build (`setup.sh`, MPS/CPU separation)
+## Unscheduled
+- [ ] Playlists / up-next queue (dropped from R1 by user)
+- [ ] Fullscreen two-line stage mode (dropped)
+- [ ] Per-unit timing nudge editor (dropped after explanation)
+- [ ] Mic-input waveform via getUserMedia (chose output-mix analyser instead)
+- [ ] Per-song key/tempo persistence (MVP decision was per-session)
 
 ---
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
-- 2026-06-11 · S5.2 · Key stepper (−/value/+, `[`/`]`, clamp ±6 with disabled buttons, accent border when ≠0) + tempo popover (Gauge button → slider 0.75–1.25 step 0.05 + Reset, accent when ≠1) in player bar; key/tempo per session (resets with player mount, per story decision). Lyric clock = new engine.displayPosition = position − shifter latency (worklet-reported via ping ~500ms after param change), so wipe tracks what's heard while pitch/tempo engaged. BUG FIX 1: pingWorklets resolved on first 'state' message — unsolicited posts from setPitch queue on the not-yet-started MessagePort and arrive first (stale latencyFrames 0); fixed with ping request-id echo, resolver matches id. BUG FIX 2 (app-level): Electron throttles rAF when window occluded/minimized → lyric renderer froze mid-song under another window; webPreferences.backgroundThrottling:false in main (also makes CDP verification focus-independent; note bringToFront does NOT restore a minimized window). Verified via CDP on amaz dual mode: −2 key full song — lines advance correctly throughout, wipe gradient err ≤1.2% vs displayPosition expectation, latencySec 0.117 compensated exactly; 2 late "failures" were the outro (last line ends 219.18s, stays current to song end by design — check artifact); tempo 0.85 set through the real popover slider — engine.tempo 0.85, clock ratio measured 0.84997, wipe err ≤0.5%, worklet comp pitch +2.8136 mirrored ×3; clamp +6 stepper disabled. NOTE: drift estimate sits ~10–12ms steady (vs ~1ms neutral) while worklets engaged — constant, not growing, well under 25ms threshold; revisit only if S4.3 recording shows audible offset. Gotcha: moli seed has 160s instrumental intro — sparse lyric coverage makes it a poor sync-verification song; amaz used instead. DEV hook window.__lrTime exposes renderer clock per tick.
-- 2026-06-11 · S5.1 · [~] Code + machine verification complete; "±2 clean by ear" joins the ear batch. SPEC CHANGE §9.4: soundtouchjs (pure-JS, pinned ^0.3.0) not WASM, and the worklet does PITCH ONLY — a push-model worklet fed by a live source can't time-stretch without underrunning, so tempo = source.playbackRate + compensating worklet pitch of −12·log2(tempo); user key adds on top; engine position advances at tempo×wall (lyric clock scales for free, S5.2 just exposes controls). Files: public/worklets/soundtouch-processor.js (streaming push via st.inputBuffer.putSamples/process/outputBuffer.receiveSamples, true-bypass verbatim copy at effective pitch 0, FIFO backlog cap 16384 frames, ping→state port protocol incl latencyFrames) + vendored public/worklets/soundtouch.js (Vite doesn't bundle worklet module graphs; Biome-ignored). Engine: per-stem worklet between source and gain in BOTH contexts (persistent across source rebuilds), addModule at load, setPitchSemitones(±6, rounded)/setTempo(0.75–1.25, rebuilds sources while playing), pingWorklets() diagnostics; position/drift/resync math all gained ×tempo. Verified via CDP: OfflineAudioContext null test bit-exact (maxDiff 0, 192k samples); 440Hz sine +2→493.91Hz (err 0.004%) −2→391.99Hz, rms preserved 0.353; playbackRate 0.85 + comp pitch → 440.00Hz exact; live dual on moli: 3 worklets mirror params, clock 3.40s per 4.00s wall at 0.85, drift −0.06ms, back-to-neutral all bypass. GOTCHA for S5.2: engaged shifter adds ~6100 frames (~127ms @48k) latency — audio lags the engine clock while pitch/tempo active; lyric wipe may need latency compensation (worklet already reports latencyFrames via ping).
-- 2026-06-11 · S4.2 · [~] Code + machine verification complete; audible-drift ear check deferred to end-of-backlog batch (user request). audioEngine.ts extended in place: optional streamCtx via AudioContext.setSinkId (monitor sink set too when picked), instrumental-only mirror graph (no vocal source exists stream-side, so toggle isolation is structural), both contexts schedule sources against one wall-clock instant via getOutputTimestamp correlation (150ms headroom dual vs 50ms single), 5s watchdog measureDrift() (positions compared at common wall instant) + >25ms hard resync of stream source only, instr volume ramps mirrored to both gains, stream setSinkId failure degrades to single with routingWarning (console.warn in Player) instead of blocking playback. Player passes routing from settings at load. Verified via CDP, monitor=Realtek / stream=Steam Streaming Speakers (no VB-Cable yet): full 5:54 moli run max |drift| 1.31ms, 0 resyncs; ScriptProcessor tap both contexts + cross-correlate vs stem: scores 0.99999997, inter-context −5.3ms (= tap buffer quantization, both errMs dominated by identical 2×4096 SP latency); vocal toggle mid-play left stream gain=1 and stream source untouched while monitor vocal gain ramped 1→0→1; seek rebuilt stream source, drift −0.018ms after; pause killed watchdog + sources, resume rebuilt, drift 0.4ms; forced skew +40ms on streamStartedAt → watchdog resynced within one tick (resyncCount 1, drift back to 0). Fallback MediaStreamDestination path NOT built (primary behaved). Decision: stream side follows instrumental volume slider (spec graph is symmetric; revisit if audience mix should stay fixed). NOTE: drift estimator and resync share the getOutputTimestamp math — physically independent confirmation is the S4.3 recording + ear batch.
-- 2026-06-11 · S4.1 · [~] Code complete, needs only the human ear check. Settings gains Audio routing fieldset: output mode select (single/dual), monitor + stream pickers from enumerateDevices(audiooutput) with devicechange refresh + "System default" option + missing-saved-device warning, per-picker Test button → 1s sine via fresh AudioContext.setSinkId (monitor 440Hz, stream 660Hz — different pitches so misrouting is ear-obvious), pickers/tests disabled in single mode. Verified via CDP: 7 output devices listed with real labels (no permission prompt needed in Electron), dual mode + Realtek pick persisted through settings round-trip, both Test buttons ran ~1s with no error, mode restored to single after (dual engine doesn't exist until S4.2). REMAINS: ear-confirm tone comes out of the chosen physical device for both pickers — then flip to [x]. Note for S4.2/S4.3: no VB-Cable in device list yet, needs install before stream-side work. Player chrome in Player.tsx: bottom bar over gradient-to-t scrim — 44px play/pause, tabular mm:ss elapsed/total, seek range (engine.seek per input, sources rebuild fine), Guide vocal toggle (Mic/MicOff icon + "Guide on/off" label per §10.7.2, V key) + vocal volume slider, instrumental volume; key/tempo hidden until Phase 5 (§9.4). Auto-hide: 3s idle → bar opacity-0 + pointer-events-none + cursor-none on stage; mousemove/any key re-shows (poke on every keydown). Coarse UI clock = separate rAF quantized 0.25s (lyric wipe keeps its own full-rate loop). playCount+1 + lastPlayedAt via updateMeta once per session on load (after StrictMode disposed-guard, so dev double-mount doesn't double-count). ReviewPane gutted to 20-line adapter: LyricRenderer with clock = audioRef.currentTime (S2.4 loop closed, per-frame React render gone from review). SongCard overlay gains group-focus-within so keyboard focus reveals card actions (mouse-untouched session was impossible before). Verified via CDP, keyboard-only: focus Sing → player autoplays → bar visible → hidden+cursor-none after 3.6s idle → V re-shows bar, vocalOn false + gain 0, label flips "Guide off" → Space pause/resume → Esc back to library → playCount 0→1, lastPlayedAt ISO written. Review mode on amaz: wipe ran on "how" at 46.1s off the creator's audio element. Screenshot shows bar layout over stage. Sing-through ear-check (sync + click-free + wipe-vs-voice) still piggybacks on first real session. LyricRenderer.tsx: React renders line list once per lyrics object, rAF loop drives all time-dependent visuals imperatively via data-role/data-state attrs + Tailwind data-variants (no per-frame React render, unlike ReviewPane stub). Zero-layout trick: ALL lines render at 48px and non-current ones transform:scale(0.52) (downscaled text = supersampled crisp; font-size/weight changes would be layout shifts) — line emphasis, auto-center (translateY on column), wipe (bg-clip gradient %), break dots (opacity) are all transform/paint only. Breaks made "currentable": effStart = prev timed line end when gap ≥5s, so the column scrolls to the dots and they drain ceil(remaining/total×3). Unit state writes only on change except the one wiping span. Player.tsx hosts it: blurred thumb + black/55 scrim + bottom gradient, engine+lyrics loaded in parallel, auto-play, minimal Space/Esc (chrome = S3.3), DEV window.__playerEngine hook. Sing button wired from card (pulled forward from S3.3 — needed an entry to verify; S3.3 still owns chrome/play-count/review-reuse). Verified via CDP on amaz (en) + moli (zh) seeds: wipe gradient % vs clock-computed expectation err 0.5% (= 1 frame write→read lag), states sung/wipe/pending correct mid-line, screenshots show enlarged white current line mid-wipe over dim coral past, line click → position landed at line start + clicked line became current, break at 38.6s gap became current with dots 3→1 draining, PerformanceObserver layout-shift count = 0 over 14s spanning line changes + 2 seeks, Esc returns to library + engine disposed. Wipe-vs-actual-singing ear/eye check piggybacks on first real sing-through (CDP can't listen). Gotcha re-hit: rAF throttled while window occluded → DOM roles lag engine position in CDP reads; bringToFront before asserting. lib/audioEngine.ts: AudioEngine class, one AudioContext, both stems fetched+decoded once at load, sources rebuilt per play/seek (SPEC §9.3.4 pattern — same path dual-context engine will reuse), both started at ctx.currentTime+0.05 same `when` (sample-synced by construction), per-stem gains, 30ms linearRamp on toggle/volume (cancelScheduledValues+setValueAtTime first), position = offset + (currentTime − startedAt) clamped, onended generation counter filters stale handlers from torn-down sources, vocal volume set while toggled off stays silent until re-toggle. DEV window.__AudioEngine hook in main.tsx (no player UI until S3.2/3.3). Verified via CDP on rick seed: sync MEASURED not just structural — ScriptProcessor tap on both gains recorded 1.5s of live mix, cross-correlated against each decoded stem (coarse /8 ±0.4s then fine ±32): inter-stem offset 0 samples; repeated after mid-play seek(100): 0 samples again (recorder lag −3968/−4096 = buffer latency, cancels). Toggle ramp sampled at 2ms: smooth 1→0.73→0.38→0.02→0 over ~30ms both directions, no step. Transport: parked seek exact, pause holds, resume continues, onEnded fires + position clamps to duration + play() after end restarts at 0. Click-free/sync ear-check piggybacks on first real S3.2/3.3 session (CDP can't listen). pipeline.py align: whisperx forced alignment on vocals.m4a, whole lyric as one 0..duration segment, language from meta.json (unknown→en), char-level tokens for zh/ja/ko else word-level, CUDA with OOM→CPU retry, stdout swapped to stderr during ML work (emit writes saved _STDOUT handle). DEP CHANGE: whisperx 3.8.6 pins torch~=2.8.0 — first install silently replaced torch 2.11.0+cu128 with 2.8.0+cpu (CUDA gone); repinned whole stack to 2.8.0+cu128/0.23.0+cu128 (+torchaudio); the +cu128 local tag in the pin is load-bearing (bare ==2.8.0 is "satisfied" by the CPU build). SPEC §2.1 updated. Side effect: onnxruntime lost CUDAExecutionProvider (warning at separate) — harmless for our .pth VR model (torch-based), matters only if MDX onnx models are ever used. BUG FIX en route: spawned python stdout is cp1252 on Windows → zh "done" line crashed on 好; sys.stdout/stderr.reconfigure(encoding=utf-8) at pipeline.py top (SPEC §5.2 noted) — this organically exercised the failure path (error banner in text step, Continue→tap mode still worked, retry succeeded). App: lyrics.align IPC (temp text file, JSON-lines parse, reject on error), Align button in text step with spinner + confirm-replace when timing exists, renderer mergeAlignment.ts (two-pointer unit↔token walk, concat-fusing both directions for granularity gaps like "don't"=2 units/1 token, short-lookahead resync, MIN_SCORE 0.3 — wav2vec2 scores run 0.35-0.9 on correct sung words, 0.5 dropped true matches to 89%), inferEnds after merge, TimingStep Tab/Shift+Tab gap jump (seek to prev timed t −1s) + cheat-strip hint. Verified: en (Amazing Grace seed) 81/85 units (95%) zero taps, review screenshot mid-wipe on "heart" at the right moment, 4 nulls = contraction second units ('ve/'d — one token covers two units, by design); zh (茉莉花 童丽 seed) 146/156 (94%) monotonic, partials scattered across verses, Tab nav + gap stamp + autosave verified via CDP. Test seeds kept (timed lyrics useful for S3). Gotcha: verification songs chosen for public-domain lyrics (hymn/folk); sung verse order discovered by transcribing the vocals stem with faster-whisper (auto-captions disabled on music videos). WaveformStrip.tsx: vocals.m4a fetched + decodeAudioData once per song, max-abs peaks at 100 buckets/s (normalized, buffer dropped), two stacked canvases — base = mirrored waveform (text-dim .55) + accent-soft stamp ticks (redrawn only on decode/stamp/resize via ResizeObserver), overlay = playhead-only full-rate rAF reading audioRef directly (no React re-render). Canvas colors resolved from CSS vars at draw (token rule kept). Click = seek through TimingStep.seekTo so followCursor applies; wrapper is a real <button tabIndex=-1> (Biome noStaticElementInteractions). Visible in both tap and review modes. BUG FIX en route: renderer fetch('karaoke://…') failed — dev origin http://localhost:5173 is cross-origin to karaoke://, supportFetchAPI alone insufficient; added corsEnabled:true privilege + Access-Control-Allow-Origin:* in protocol.ts (SPEC §8 already promised Web Audio fetch, no spec change). Verified via CDP on rick seed: phrase blocks/intro silence/instrumental break visible in screenshot; click at 50% → currentTime 106.52 vs 106.53 expected; 5 stamps → orange ticks; fillRect instrumentation during 2s playback = 1.00 per frame at 60fps (playhead-only). Gotcha: rAF count 0 until Page.bringToFront — Electron throttles rAF when window occluded, CDP perf checks need focus. Test lyrics.json removed after. lib/inferEnds.ts pure fn (SPEC §6.4): for fully-stamped lines end = min(lastT+MAX_TAIL 5s, next non-break line start, songDuration), partial/break lines end=null — runs inside TimingStep persist on every stamp/undo so lyrics.json is always valid; overlap guard end=lastT+0.2 if next start precedes lastT. ReviewPane.tsx = inline player-renderer stub (S3.2 replaces): own full-rate rAF clock (no 0.1s quantize — wipe is information), current line text-4xl, past opacity-40/future 70, per-unit linear-gradient bg-clip-text wipe between t and unit end (next t ?? line end), click line = seek, auto-center scroll. TimingStep: Review/Tap toggle in transport sharing the one audio element, Space in review re-enters tap with cursor at line currently playing (last start ≤ now), Backspace/stamp disabled in review, cheat strip swaps hints. Verified via CDP on rick seed: drafted real chorus text, hand-patched stamps on disk (re-Continue kept timing, no discard dialog), live-stamped final unit → all ends valid+monotonic (next-start cap 23.41/45.55/47.74, MAX_TAIL across break 30.77, song-end tail 55.45); review screenshot at 44.5s shows mid-wipe on "give" in enlarged chorus line; Space exit landed cursor on line playing at 66.5s; undo cross-line nulled only that line's end. Believability ear-check piggybacks on next real tapped song (CDP can't listen). Gotcha: scoping card buttons by walking ancestors' textContent matches the whole grid — scope from the title leaf upward instead. Test lyrics.json removed after. TimingStep.tsx replaces S2.2 placeholder: flat unit cursor over non-break lines (breaks auto-skip free), Space stamp (e.repeat guarded) sets unit.t + line.start on first unit, Backspace clears cursor−1 cross-line, Enter play/pause, ←/→ ±5s + slider seek both run followCursor (first stamped t ≥ seek time, backward only), ↑/↓ rate clamp over [0.5,0.7,0.85,1] with preservesPitch, line click jumps cursor + seeks start−2s when stamped, 1s-debounced lyrics.save with unmount flush, rAF clock quantized 0.1s (~10Hz re-render), dismissible kbd cheat strip. Parent sync via onChange→setSaved (S2.2 gotcha closed). Verified via CDP keydown dispatch: 33-unit Chinese text tapped end-to-end at 0.7× → all t stamped strictly monotonic, line starts set, break null; mid-tap leave→reopen resumed caret at first unstamped (么); cross-line undo returned caret to 活; seek-to-0 followed cursor to 不; line click landed 风 without seek (unstamped). Rate state resets to 1× on remount (per-session, fine). Test lyrics.json removed after. LyricCreator screen (text step + read-only tokenized placeholder until S2.3 timing UI), wired via Lyrics card button → App view union. lib/lyricsText.ts: textarea⇄Lyrics (empty row = break, consecutive empties collapse, edges trimmed), buildLyrics diffs vs saved via LCS on line text — matched lines carry old line object verbatim (timing kept), unmatched fresh t:null; invalidated = unmatched old lines that had timing → ConfirmDialog ("Discard timing", names first lost line) before save. Verified via CDP: paste 5-row text (CJK/EN/break/dup chorus) → lyrics.json correct units+break; fake-timed 3 lines, re-entered, edited 1 line → dialog fired, edited line null, untouched line AND duplicate chorus kept own t (LCS handles dups positionally). Gotcha: creator caches lyrics in state — timing written behind its back (future S2.3) must reload via re-enter. Test lyrics.json removed from seed after. src/shared/tokenize.ts: Intl.Segmenter grapheme walk, CJK regex (Han/Hiragana/Katakana/Hangul) = unit per char, \p{L}\p{N} runs = word units, punctuation/space appends to previous unit text (leading punct prefixes first unit, e.g. 「你). lyrics.get/save real in library.ts (save fires library:changed since hasLyrics derives from file). DEV-only window.__tokenize hook in main.tsx for console checks. Verified via CDP: 不是想怎么来→6, "But I wanna go home"→5 (spaces attach), mixed 我们 sing 一首 song→sane, round-trip exact JSON match, missing lyrics→null, hasLyrics flips true after save. Test lyrics.json removed from seed after.
-- 2026-06-11 · S1.6 · Edit-meta dialog (title/artist/language → updateMeta), heart favorite toggle on card, ⋯ card menu (edit/open folder/delete — delete moved off direct button per SPEC §10.8), Settings screen (App-level view switch, gear in header; Library + Pipeline fieldsets, save-on-blur, Test pipeline button reuses import.probe on known URL). SPEC CHANGE: library.openFolder(id) added to §8 (shell.openPath). Verified via CDP: edit→meta.json on disk→survives restart, favorite toggles round-trip, openFolder pops Explorer at song dir, probe test 1.8s success, libraryDir round-trips through settings.json. Gotcha: React onBlur = focusout event, plain blur dispatch does nothing (matters for CDP-driven tests).
-- 2026-06-11 · S1.5 · FIFO queue in main (importQueue.ts): spawns pipeline process, readline over stdout JSON-lines, broadcasts import:progress, meta.json written upfront at start (durationSec patched on done), error.json + badge on non-zero exit, retry re-enqueues, library:delete cancels/kills active job first. SongListItem gains `ready` (original.m4a exists) — error state derived from error.json OR not-ready, so killed-mid-import songs show Error after restart too. SPEC CHANGE: import.start req gains youtubeTitle (§8). Verified via CDP: dialog→Add→badges Queued/Separating/Converting advance, 2 URLs run serially ("1 more queued" strip), imported song plays via karaoke://, killed python mid-run → Error badge + error.json ("pipeline exited 4294967295") → Retry button → success with durationSec. Test songs deleted after.
-- 2026-06-10 · S1.4 · Import dialog: debounced probe (400ms, seq-guarded against stale results), prefill from track/artist fields else title heuristic (strips (Official Video)/【官方MV】 decoration, splits on dash family + 「」), language select, https thumb preview (CSP img-src widened with https:). import:start is a stub returning randomUUID until S1.5. Verified via CDP: prefill 3.5s, correct split, Add → jobId, dialog closes. main/pipeline.ts spawns venv python for probe.
-- 2026-06-10 · S1.3 · Library service (folder scan, meta as id-authority from folder name, sorted by addedAt) + live list/delete/updateMeta IPC. Renderer: card grid, search, language/favorites/needs-lyrics chips, confirm-delete dialog, empty state. SPEC CHANGE: library.list returns SongListItem[] (SongMeta + derived hasLyrics/error) — cards need them, §8 updated. Fonts bundled via @fontsource-variable (Inter + Noto Sans SC). Verified via screenshot + CDP-driven UI test (search/filters/delete all pass; delete removed folder on disk). Seeds: rick + nirv from S1.2 outputs. CDP test trick: launch dev with REMOTE_DEBUGGING_PORT=9222, drive via Runtime.evaluate.
-- 2026-06-10 · S1.2 · Full chain works standalone. Verified: dQw4w9WgXcQ + hTWKbfoikeg both → 4 files; JSON-lines progress streamed (download per-percent via yt-dlp hook, separate/convert coarse); stdout is pure JSON (audio-separator tqdm goes to stderr); both originals measured −14.1 LUFS after shared-gain normalization; stems plausible (vocals mean −23.6dB vs instrumental −20dB, distinct content). GPU separation ≈12s for 3.5min song on 5060 Ti. UVR model auto-downloads to pipeline/models (gitignored). Test outputs kept at Karaoke\_test-s12* as S1.3 seeds. Ear-check of stem quality still recommended.
-- 2026-06-10 · S1.1 · Probe via yt_dlp Python API (noplaylist; artists list joined, channel falls back to uploader). Verified: real URL → correct one-line JSON exit 0; bad URL → {"stage":"error"} exit 1 (yt-dlp also prints its own ERROR to stderr — harmless, stdout stays clean JSON). ruff green.
-- 2026-06-10 · S0.3 · Venv built (Python 3.13). SPEC CHANGE: torch pinned 2.11.0+cu128 (not 2.12.0 — cu128 index tops out at 2.11.0; 2.12.0 resolves to PyPI CPU build). torchvision pinned 0.26.0+cu128 alongside since onnx2torch pulls it and unpinned resolve forced a CPU torch upgrade. setup.ps1 now hard-fails on pip exit codes + asserts CUDA at end. Verified: CUDA True on RTX 5060 Ti, pipeline.py --help shows probe/process, ruff check+format pass, check:py script added.
-- 2026-06-10 · S0.2 · Typed IPC bridge (`window.singray`, contract types in src/shared/types.ts shared by all three tsconfigs), settings store with defaults + JSON persistence in userData, `karaoke://<songId>/<file>` protocol with manual byte-range support (Readable.toWeb streams). Verified: settings get→set→file-write round-trip (settings.json appeared in %APPDATA%\singray), 30s test-tone M4A at Karaoke\test\original.m4a played via `<audio>` (screenshot, full duration shown). Temp smoke-test panel in App.tsx — replaced in S1.3.
-- 2026-06-10 · S0.1 · Scaffolded with electron-vite 5 template (kept template combo vite 7 + TS 5.9 — electron-vite 5 peer-caps vite at ^7; bumped electron to ^42.4.0). Replaced ESLint/Prettier with Biome (tailwindDirectives enabled for @theme parsing). Tailwind v4 tokens in main.css, strict+noUncheckedIndexedAccess in both tsconfigs, simple-git-hooks pre-commit verified blocking a type error. Verified dev window dark-themed via screenshot. Gotcha: electron binary needed manual `node node_modules/electron/install.js` after npm install.
-- 2026-06-10 · — · Spec + backlog created. Nothing built yet.
+- 2026-06-12 · — · Round 1 backlog created from `Some enhancement.md` feedback + grilling session; MVP backlog archived to `docs/rounds/00-mvp.md`. Key decisions recorded in Triage block above. Tokenizer apostrophe bug confirmed in code (`'` not in `\p{L}` word run). Dropped: nudge editor, fullscreen stage, playlists.
