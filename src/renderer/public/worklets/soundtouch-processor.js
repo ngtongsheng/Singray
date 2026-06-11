@@ -3,9 +3,11 @@
 // compensating pitch offset sent here, so this processor always consumes and
 // produces frames 1:1 on average and the push model stays underrun-free.
 //
-// Messages in:  { pitch: <semitones> }  — 0 engages true bypass (verbatim copy)
-//               { type: 'ping' }        — replies with current state (verification)
-// Messages out: { type: 'state', pitch, bypass, latencyFrames }
+// Messages in:  { pitch: <semitones> }     — 0 engages true bypass (verbatim copy)
+//               { type: 'ping', id }       — replies with current state; id echoed
+// Messages out: { type: 'state', id, pitch, bypass, latencyFrames }
+//               (param changes also post an unsolicited state with id: null —
+//               receivers matching on id are immune to those queueing up)
 //
 // Lives in public/ (served verbatim): Vite does not bundle AudioWorklet module
 // graphs, so this file and its vendored ./soundtouch.js import must be plain JS.
@@ -28,7 +30,7 @@ class SoundTouchProcessor extends AudioWorkletProcessor {
     this.port.onmessage = (e) => {
       const msg = e.data
       if (msg && typeof msg.pitch === 'number') this.setPitch(msg.pitch)
-      if (msg && msg.type === 'ping') this.postState()
+      if (msg && msg.type === 'ping') this.postState(msg.id)
     }
   }
 
@@ -51,9 +53,10 @@ class SoundTouchProcessor extends AudioWorkletProcessor {
     this.postState()
   }
 
-  postState() {
+  postState(id = null) {
     this.port.postMessage({
       type: 'state',
+      id,
       pitch: this.pitch,
       bypass: this.st === null,
       latencyFrames: this.framesIn - this.framesOut

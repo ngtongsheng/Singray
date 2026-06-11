@@ -1,4 +1,4 @@
-import { Loader2, Mic, MicOff, Pause, Play, Volume2 } from 'lucide-react'
+import { Gauge, Loader2, Mic, MicOff, Minus, Pause, Play, Plus, Volume2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Lyrics, SongListItem } from '../../../shared/types'
 import LyricRenderer from '../components/LyricRenderer'
@@ -29,6 +29,9 @@ function Player({ song, onExit }: Props): React.JSX.Element {
   const [vocalVol, setVocalVol] = useState(1)
   const [instrVol, setInstrVol] = useState(1)
   const [position, setPosition] = useState(0)
+  const [keyVal, setKeyVal] = useState(0)
+  const [tempoVal, setTempoVal] = useState(1)
+  const [tempoOpen, setTempoOpen] = useState(false)
   const [barVisible, setBarVisible] = useState(true)
   const hideTimer = useRef<number>(0)
 
@@ -116,6 +119,24 @@ function Player({ song, onExit }: Props): React.JSX.Element {
     setVocalOn(next)
   }, [engine])
 
+  const stepKey = useCallback(
+    (delta: number) => {
+      if (!engine) return
+      engine.setPitchSemitones(engine.pitchSemitones + delta)
+      setKeyVal(engine.pitchSemitones)
+    },
+    [engine]
+  )
+
+  const changeTempo = useCallback(
+    (t: number) => {
+      if (!engine) return
+      engine.setTempo(t)
+      setTempoVal(engine.tempo)
+    },
+    [engine]
+  )
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       poke()
@@ -125,12 +146,15 @@ function Player({ song, onExit }: Props): React.JSX.Element {
         togglePlay()
       }
       if (e.key === 'v' || e.key === 'V') toggleVocal()
+      if (e.key === '[') stepKey(-1)
+      if (e.key === ']') stepKey(1)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onExit, togglePlay, toggleVocal, poke])
+  }, [onExit, togglePlay, toggleVocal, stepKey, poke])
 
-  const clock = useCallback(() => engine?.position ?? 0, [engine])
+  // Lyric clock follows what's audible: engine position minus shifter latency (§7.3).
+  const clock = useCallback(() => engine?.displayPosition ?? 0, [engine])
   const seek = useCallback((t: number) => engine?.seek(t), [engine])
 
   return (
@@ -234,6 +258,74 @@ function Player({ song, onExit }: Props): React.JSX.Element {
               title="Guide vocal volume"
               className="h-11 w-24 cursor-pointer accent-accent"
             />
+
+            <div
+              className={`flex h-11 items-center gap-1 rounded-control border px-2 ${
+                keyVal !== 0 ? 'border-accent text-accent' : 'border-border text-text-dim'
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => stepKey(-1)}
+                disabled={keyVal <= -6}
+                title="Key down ([)"
+                className="flex size-7 items-center justify-center rounded-control hover:bg-surface-2 disabled:opacity-30"
+              >
+                <Minus className="size-4" strokeWidth={1.5} />
+              </button>
+              <span className="w-10 text-center text-sm tabular-nums">
+                Key {keyVal > 0 ? `+${keyVal}` : keyVal}
+              </span>
+              <button
+                type="button"
+                onClick={() => stepKey(1)}
+                disabled={keyVal >= 6}
+                title="Key up (])"
+                className="flex size-7 items-center justify-center rounded-control hover:bg-surface-2 disabled:opacity-30"
+              >
+                <Plus className="size-4" strokeWidth={1.5} />
+              </button>
+            </div>
+
+            <div className="relative">
+              {tempoOpen && (
+                <div className="absolute right-0 bottom-full mb-2 flex items-center gap-3 rounded-control border border-border bg-surface px-4 py-3 shadow-lg">
+                  <span className="text-sm text-text-dim">Tempo</span>
+                  <input
+                    type="range"
+                    min={0.75}
+                    max={1.25}
+                    step={0.05}
+                    value={tempoVal}
+                    onChange={(e) => changeTempo(Number(e.target.value))}
+                    title="Tempo"
+                    className="w-32 cursor-pointer accent-accent"
+                  />
+                  <span className="w-12 text-sm tabular-nums">{tempoVal.toFixed(2)}×</span>
+                  <button
+                    type="button"
+                    onClick={() => changeTempo(1)}
+                    className="rounded-control border border-border px-2 py-1 text-text-dim text-xs hover:text-text"
+                  >
+                    Reset
+                  </button>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setTempoOpen((o) => !o)}
+                aria-expanded={tempoOpen}
+                title="Tempo"
+                className={`flex h-11 items-center gap-2 rounded-control border px-3 text-sm tabular-nums ${
+                  tempoVal !== 1
+                    ? 'border-accent text-accent'
+                    : 'border-border text-text-dim hover:text-text'
+                }`}
+              >
+                <Gauge className="size-4" strokeWidth={1.5} />
+                {tempoVal.toFixed(2)}×
+              </button>
+            </div>
 
             <span className="flex items-center gap-2 text-text-dim">
               <Volume2 className="size-4" strokeWidth={1.5} />

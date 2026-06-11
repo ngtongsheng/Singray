@@ -101,6 +101,7 @@ function LyricRenderer({ lyrics, clock, onSeek }: Props): React.JSX.Element {
 
     const tick = (): void => {
       const time = clock()
+      if (import.meta.env.DEV) (window as Window & { __lrTime?: number }).__lrTime = time
       let cur = -1
       meta.forEach((m, i) => {
         if (m.effStart !== null && m.effStart <= time) cur = i

@@ -50,10 +50,14 @@ interface SinkableContext extends AudioContext {
 /** State echo from the worklet (see soundtouch-processor.js). */
 export interface WorkletState {
   type: 'state'
+  /** Ping echo id; unsolicited posts carry null. */
+  id: number | null
   pitch: number
   bypass: boolean
   latencyFrames: number
 }
+
+let pingSeq = 0
 
 /** Map a performance.now() instant onto a context's timeline (uses the output
  *  timestamp correlation so device latency is accounted for on both sides). */
@@ -96,6 +100,9 @@ export class AudioEngine {
   private _instrVolume = 1
   private _pitchSemitones = 0
   private _tempo = 1
+  /** Shifter latency (s) while engaged — display clock subtracts it so lyrics track what's heard. */
+  private latencySec = 0
+  private latencyTimer: number | null = null
   /** Fired once when playback reaches the end of the song naturally. */
   onEnded: (() => void) | null = null
   /** Non-fatal routing problem (e.g. saved stream device gone → degraded to single). */
@@ -206,6 +213,12 @@ export class AudioEngine {
     return Math.min(this.offset + elapsed * this._tempo, this.duration)
   }
 
+  /** Position of the audio currently audible — lyric clock (§7.3). Subtracts the
+   *  shifter's pipeline latency while pitch/tempo is engaged (worklet-reported). */
+  get displayPosition(): number {
+    return Math.max(0, this.position - this.latencySec)
+  }
+
   get vocalOn(): boolean {
     return this._vocalOn
   }
@@ -301,6 +314,21 @@ export class AudioEngine {
     this.stInstr.port.postMessage(msg)
     this.stVocal.port.postMessage(msg)
     this.stInstrStream?.port.postMessage(msg)
+    // Refresh the display-clock latency estimate once the pipeline has warmed up.
+    if (this.latencyTimer !== null) window.clearTimeout(this.latencyTimer)
+    if (this.effectivePitch === 0) {
+      this.latencySec = 0
+      this.latencyTimer = null
+    } else {
+      this.latencyTimer = window.setTimeout(() => {
+        this.latencyTimer = null
+        void this.pingWorklets().then(([state]) => {
+          if (state && this.effectivePitch !== 0) {
+            this.latencySec = state.latencyFrames / this.ctx.sampleRate
+          }
+        })
+      }, 500)
+    }
   }
 
   /** Round-trip state from every worklet (diagnostics/verification). */
@@ -312,15 +340,19 @@ export class AudioEngine {
       nodes.map(
         (node) =>
           new Promise<WorkletState>((resolve) => {
+            const id = ++pingSeq
             const onMsg = (e: MessageEvent): void => {
-              if ((e.data as WorkletState).type === 'state') {
+              const state = e.data as WorkletState
+              // Match on id: stale unsolicited states (id null) queue up on a
+              // not-yet-started port and would otherwise resolve the ping early.
+              if (state.type === 'state' && state.id === id) {
                 node.port.removeEventListener('message', onMsg)
-                resolve(e.data as WorkletState)
+                resolve(state)
               }
             }
             node.port.addEventListener('message', onMsg)
             node.port.start()
-            node.port.postMessage({ type: 'ping' })
+            node.port.postMessage({ type: 'ping', id })
           })
       )
     )
@@ -328,6 +360,7 @@ export class AudioEngine {
 
   /** Tear down everything; the engine is unusable afterwards. */
   dispose(): void {
+    if (this.latencyTimer !== null) window.clearTimeout(this.latencyTimer)
     this.stopDriftWatchdog()
     this.stopSources()
     this._playing = false
