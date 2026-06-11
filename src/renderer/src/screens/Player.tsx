@@ -37,7 +37,16 @@ function Player({ song, onExit }: Props): React.JSX.Element {
   useEffect(() => {
     let disposed = false
     let eng: AudioEngine | null = null
-    Promise.all([AudioEngine.load(song.id), window.singray.lyrics.get(song.id)])
+    Promise.all([
+      window.singray.settings.get().then((s) =>
+        AudioEngine.load(song.id, {
+          mode: s.audioOutputMode,
+          monitorDeviceId: s.monitorDeviceId,
+          streamDeviceId: s.streamDeviceId
+        })
+      ),
+      window.singray.lyrics.get(song.id)
+    ])
       .then(([e, l]) => {
         if (disposed) {
           e.dispose()
@@ -46,6 +55,7 @@ function Player({ song, onExit }: Props): React.JSX.Element {
         eng = e
         setEngine(e)
         setLyrics(l)
+        if (e.routingWarning) console.warn(e.routingWarning)
         e.play()
         window.singray.library.updateMeta(song.id, {
           playCount: song.playCount + 1,
