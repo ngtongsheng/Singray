@@ -34,9 +34,10 @@ const STRIP_LABEL: Record<string, string> = {
 interface Props {
   onOpenSettings: () => void
   onEditLyrics: (song: SongListItem) => void
+  onSing: (song: SongListItem) => void
 }
 
-function Library({ onOpenSettings, onEditLyrics }: Props): React.JSX.Element {
+function Library({ onOpenSettings, onEditLyrics, onSing }: Props): React.JSX.Element {
   const { songs } = useLibrary()
   const imports = useImports()
   const [query, setQuery] = useState('')
@@ -185,6 +186,7 @@ function Library({ onOpenSettings, onEditLyrics }: Props): React.JSX.Element {
               onDelete={setPendingDelete}
               onEdit={setEditing}
               onEditLyrics={onEditLyrics}
+              onSing={onSing}
             />
           ))}
           {filtered.length === 0 && (

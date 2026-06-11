@@ -2,9 +2,14 @@ import { useState } from 'react'
 import type { SongListItem } from '../../shared/types'
 import Library from './screens/Library'
 import LyricCreator from './screens/LyricCreator'
+import Player from './screens/Player'
 import Settings from './screens/Settings'
 
-type View = { name: 'library' } | { name: 'settings' } | { name: 'creator'; song: SongListItem }
+type View =
+  | { name: 'library' }
+  | { name: 'settings' }
+  | { name: 'creator'; song: SongListItem }
+  | { name: 'player'; song: SongListItem }
 
 function App(): React.JSX.Element {
   const [view, setView] = useState<View>({ name: 'library' })
@@ -12,10 +17,13 @@ function App(): React.JSX.Element {
   if (view.name === 'settings') return <Settings onBack={() => setView({ name: 'library' })} />
   if (view.name === 'creator')
     return <LyricCreator song={view.song} onBack={() => setView({ name: 'library' })} />
+  if (view.name === 'player')
+    return <Player song={view.song} onExit={() => setView({ name: 'library' })} />
   return (
     <Library
       onOpenSettings={() => setView({ name: 'settings' })}
       onEditLyrics={(song) => setView({ name: 'creator', song })}
+      onSing={(song) => setView({ name: 'player', song })}
     />
   )
 }

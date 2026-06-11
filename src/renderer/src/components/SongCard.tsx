@@ -18,6 +18,7 @@ interface Props {
   onDelete: (song: SongListItem) => void
   onEdit: (song: SongListItem) => void
   onEditLyrics: (song: SongListItem) => void
+  onSing: (song: SongListItem) => void
 }
 
 const STAGE_LABEL: Record<string, string> = {
@@ -135,7 +136,14 @@ function CardMenu({
   )
 }
 
-function SongCard({ song, importing, onDelete, onEdit, onEditLyrics }: Props): React.JSX.Element {
+function SongCard({
+  song,
+  importing,
+  onDelete,
+  onEdit,
+  onEditLyrics,
+  onSing
+}: Props): React.JSX.Element {
   const failed = !importing && (song.error !== null || !song.ready)
 
   return (
@@ -180,8 +188,9 @@ function SongCard({ song, importing, onDelete, onEdit, onEditLyrics }: Props): R
               <button
                 type="button"
                 disabled={!song.ready}
-                title="Sing — coming in Phase 3"
-                className="flex items-center gap-1.5 rounded-control bg-accent px-3 py-1.5 font-medium text-sm text-text disabled:opacity-50"
+                onClick={() => onSing(song)}
+                title="Sing"
+                className="flex items-center gap-1.5 rounded-control bg-accent px-3 py-1.5 font-medium text-sm text-text hover:bg-accent-soft disabled:opacity-50"
               >
                 <Mic2 className="size-4" strokeWidth={1.5} /> Sing
               </button>
