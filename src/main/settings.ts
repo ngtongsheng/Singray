@@ -10,7 +10,8 @@ function defaults(): Settings {
     monitorDeviceId: '',
     streamDeviceId: '',
     audioOutputMode: 'single',
-    playerBarPinned: true
+    playerBarPinned: true,
+    stageSoundwave: false
   }
 }
 

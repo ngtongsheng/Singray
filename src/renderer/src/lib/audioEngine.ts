@@ -264,6 +264,22 @@ export class AudioEngine {
     }
   }
 
+  private analyser: AnalyserNode | null = null
+
+  /** Analyser tapped off the monitor mix (both stem gains), for stage visuals (R1.4).
+   *  Pure tap — not wired to the destination, audio path unchanged. Cached so
+   *  repeated toggles don't stack taps; dies with the context on dispose. */
+  createMonitorAnalyser(): AnalyserNode {
+    if (this.analyser) return this.analyser
+    const a = this.ctx.createAnalyser()
+    a.fftSize = 2048
+    a.smoothingTimeConstant = 0.82
+    this.gainInstr.connect(a)
+    this.gainVocal.connect(a)
+    this.analyser = a
+    return a
+  }
+
   setVocal(on: boolean): void {
     this._vocalOn = on
     this.ramp(this.gainVocal, on ? this._vocalVolume : 0)

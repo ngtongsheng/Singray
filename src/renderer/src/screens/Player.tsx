@@ -1,4 +1,5 @@
 import {
+  AudioWaveform,
   Gauge,
   Loader2,
   Mic,
@@ -17,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Lyrics, SongListItem } from '../../../shared/types'
 import EditMetaDialog from '../components/EditMetaDialog'
 import LyricRenderer from '../components/LyricRenderer'
+import Soundwave from '../components/Soundwave'
 import { AudioEngine } from '../lib/audioEngine'
 
 interface Props {
@@ -52,6 +54,9 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
   const [barVisible, setBarVisible] = useState(true)
   const [pinned, setPinned] = useState(true)
   const [editOpen, setEditOpen] = useState(false)
+  const [waveOn, setWaveOn] = useState(false)
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
+  const [windowHidden, setWindowHidden] = useState(document.hidden)
   const hideTimer = useRef<number>(0)
 
   // song.playCount intentionally not a dep: one increment per session, not per meta refresh.
@@ -62,6 +67,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
     Promise.all([
       window.singray.settings.get().then((s) => {
         setPinned(s.playerBarPinned)
+        setWaveOn(s.stageSoundwave)
         return AudioEngine.load(song.id, {
           mode: s.audioOutputMode,
           monitorDeviceId: s.monitorDeviceId,
@@ -134,6 +140,27 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
     })
   }, [])
 
+  const toggleWave = useCallback(() => {
+    setWaveOn((w) => {
+      const next = !w
+      window.singray.settings.set({ stageSoundwave: next })
+      return next
+    })
+  }, [])
+
+  // Analyser is per-engine (its context dies with the engine) and only built when needed.
+  useEffect(() => {
+    if (engine && waveOn) setAnalyser(engine.createMonitorAnalyser())
+    else setAnalyser(null)
+  }, [engine, waveOn])
+
+  // Ken Burns pauses while the window is hidden.
+  useEffect(() => {
+    const onVis = (): void => setWindowHidden(document.hidden)
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [])
+
   const togglePlay = useCallback(() => {
     if (!engine) return
     if (engine.playing) engine.pause()
@@ -195,10 +222,13 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
         src={window.singray.audio.thumbUrl(song.id)}
         alt=""
         draggable={false}
-        className="absolute inset-0 h-full w-full scale-110 object-cover blur-3xl"
+        className={`animate-ken-burns absolute inset-0 h-full w-full object-cover blur-3xl ${
+          windowHidden ? 'paused' : ''
+        }`}
       />
       <div className="absolute inset-0 bg-black/55" />
       <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-bg to-transparent" />
+      {waveOn && analyser && <Soundwave analyser={analyser} playing={playing} />}
 
       <div className="absolute inset-0">
         {error ? (
@@ -238,6 +268,17 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
           }`}
         >
           <div className="flex items-center gap-2 px-4 py-3">
+            <button
+              type="button"
+              onClick={toggleWave}
+              aria-pressed={waveOn}
+              title={waveOn ? 'Hide soundwave' : 'Show soundwave'}
+              className={`flex items-center gap-1.5 rounded-control bg-black/50 px-3 py-1.5 text-sm hover:bg-black/70 ${
+                waveOn ? 'text-accent' : 'text-text-dim hover:text-text'
+              }`}
+            >
+              <AudioWaveform className="size-4" strokeWidth={1.5} />
+            </button>
             <button
               type="button"
               onClick={() => setEditOpen(true)}

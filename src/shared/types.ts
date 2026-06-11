@@ -57,6 +57,8 @@ export interface Settings {
   audioOutputMode: 'single' | 'dual'
   /** Player control bar: pinned (always visible) vs auto-hide after inactivity. */
   playerBarPinned: boolean
+  /** Stage soundwave visual (analyser on the monitor mix), default off. */
+  stageSoundwave: boolean
 }
 
 export interface ProbeResult {

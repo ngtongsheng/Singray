@@ -52,3 +52,31 @@
     outline-offset: 2px;
   }
 }
+
+/* Stage Ken Burns (R1.4): transform-only slow pan/zoom on the blurred art.
+   Paused via animation-play-state when the window is hidden (Player toggles). */
+@keyframes ken-burns {
+  0% {
+    transform: scale(1.1) translate(0, 0);
+  }
+  25% {
+    transform: scale(1.16) translate(-1.5%, 1%);
+  }
+  50% {
+    transform: scale(1.22) translate(1%, -1.5%);
+  }
+  75% {
+    transform: scale(1.16) translate(1.5%, 1%);
+  }
+  100% {
+    transform: scale(1.1) translate(0, 0);
+  }
+}
+
+.animate-ken-burns {
+  animation: ken-burns 60s ease-in-out infinite;
+}
+
+.animate-ken-burns.paused {
+  animation-play-state: paused;
+}

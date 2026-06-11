@@ -4,7 +4,7 @@ Source: user feedback 2026-06-12 (`Some enhancement.md`), grilled + triaged. MVP
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → R1.4** (update this pointer whenever a story starts/finishes)
+> **Now → R1.5** (update this pointer whenever a story starts/finishes)
 >
 > R0.1 (ear batch) + R0.2 (AG06) are user-side, can run anytime in parallel with coding stories — they don't block the pointer.
 
@@ -53,7 +53,7 @@ No autoplay on enter (explicit play). Bar pinned/visible by default; new unpin t
 Tokenizer: apostrophe (`'`/`’`) between letters is word-internal — "We're" = 1 unit, "don't" = 1 unit (fix in `src/shared/tokenize.ts` word-run logic; existing saved lyrics untouched, only new tokenization). Player no-lyrics state: drop the "No lyrics yet — time them in the lyric creator first" copy, show just an Add lyrics button (same affordance R1.1 adds).
 - **Done when:** dev-console check `We're don't I've gone` → 4 units; alignment merge still works on a contraction-heavy English line; lyric-less song in player shows single button that opens creator on the right song.
 
-### [ ] R1.4 Stage visuals
+### [x] R1.4 Stage visuals
 Blurred thumb background gets slow Ken Burns pan/zoom (transform-only, ~60s loop, paused when window hidden). Soundwave option: AnalyserNode on monitor context master → canvas wave/bars layered into stage (transform/paint only, no layout shift), toggle in player overflow, default off, persisted.
 - **Done when:** pan visibly drifts over a minute with 0 layout-shift entries; wave moves with the music and stops when paused; toggle state survives restart; lyric wipe perf trace unchanged.
 
@@ -161,6 +161,7 @@ Release workflow adds macos job: electron-builder .dmg (unsigned), uploaded to s
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-12 · R1.4 · Ken Burns: CSS keyframes (transform-only, 60s loop) on blurred art, `animation-play-state: paused` on visibilitychange. Soundwave: `engine.createMonitorAnalyser()` (cached tap off both stem gains, audio path untouched) → canvas frequency bars (96 bars, accent token via getComputedStyle), draw loop gated on `playing`; toggle in player top chrome, persisted as `stageSoundwave` (default off). Verified: transform drifts, 0 layout-shift entries during 12s pan+wave, wave freezes on pause, worst rAF frame 17ms, toggle survives restart.
 - 2026-06-12 · R1.3 · Tokenizer: `'`/`’` joins word run only when flanked by letters (lookahead on segment list) — "We're don't I've gone" → 4 units; trailing/quoting apostrophes still attach as punctuation; merge verified 10/10 on contraction-heavy line (core() already strips apostrophes, so token match unaffected). Player no-lyrics state = single Add lyrics button → creator (verified opens on right song). Node `--experimental-strip-types` runs shared TS directly for logic checks.
 - 2026-06-12 · R1.2 · No autoplay (enter paused at 0:00, guide vocal off via `engine.setVocal(false)` post-load); new `playerBarPinned` setting (default true) + pin/unpin button at bar end — unpin restores 3s auto-hide; control order play → seek → instr vol → guide cluster (toggle+volume in one bordered unit) → key → tempo; ←/→ seek ±5s; Key span `w-14 whitespace-nowrap` fixes +n wrap; tempo slider → radio presets (0.75–1.25) + Reset. All done-when checks verified via playwright driver (full-song pinned check proxied at 4.5s idle; ear-grade wipe check stays in R0.1).
 - 2026-06-12 · R1.1 · Whole card click → player; hover overlay removed — overlay was the favorite-bug root cause (its `absolute inset-0` div sat over the heart and swallowed clicks). Card keeps heart + small ⋯ menu (Open folder / Delete); Edit details + Edit/Add lyrics moved to player top-right chrome (EditMetaDialog renders in player; Esc guard added so closing dialog doesn't exit player). Import strip moved to bottom status bar. All done-when checks verified by driving the built app with playwright-core `_electron` (scripts in `%TEMP%\singray-drive`, reusable pattern for future UI verification).
