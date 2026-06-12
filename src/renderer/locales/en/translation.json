@@ -55,7 +55,13 @@
   },
   "editMeta": {
     "title": "Edit details",
-    "aria": "Edit song details"
+    "aria": "Edit song details",
+    "clean": "Clean up with AI",
+    "cleanTip": "Ask the configured model to strip decoration and pick the artist's local name",
+    "preview": "Suggested clean-up",
+    "apply": "Apply",
+    "dismiss": "Dismiss",
+    "noChanges": "Already clean — no changes suggested."
   },
   "player": {
     "editLyrics": "Edit lyrics",

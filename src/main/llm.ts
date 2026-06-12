@@ -16,6 +16,12 @@ export interface ChatOptions {
   /** Hard cap on the round-trip; default 30s (local models can be slow to load). */
   timeoutMs?: number
   temperature?: number
+  /**
+   * Ask reasoning models to skip thinking (`reasoning_effort: "none"`, honored by
+   * Ollama's /v1) — without it a thinking model burns the whole enrichment budget
+   * on hidden tokens. Servers that reject the param get one retry without it.
+   */
+  noReasoning?: boolean
 }
 
 const DEFAULT_TIMEOUT_MS = 30_000
@@ -68,22 +74,28 @@ export async function chat(messages: ChatMessage[], opts: ChatOptions = {}): Pro
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (llmApiKey.trim()) headers.Authorization = `Bearer ${llmApiKey.trim()}`
 
-  let res: Response
-  try {
-    res = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model,
-        messages,
-        stream: false,
-        ...(opts.temperature !== undefined && { temperature: opts.temperature })
-      }),
-      signal: AbortSignal.timeout(timeoutMs)
-    })
-  } catch (err) {
-    throw friendlyNetworkError(err, baseUrl, timeoutMs)
+  const request = async (noReasoning: boolean): Promise<Response> => {
+    try {
+      return await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model,
+          messages,
+          stream: false,
+          ...(opts.temperature !== undefined && { temperature: opts.temperature }),
+          ...(noReasoning && { reasoning_effort: 'none' })
+        }),
+        signal: AbortSignal.timeout(timeoutMs)
+      })
+    } catch (err) {
+      throw friendlyNetworkError(err, baseUrl, timeoutMs)
+    }
   }
+
+  let res = await request(opts.noReasoning ?? false)
+  // Strict providers 400 on reasoning_effort for non-reasoning models — retry plain.
+  if (opts.noReasoning && res.status === 400) res = await request(false)
   if (!res.ok) throw await friendlyHttpError(res, model)
 
   let content: unknown

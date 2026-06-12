@@ -55,7 +55,13 @@
   },
   "editMeta": {
     "title": "编辑信息",
-    "aria": "编辑歌曲信息"
+    "aria": "编辑歌曲信息",
+    "clean": "AI 清理",
+    "cleanTip": "让配置的模型去除标题修饰，并选用歌手的本地名称",
+    "preview": "清理建议",
+    "apply": "应用",
+    "dismiss": "忽略",
+    "noChanges": "已经很干净，无需修改。"
   },
   "player": {
     "editLyrics": "编辑歌词",

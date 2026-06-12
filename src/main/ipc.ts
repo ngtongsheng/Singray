@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
-import type { ImportRequest, Lyrics, Settings, SongMeta } from '../shared/types'
+import type { ImportRequest, Lyrics, ProbeResult, Settings, SongMeta } from '../shared/types'
+import { cleanMeta, enrichProbe } from './enrich'
 import { cancelImport, retryImport, startImport } from './importQueue'
 import { deleteSong, getLyrics, listSongs, openSongFolder, saveLyrics, updateMeta } from './library'
 import { testLlm } from './llm'
@@ -26,6 +27,11 @@ export function registerIpc(): void {
   ipcMain.handle('lyrics:align', (_e, id: string, text: string) => alignLyrics(id, text))
 
   ipcMain.handle('llm:test', () => testLlm())
+  ipcMain.handle('llm:enrichProbe', (_e, probe: ProbeResult) => enrichProbe(probe))
+  ipcMain.handle(
+    'llm:cleanMeta',
+    (_e, input: { title: string; artist: string; youtubeTitle: string }) => cleanMeta(input)
+  )
 
   ipcMain.handle('import:probe', (_e, url: string) => probe(url))
   ipcMain.handle('import:start', (_e, req: ImportRequest) => startImport(req))

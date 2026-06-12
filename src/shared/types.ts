@@ -85,6 +85,14 @@ export interface Settings {
   llmApiKey: string
 }
 
+/** Cleaned title/artist from metadata enrichment (R3.2). */
+export interface EnrichResult {
+  title: string
+  artist: string
+  /** 'llm' when the model produced it; 'heuristic' when the fallback fired (unreachable/slow). */
+  source: 'llm' | 'heuristic'
+}
+
 /** Result of a successful LLM round-trip test (R3.1). */
 export interface LlmTestResult {
   model: string
@@ -160,6 +168,10 @@ export interface SingrayApi {
   llm: {
     /** Round-trips a tiny prompt through the configured endpoint; rejects with a readable message. */
     test(): Promise<LlmTestResult>
+    /** Cleans probe metadata for import prefill; falls back to the heuristic parser, never rejects. */
+    enrichProbe(probe: ProbeResult): Promise<EnrichResult>
+    /** "Clean up with AI" on an existing song; rejects with a readable message. */
+    cleanMeta(input: { title: string; artist: string; youtubeTitle: string }): Promise<EnrichResult>
   }
   audio: {
     url(id: string, track: AudioTrack): string

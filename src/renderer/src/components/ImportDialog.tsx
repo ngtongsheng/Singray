@@ -2,7 +2,6 @@ import { Loader2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Language, LanguageDef, ProbeResult } from '../../../shared/types'
-import { parseYoutubeTitle } from '../lib/parseTitle'
 import { Button, Dialog, Input, Select } from './ui'
 
 interface Props {
@@ -41,17 +40,14 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
     const timer = setTimeout(() => {
       window.singray.import
         .probe(trimmed)
-        .then((result) => {
+        .then(async (result) => {
           if (seq !== probeSeq.current) return
           setProbed(result)
-          if (result.track && result.artist) {
-            setTitle(result.track)
-            setArtist(result.artist)
-          } else {
-            const parsed = parseYoutubeTitle(result.title)
-            setTitle(parsed.title)
-            setArtist(parsed.artist || result.channel)
-          }
+          // LLM cleanup races a ~3s budget in main; falls back to the heuristic parser.
+          const enriched = await window.singray.llm.enrichProbe(result)
+          if (seq !== probeSeq.current) return
+          setTitle(enriched.title)
+          setArtist(enriched.artist)
         })
         .catch((err: Error) => {
           if (seq !== probeSeq.current) return

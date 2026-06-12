@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type {
   AlignToken,
   AudioTrack,
+  EnrichResult,
   ImportProgress,
   ImportRequest,
   LlmTestResult,
@@ -41,7 +42,9 @@ const api: SingrayApi = {
     set: (patch) => ipcRenderer.invoke('settings:set', patch) as Promise<Settings>
   },
   llm: {
-    test: () => ipcRenderer.invoke('llm:test') as Promise<LlmTestResult>
+    test: () => ipcRenderer.invoke('llm:test') as Promise<LlmTestResult>,
+    enrichProbe: (probe) => ipcRenderer.invoke('llm:enrichProbe', probe) as Promise<EnrichResult>,
+    cleanMeta: (input) => ipcRenderer.invoke('llm:cleanMeta', input) as Promise<EnrichResult>
   },
   audio: {
     url: (id: string, track: AudioTrack) => `karaoke://${id}/${track}.m4a`,
