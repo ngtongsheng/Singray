@@ -15,7 +15,8 @@ function defaults(): Settings {
     languages: [
       { code: 'zh', label: '中文' },
       { code: 'en', label: 'English' }
-    ]
+    ],
+    uiLanguage: ''
   }
 }
 

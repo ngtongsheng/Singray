@@ -8,6 +8,7 @@ import {
   RotateCcw,
   Trash2
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { ImportProgress, SongListItem } from '../../../shared/types'
 import { Button, IconButton, Menu, MenuItem } from './ui'
 
@@ -18,22 +19,23 @@ interface Props {
   onSing: (song: SongListItem) => void
 }
 
-const STAGE_LABEL: Record<string, string> = {
-  queued: 'Queued',
-  download: 'Downloading',
-  separate: 'Separating',
-  convert: 'Converting'
+const STAGE_KEY: Record<string, string> = {
+  queued: 'stage.queued',
+  download: 'stage.download',
+  separate: 'stage.separate',
+  convert: 'stage.convert'
 }
 
 function StatusBadge({
   song,
   importing
 }: Pick<Props, 'song' | 'importing'>): React.JSX.Element | null {
+  const { t } = useTranslation()
   if (importing) {
     return (
       <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-control bg-black/60 px-2 py-0.5 text-text text-xs">
         <Loader2 className="size-3 animate-spin" />
-        {STAGE_LABEL[importing.stage] ?? importing.stage}
+        {STAGE_KEY[importing.stage] ? t(STAGE_KEY[importing.stage] as string) : importing.stage}
         {importing.stage !== 'queued' && ` ${Math.round(importing.progress * 100)}%`}
       </span>
     )
@@ -42,16 +44,16 @@ function StatusBadge({
     return (
       <span
         className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-control bg-black/60 px-2 py-0.5 text-danger text-xs"
-        title={song.error ?? 'import interrupted'}
+        title={song.error ?? t('card.importInterrupted')}
       >
-        <AlertTriangle className="size-3" /> Error
+        <AlertTriangle className="size-3" /> {t('card.error')}
       </span>
     )
   }
   if (!song.hasLyrics) {
     return (
       <span className="absolute bottom-2 left-2 rounded-control bg-black/60 px-2 py-0.5 text-text-dim text-xs">
-        needs lyrics
+        {t('card.needsLyrics')}
       </span>
     )
   }
@@ -59,6 +61,7 @@ function StatusBadge({
 }
 
 function SongCard({ song, importing, onDelete, onSing }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const failed = !importing && (song.error !== null || !song.ready)
   const openable = !importing && !failed
 
@@ -96,7 +99,7 @@ function SongCard({ song, importing, onDelete, onSing }: Props): React.JSX.Eleme
               <IconButton
                 variant="bare"
                 onClick={toggle}
-                title="More actions"
+                title={t('card.moreActions')}
                 className={`rounded-control bg-black/50 p-1 transition-opacity hover:bg-black/70 ${
                   open ? '' : 'opacity-0 group-hover:opacity-100'
                 }`}
@@ -106,10 +109,10 @@ function SongCard({ song, importing, onDelete, onSing }: Props): React.JSX.Eleme
             )}
           >
             <MenuItem onSelect={() => window.singray.library.openFolder(song.id)}>
-              <Folder className="size-3.5" strokeWidth={1.5} /> Open folder
+              <Folder className="size-3.5" strokeWidth={1.5} /> {t('card.openFolder')}
             </MenuItem>
             <MenuItem danger onSelect={() => onDelete(song)}>
-              <Trash2 className="size-3.5" strokeWidth={1.5} /> Delete
+              <Trash2 className="size-3.5" strokeWidth={1.5} /> {t('common.delete')}
             </MenuItem>
           </Menu>
         </div>
@@ -119,7 +122,7 @@ function SongCard({ song, importing, onDelete, onSing }: Props): React.JSX.Eleme
             e.stopPropagation()
             window.singray.library.updateMeta(song.id, { favorite: !song.favorite })
           }}
-          title={song.favorite ? 'Remove from favorites' : 'Add to favorites'}
+          title={song.favorite ? t('card.unfavorite') : t('card.favorite')}
           className={`absolute top-2 right-2 rounded-control p-1 transition-opacity hover:scale-110 ${
             song.favorite ? '' : 'opacity-0 group-hover:opacity-100'
           }`}
@@ -138,9 +141,9 @@ function SongCard({ song, importing, onDelete, onSing }: Props): React.JSX.Eleme
                 e.stopPropagation()
                 window.singray.import.retry(song.id)
               }}
-              title="Retry import"
+              title={t('card.retryTip')}
             >
-              <RotateCcw className="size-4" strokeWidth={1.5} /> Retry
+              <RotateCcw className="size-4" strokeWidth={1.5} /> {t('card.retry')}
             </Button>
           </div>
         )}
@@ -155,7 +158,7 @@ function SongCard({ song, importing, onDelete, onSing }: Props): React.JSX.Eleme
           </p>
           <span
             className="flex shrink-0 items-center gap-1 text-text-dim text-xs tabular-nums"
-            title="Times sung"
+            title={t('card.timesSung')}
           >
             <Mic2 className="size-3" strokeWidth={1.5} />
             {song.playCount + song.sings.length}

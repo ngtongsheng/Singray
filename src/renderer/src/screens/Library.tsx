@@ -1,6 +1,7 @@
 import { Heart, Mic2, Plus, Search, Settings as SettingsIcon, Type } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Language, LanguageDef, SongListItem } from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ImportDialog from '../components/ImportDialog'
@@ -11,11 +12,11 @@ import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
 import { usePrefersReducedMotion } from '../lib/motionPresets'
 
-const STRIP_LABEL: Record<string, string> = {
-  queued: 'Queued',
-  download: 'Downloading',
-  separate: 'Separating vocals',
-  convert: 'Converting'
+const STRIP_KEY: Record<string, string> = {
+  queued: 'stage.queued',
+  download: 'stage.download',
+  separate: 'stage.separateLong',
+  convert: 'stage.convert'
 }
 
 type SortMode = 'added' | 'mostSung' | 'recentSung'
@@ -30,6 +31,7 @@ interface Props {
 }
 
 function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const { songs } = useLibrary()
   const imports = useImports()
   const [query, setQuery] = useState('')
@@ -65,7 +67,8 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
     [langDefs, songs]
   )
   const langLabel = (code: Language): string =>
-    langDefs.find((l) => l.code === code)?.label ?? (code === 'unknown' ? 'Unknown' : code)
+    langDefs.find((l) => l.code === code)?.label ??
+    (code === 'unknown' ? t('common.unknown') : code)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -100,16 +103,16 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
             icon={<Search className="size-4 text-text-dim" />}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search title or artist  ( / )"
+            placeholder={t('library.searchPlaceholder')}
           />
         </div>
         <div className="flex-1" />
         <Button variant="primary" onClick={() => setShowImport(true)} className="app-no-drag">
-          <Plus className="size-4" strokeWidth={2} /> Add Song
+          <Plus className="size-4" strokeWidth={2} /> {t('library.addSong')}
         </Button>
         <IconButton
           onClick={onOpenSettings}
-          title="Settings"
+          title={t('library.settings')}
           className="app-no-drag text-text-dim hover:text-text"
         >
           <SettingsIcon className="size-4" strokeWidth={1.5} />
@@ -127,30 +130,30 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
           </Chip>
         ))}
         <Chip active={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
-          <Heart className="size-3.5" strokeWidth={1.5} /> Favorites
+          <Heart className="size-3.5" strokeWidth={1.5} /> {t('library.favorites')}
         </Chip>
         <Chip active={needsLyricsOnly} onClick={() => setNeedsLyricsOnly(!needsLyricsOnly)}>
-          <Type className="size-3.5" strokeWidth={1.5} /> Needs lyrics
+          <Type className="size-3.5" strokeWidth={1.5} /> {t('library.needsLyrics')}
         </Chip>
         <div className="flex-1" />
         <Select
           uiSize="sm"
           value={sort}
           onChange={(e) => setSort(e.target.value as SortMode)}
-          title="Sort"
+          title={t('library.sort')}
         >
-          <option value="added">Recently added</option>
-          <option value="mostSung">Most sung</option>
-          <option value="recentSung">Recently sung</option>
+          <option value="added">{t('library.sortAdded')}</option>
+          <option value="mostSung">{t('library.sortMostSung')}</option>
+          <option value="recentSung">{t('library.sortRecentSung')}</option>
         </Select>
       </div>
 
       {songs.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-4">
           <Mic2 className="size-12 text-accent" strokeWidth={1.5} />
-          <p className="text-text-dim">Paste a YouTube link to add your first song</p>
+          <p className="text-text-dim">{t('library.emptyHint')}</p>
           <Button variant="primary" size="md" onClick={() => setShowImport(true)}>
-            <Plus className="size-4" strokeWidth={2} /> Add Song
+            <Plus className="size-4" strokeWidth={2} /> {t('library.addSong')}
           </Button>
         </div>
       ) : (
@@ -172,7 +175,7 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
             </motion.div>
           ))}
           {filtered.length === 0 && (
-            <p className="col-span-full py-12 text-center text-text-dim">No songs match.</p>
+            <p className="col-span-full py-12 text-center text-text-dim">{t('library.noMatch')}</p>
           )}
         </div>
       )}
@@ -187,11 +190,13 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
             <div className="relative border-border border-t bg-surface px-6 py-1.5">
               <div className="flex items-center gap-2 text-xs">
                 <span className="text-text-dim">
-                  {STRIP_LABEL[job.stage] ?? job.stage} · {title}
+                  {STRIP_KEY[job.stage] ? t(STRIP_KEY[job.stage] as string) : job.stage} · {title}
                 </span>
                 <span className="font-medium text-accent">{Math.round(job.progress * 100)}%</span>
                 {imports.size > 1 && (
-                  <span className="text-text-dim">· {imports.size - 1} more queued</span>
+                  <span className="text-text-dim">
+                    {t('library.moreQueued', { count: imports.size - 1 })}
+                  </span>
                 )}
               </div>
               <div
@@ -206,9 +211,12 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
         {showImport && <ImportDialog onClose={() => setShowImport(false)} />}
         {pendingDelete && (
           <ConfirmDialog
-            title="Delete song?"
-            body={`"${pendingDelete.title}" by ${pendingDelete.artist} will be removed from your library, including its audio files and lyrics.`}
-            confirmLabel="Delete"
+            title={t('library.deleteTitle')}
+            body={t('library.deleteBody', {
+              title: pendingDelete.title,
+              artist: pendingDelete.artist
+            })}
+            confirmLabel={t('common.delete')}
             onConfirm={confirmDelete}
             onCancel={() => setPendingDelete(null)}
           />

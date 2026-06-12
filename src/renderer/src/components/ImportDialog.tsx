@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Language, LanguageDef, ProbeResult } from '../../../shared/types'
 import { parseYoutubeTitle } from '../lib/parseTitle'
 import { Button, Dialog, Input, Select } from './ui'
@@ -9,6 +10,7 @@ interface Props {
 }
 
 function ImportDialog({ onClose }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const [url, setUrl] = useState('')
   const [probing, setProbing] = useState(false)
   const [probeError, setProbeError] = useState<string | null>(null)
@@ -81,11 +83,11 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
   }
 
   return (
-    <Dialog label="Add song" width="w-[640px]" onClose={onClose}>
-      <h2 className="font-semibold text-base">Add song</h2>
+    <Dialog label={t('import.title')} width="w-[640px]" onClose={onClose}>
+      <h2 className="font-semibold text-base">{t('import.title')}</h2>
 
       <label className="mt-4 block">
-        <span className="mb-1 block text-text-dim text-xs">YouTube URL</span>
+        <span className="mb-1 block text-text-dim text-xs">{t('import.urlLabel')}</span>
         <Input
           ref={urlRef}
           value={url}
@@ -108,15 +110,15 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
           </div>
           <div className="flex flex-1 flex-col gap-3">
             <label className="block">
-              <span className="mb-1 block text-text-dim text-xs">Title</span>
+              <span className="mb-1 block text-text-dim text-xs">{t('common.title')}</span>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} />
             </label>
             <label className="block">
-              <span className="mb-1 block text-text-dim text-xs">Artist</span>
+              <span className="mb-1 block text-text-dim text-xs">{t('common.artist')}</span>
               <Input value={artist} onChange={(e) => setArtist(e.target.value)} />
             </label>
             <label className="block">
-              <span className="mb-1 block text-text-dim text-xs">Language</span>
+              <span className="mb-1 block text-text-dim text-xs">{t('common.language')}</span>
               <Select value={language} onChange={(e) => setLanguage(e.target.value)}>
                 {languages.map((l) => (
                   <option key={l.code} value={l.code}>
@@ -124,7 +126,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                   </option>
                 ))}
                 {!languages.some((l) => l.code === 'unknown') && (
-                  <option value="unknown">Unknown</option>
+                  <option value="unknown">{t('common.unknown')}</option>
                 )}
               </Select>
             </label>
@@ -134,7 +136,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
 
       <div className="mt-6 flex justify-end gap-3">
         <Button size="md" onClick={onClose}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button
           variant="primary"
@@ -142,7 +144,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
           onClick={submit}
           disabled={!probed || !title.trim() || submitting}
         >
-          Add
+          {t('import.add')}
         </Button>
       </div>
     </Dialog>

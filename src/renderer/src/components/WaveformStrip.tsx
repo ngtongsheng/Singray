@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from './ui'
 
 interface Props {
@@ -38,6 +39,7 @@ function sizeCanvas(canvas: HTMLCanvasElement, w: number, dpr: number): CanvasRe
  * the playhead so the per-frame redraw is a clearRect + one line.
  */
 function WaveformStrip({ songId, audioRef, stamps, onSeek }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const wrapRef = useRef<HTMLButtonElement>(null)
   const baseRef = useRef<HTMLCanvasElement>(null)
   const overlayRef = useRef<HTMLCanvasElement>(null)
@@ -162,7 +164,7 @@ function WaveformStrip({ songId, audioRef, stamps, onSeek }: Props): React.JSX.E
         ref={wrapRef}
         variant="bare"
         tabIndex={-1}
-        title="Click to seek"
+        title={t('timing.clickToSeek')}
         className="relative block w-full cursor-pointer"
         style={{ height: HEIGHT }}
         onClick={(e) => {
@@ -176,7 +178,7 @@ function WaveformStrip({ songId, audioRef, stamps, onSeek }: Props): React.JSX.E
         <canvas ref={overlayRef} className="absolute inset-0 size-full" />
         {!peaks && (
           <span className="absolute inset-0 flex items-center justify-center text-text-dim/60 text-xs">
-            {failed ? 'Waveform unavailable' : 'Rendering waveform…'}
+            {failed ? t('timing.waveformUnavailable') : t('timing.waveformRendering')}
           </span>
         )}
       </Button>

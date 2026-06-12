@@ -1,5 +1,6 @@
 import { Eye, Keyboard, Pause, Play, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Lyrics } from '../../../shared/types'
 import { inferEnds } from '../lib/inferEnds'
 import ReviewPane from './ReviewPane'
@@ -32,6 +33,7 @@ function unitT(lyrics: Lyrics, pos: UnitPos): number | null {
 
 /** Tap-along timing step (SPEC §6.3): Space stamps, original.m4a as reference. */
 function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const audioRef = useRef<HTMLAudioElement>(null)
   const lineRefs = useRef(new Map<number, HTMLButtonElement>())
   const [playing, setPlaying] = useState(false)
@@ -309,7 +311,7 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
             togglePlay()
             e.currentTarget.blur()
           }}
-          title={playing ? 'Pause (Enter)' : 'Play (Enter)'}
+          title={playing ? t('timing.pauseTip') : t('timing.playTip')}
         >
           {playing ? (
             <Pause className="size-5" strokeWidth={2} />
@@ -338,15 +340,15 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
             else setReview(true)
             e.currentTarget.blur()
           }}
-          title={review ? 'Back to tap mode (Space)' : 'Review timing'}
+          title={review ? t('timing.tapTip') : t('timing.reviewTip')}
         >
           {review ? (
             <>
-              <Keyboard className="size-4" strokeWidth={1.5} /> Tap
+              <Keyboard className="size-4" strokeWidth={1.5} /> {t('timing.tap')}
             </>
           ) : (
             <>
-              <Eye className="size-4" strokeWidth={1.5} /> Review
+              <Eye className="size-4" strokeWidth={1.5} /> {t('timing.review')}
             </>
           )}
         </Toggle>
@@ -360,9 +362,7 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
         <>
           <div className="flex min-h-28 items-center justify-center px-6 py-6">
             {done ? (
-              <p className="font-lyric text-2xl text-success">
-                All units stamped — ready for review
-              </p>
+              <p className="font-lyric text-2xl text-success">{t('timing.done')}</p>
             ) : (
               <p className="max-w-full text-center font-lyric text-4xl leading-snug">
                 {lyrics.lines[currentLine]?.units.map((u, ui) => {
@@ -428,24 +428,24 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
       {showKeys && (
         <div className="flex items-center gap-5 border-border border-t bg-surface px-6 py-2 text-text-dim text-xs">
           {review ? (
-            <Hint k="Space" label="back to tap" />
+            <Hint k="Space" label={t('timing.hintBackToTap')} />
           ) : (
             <>
-              <Hint k="Space" label="stamp unit" />
-              <Hint k="⌫" label="undo" />
+              <Hint k="Space" label={t('timing.hintStamp')} />
+              <Hint k="⌫" label={t('timing.hintUndo')} />
               {stamps.length > 0 && stamps.length < flatUnits.length && (
-                <Hint k="Tab" label="next gap" />
+                <Hint k="Tab" label={t('timing.hintGap')} />
               )}
             </>
           )}
-          <Hint k="Enter" label="play / pause" />
-          <Hint k="← →" label="±5s" />
-          <Hint k="↑ ↓" label="speed" />
+          <Hint k="Enter" label={t('timing.hintPlay')} />
+          <Hint k="← →" label={t('timing.hintSeek')} />
+          <Hint k="↑ ↓" label={t('timing.hintSpeed')} />
           <div className="flex-1" />
           <IconButton
             variant="bare"
             onClick={() => setShowKeys(false)}
-            title="Hide shortcuts"
+            title={t('timing.hideShortcuts')}
             className="rounded-control p-1 hover:bg-surface-2 hover:text-text"
           >
             <X className="size-3.5" strokeWidth={1.5} />

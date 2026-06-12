@@ -1,8 +1,10 @@
 import { ArrowLeft, CheckCircle2, Loader2, Plus, Volume2, X, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Settings as SettingsModel } from '../../../shared/types'
 import Titlebar from '../components/Titlebar'
 import { Button, IconButton, Input, Select } from '../components/ui'
+import { availableLocales, i18n, localeName, resolveLocale } from '../lib/i18n'
 
 /** Play a short sine tone on a specific output device ('' = system default). */
 async function playTestTone(deviceId: string, freq: number): Promise<void> {
@@ -43,6 +45,7 @@ type TestState =
   | { kind: 'fail'; detail: string }
 
 function Settings({ onBack }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const [settings, setSettings] = useState<SettingsModel | null>(null)
   const [test, setTest] = useState<TestState>({ kind: 'idle' })
   const [outputs, setOutputs] = useState<MediaDeviceInfo[]>([])
@@ -115,7 +118,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
     try {
       const result = await window.singray.import.probe(TEST_URL)
       const secs = ((Date.now() - started) / 1000).toFixed(1)
-      setTest({ kind: 'ok', detail: `Probed "${result.title}" in ${secs}s` })
+      setTest({ kind: 'ok', detail: t('settings.probedIn', { title: result.title, secs }) })
     } catch (err) {
       setTest({
         kind: 'fail',
@@ -124,27 +127,52 @@ function Settings({ onBack }: Props): React.JSX.Element {
     }
   }
 
-  if (!settings) return <div className="p-6 text-text-dim">Loading…</div>
+  const setUiLanguage = (v: string): void => {
+    void patch({ uiLanguage: v })
+    void i18n.changeLanguage(resolveLocale(v)) // instant, no restart (R2.5)
+  }
+
+  if (!settings) return <div className="p-6 text-text-dim">{t('common.loading')}</div>
 
   return (
     <div className="flex h-full flex-col">
       <Titlebar>
         <IconButton
           onClick={onBack}
-          title="Back to library (Esc)"
+          title={t('common.backEsc')}
           className="app-no-drag text-text-dim hover:text-text"
         >
           <ArrowLeft className="size-4" strokeWidth={1.5} />
         </IconButton>
-        <h1 className="font-semibold text-base">Settings</h1>
+        <h1 className="font-semibold text-base">{t('settings.title')}</h1>
       </Titlebar>
 
       <div className="flex-1 overflow-y-auto px-6 py-6">
         <div className="mx-auto flex max-w-xl flex-col gap-8">
           <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">Library</legend>
+            <legend className="px-1 font-medium text-sm">{t('settings.interface')}</legend>
             <label className="block">
-              <span className="mb-1 block text-text-dim text-xs">Library folder</span>
+              <span className="mb-1 block text-text-dim text-xs">{t('settings.uiLanguage')}</span>
+              <Select value={settings.uiLanguage} onChange={(e) => setUiLanguage(e.target.value)}>
+                <option value="">{t('settings.followSystem')}</option>
+                {availableLocales.map((code) => (
+                  <option key={code} value={code}>
+                    {localeName(code)}
+                  </option>
+                ))}
+              </Select>
+              <span className="mt-1 block text-text-dim text-xs">
+                {t('settings.uiLanguageHelp')}
+              </span>
+            </label>
+          </fieldset>
+
+          <fieldset className="rounded-card border border-border p-4">
+            <legend className="px-1 font-medium text-sm">{t('settings.library')}</legend>
+            <label className="block">
+              <span className="mb-1 block text-text-dim text-xs">
+                {t('settings.libraryFolder')}
+              </span>
               <Input
                 defaultValue={settings.libraryDir}
                 onBlur={(e) => {
@@ -153,13 +181,13 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 }}
               />
               <span className="mt-1 block text-text-dim text-xs">
-                Where downloaded songs are stored. One folder per song.
+                {t('settings.libraryFolderHelp')}
               </span>
             </label>
           </fieldset>
 
           <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">Languages</legend>
+            <legend className="px-1 font-medium text-sm">{t('settings.languages')}</legend>
             <div className="flex flex-col gap-2">
               {settings.languages.map((l) => (
                 <div
@@ -172,7 +200,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
                     variant="ghost"
                     size="xs"
                     onClick={() => removeLanguage(l.code)}
-                    title={`Remove ${l.label}`}
+                    title={t('settings.remove', { label: l.label })}
                     className="text-text-dim hover:text-text"
                   >
                     <X className="size-3.5" strokeWidth={1.5} />
@@ -185,7 +213,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
                     value={newCode}
                     onChange={(e) => setNewCode(e.target.value)}
                     placeholder="ja"
-                    aria-label="Language code"
+                    aria-label={t('settings.langCode')}
                   />
                 </div>
                 <Input
@@ -195,29 +223,30 @@ function Settings({ onBack }: Props): React.JSX.Element {
                     if (e.key === 'Enter') addLanguage()
                   }}
                   placeholder="日本語"
-                  aria-label="Language label"
+                  aria-label={t('settings.langLabel')}
                 />
                 <Button
                   size="md"
                   onClick={addLanguage}
                   disabled={!newCodeClean || !newLabel.trim() || codeTaken}
-                  title={codeTaken ? `"${newCodeClean}" is already in the list` : 'Add language'}
+                  title={
+                    codeTaken
+                      ? t('settings.codeTaken', { code: newCodeClean })
+                      : t('settings.addLanguageTip')
+                  }
                   className="shrink-0"
                 >
-                  <Plus className="size-4" strokeWidth={1.5} /> Add
+                  <Plus className="size-4" strokeWidth={1.5} /> {t('settings.add')}
                 </Button>
               </div>
-              <span className="text-text-dim text-xs">
-                Offered in the import form and library filters; the code is what alignment passes to
-                whisperx. Removing a language keeps existing songs intact.
-              </span>
+              <span className="text-text-dim text-xs">{t('settings.languagesHelp')}</span>
             </div>
           </fieldset>
 
           <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">Pipeline</legend>
+            <legend className="px-1 font-medium text-sm">{t('settings.pipeline')}</legend>
             <label className="block">
-              <span className="mb-1 block text-text-dim text-xs">Python executable</span>
+              <span className="mb-1 block text-text-dim text-xs">{t('settings.pythonExe')}</span>
               <div className="flex gap-2">
                 <Input
                   defaultValue={settings.pythonPath}
@@ -233,12 +262,10 @@ function Settings({ onBack }: Props): React.JSX.Element {
                   className="shrink-0"
                 >
                   {test.kind === 'running' && <Loader2 className="size-4 animate-spin" />}
-                  Test pipeline
+                  {t('settings.testPipeline')}
                 </Button>
               </div>
-              <span className="mt-1 block text-text-dim text-xs">
-                Python from pipeline\.venv with yt-dlp and audio-separator installed.
-              </span>
+              <span className="mt-1 block text-text-dim text-xs">{t('settings.pythonHelp')}</span>
               {test.kind === 'ok' && (
                 <span className="mt-2 flex items-center gap-1.5 text-success text-xs">
                   <CheckCircle2 className="size-3.5" /> {test.detail}
@@ -253,23 +280,20 @@ function Settings({ onBack }: Props): React.JSX.Element {
           </fieldset>
 
           <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">Audio routing</legend>
+            <legend className="px-1 font-medium text-sm">{t('settings.audio')}</legend>
             <div className="flex flex-col gap-4">
               <label className="block">
-                <span className="mb-1 block text-text-dim text-xs">Output mode</span>
+                <span className="mb-1 block text-text-dim text-xs">{t('settings.outputMode')}</span>
                 <Select
                   value={settings.audioOutputMode}
                   onChange={(e) =>
                     patch({ audioOutputMode: e.target.value as SettingsModel['audioOutputMode'] })
                   }
                 >
-                  <option value="single">Single — everything to one device</option>
-                  <option value="dual">Dual — monitor + stream mixes (Phase 4)</option>
+                  <option value="single">{t('settings.modeSingle')}</option>
+                  <option value="dual">{t('settings.modeDual')}</option>
                 </Select>
-                <span className="mt-1 block text-text-dim text-xs">
-                  Dual sends instrumental-only to the stream device while your monitor keeps the
-                  guide vocal.
-                </span>
+                <span className="mt-1 block text-text-dim text-xs">{t('settings.modeHelp')}</span>
               </label>
 
               {(['monitor', 'stream'] as const).map((which) => {
@@ -280,8 +304,8 @@ function Settings({ onBack }: Props): React.JSX.Element {
                   <label key={which} className="block">
                     <span className="mb-1 block text-text-dim text-xs">
                       {which === 'monitor'
-                        ? 'Monitor device (your headphones / AG06)'
-                        : 'Stream device (virtual cable to the singing site)'}
+                        ? t('settings.monitorDevice')
+                        : t('settings.streamDevice')}
                     </span>
                     <div className="flex gap-2">
                       <Select
@@ -295,10 +319,10 @@ function Settings({ onBack }: Props): React.JSX.Element {
                           )
                         }
                       >
-                        <option value="">System default</option>
+                        <option value="">{t('settings.systemDefault')}</option>
                         {outputs.map((d) => (
                           <option key={d.deviceId} value={d.deviceId}>
-                            {d.label || `Output ${d.deviceId.slice(0, 8)}`}
+                            {d.label || t('settings.outputN', { id: d.deviceId.slice(0, 8) })}
                           </option>
                         ))}
                       </Select>
@@ -306,7 +330,11 @@ function Settings({ onBack }: Props): React.JSX.Element {
                         size="md"
                         onClick={() => testTone(which)}
                         disabled={toneBusy !== null || settings.audioOutputMode === 'single'}
-                        title={`Play a test tone on the ${which} device`}
+                        title={
+                          which === 'monitor'
+                            ? t('settings.toneTipMonitor')
+                            : t('settings.toneTipStream')
+                        }
                         className="shrink-0"
                       >
                         {toneBusy === which ? (
@@ -314,12 +342,12 @@ function Settings({ onBack }: Props): React.JSX.Element {
                         ) : (
                           <Volume2 className="size-4" strokeWidth={1.5} />
                         )}
-                        Test
+                        {t('settings.test')}
                       </Button>
                     </div>
                     {!known && (
                       <span className="mt-1 block text-danger text-xs">
-                        Saved device not found — pick again (falls back to system default).
+                        {t('settings.deviceMissing')}
                       </span>
                     )}
                   </label>

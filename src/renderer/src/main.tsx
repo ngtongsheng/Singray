@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client'
 import { tokenizeLine } from '../../shared/tokenize'
 import App from './App'
 import { AudioEngine } from './lib/audioEngine'
+import { initI18n, resolveLocale } from './lib/i18n'
 
 if (import.meta.env.DEV) {
   // dev-console access for eyeballing tokenization (SPEC §4.4)
@@ -16,8 +17,12 @@ if (import.meta.env.DEV) {
 const rootEl = document.getElementById('root')
 if (!rootEl) throw new Error('#root element missing')
 
-createRoot(rootEl).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-)
+// i18n needs the saved locale preference before first paint (R2.5).
+window.singray.settings.get().then((settings) => {
+  initI18n(resolveLocale(settings.uiLanguage))
+  createRoot(rootEl).render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  )
+})

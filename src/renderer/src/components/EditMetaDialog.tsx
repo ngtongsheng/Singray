@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Language, LanguageDef, SongListItem } from '../../../shared/types'
 import { Button, Dialog, Input, Select } from './ui'
 
@@ -8,6 +9,7 @@ interface Props {
 }
 
 function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const [title, setTitle] = useState(song.title)
   const [artist, setArtist] = useState(song.artist)
   const [language, setLanguage] = useState<Language>(song.language)
@@ -25,9 +27,10 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
     const opts = [...languages]
     if (!opts.some((l) => l.code === song.language) && song.language !== 'unknown')
       opts.push({ code: song.language, label: song.language })
-    if (!opts.some((l) => l.code === 'unknown')) opts.push({ code: 'unknown', label: 'Unknown' })
+    if (!opts.some((l) => l.code === 'unknown'))
+      opts.push({ code: 'unknown', label: t('common.unknown') })
     return opts
-  }, [languages, song.language])
+  }, [languages, song.language, t])
 
   const save = async (): Promise<void> => {
     if (!title.trim()) return
@@ -45,20 +48,20 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
   }
 
   return (
-    <Dialog label="Edit song details" width="w-[420px]" onClose={onClose}>
-      <h2 className="font-semibold text-base">Edit details</h2>
+    <Dialog label={t('editMeta.aria')} width="w-[420px]" onClose={onClose}>
+      <h2 className="font-semibold text-base">{t('editMeta.title')}</h2>
 
       <div className="mt-4 flex flex-col gap-3">
         <label className="block">
-          <span className="mb-1 block text-text-dim text-xs">Title</span>
+          <span className="mb-1 block text-text-dim text-xs">{t('common.title')}</span>
           <Input ref={titleRef} value={title} onChange={(e) => setTitle(e.target.value)} />
         </label>
         <label className="block">
-          <span className="mb-1 block text-text-dim text-xs">Artist</span>
+          <span className="mb-1 block text-text-dim text-xs">{t('common.artist')}</span>
           <Input value={artist} onChange={(e) => setArtist(e.target.value)} />
         </label>
         <label className="block">
-          <span className="mb-1 block text-text-dim text-xs">Language</span>
+          <span className="mb-1 block text-text-dim text-xs">{t('common.language')}</span>
           <Select value={language} onChange={(e) => setLanguage(e.target.value)}>
             {options.map((l) => (
               <option key={l.code} value={l.code}>
@@ -71,10 +74,10 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
 
       <div className="mt-6 flex justify-end gap-3">
         <Button size="md" onClick={onClose}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button variant="primary" size="md" onClick={save} disabled={!title.trim() || saving}>
-          Save
+          {t('common.save')}
         </Button>
       </div>
     </Dialog>

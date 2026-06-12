@@ -75,6 +75,8 @@ export interface Settings {
   stageVisual: 'off' | 'waveform' | 'bars'
   /** Editable language list (R2.4): drives import form, library filter chips, alignment. */
   languages: LanguageDef[]
+  /** UI locale (R2.5): a folder name under src/renderer/locales, or '' = follow OS. */
+  uiLanguage: string
 }
 
 export interface ProbeResult {

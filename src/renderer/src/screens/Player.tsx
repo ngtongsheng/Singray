@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Lyrics, Settings, SongListItem } from '../../../shared/types'
 import EditMetaDialog from '../components/EditMetaDialog'
 import LyricRenderer from '../components/LyricRenderer'
@@ -42,10 +43,10 @@ const STAGE_VISUAL_NEXT: Record<StageVisual, StageVisual> = {
   waveform: 'bars',
   bars: 'off'
 }
-const STAGE_VISUAL_LABEL: Record<StageVisual, string> = {
-  off: 'Stage visual: off',
-  waveform: 'Stage visual: waveform',
-  bars: 'Stage visual: bars'
+const STAGE_VISUAL_KEY: Record<StageVisual, string> = {
+  off: 'player.stageVisual.off',
+  waveform: 'player.stageVisual.waveform',
+  bars: 'player.stageVisual.bars'
 }
 
 function fmt(s: number): string {
@@ -58,6 +59,7 @@ function fmt(s: number): string {
  * auto-hide control bar (§7.2). Space play/pause, V guide vocal, Esc exits.
  */
 function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const [engine, setEngine] = useState<AudioEngine | null>(null)
   const [lyrics, setLyrics] = useState<Lyrics | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -244,7 +246,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
       <Titlebar>
         <IconButton
           onClick={onExit}
-          title="Back to library (Esc)"
+          title={t('common.backEsc')}
           className="app-no-drag text-text-dim hover:text-text"
         >
           <ArrowLeft className="size-4" strokeWidth={1.5} />
@@ -260,7 +262,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
               variant="ghost"
               active={stageVisual !== 'off'}
               onClick={cycleStageVisual}
-              title={`${STAGE_VISUAL_LABEL[stageVisual]} — click to switch`}
+              title={t('player.stageVisualTip', { mode: t(STAGE_VISUAL_KEY[stageVisual]) })}
               className="app-no-drag"
             >
               {stageVisual === 'bars' ? (
@@ -272,18 +274,19 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
             <Button
               variant="ghost"
               onClick={() => setEditOpen(true)}
-              title="Edit details"
+              title={t('editMeta.title')}
               className="app-no-drag text-text-dim hover:text-text"
             >
-              <Pencil className="size-4" strokeWidth={1.5} /> Edit details
+              <Pencil className="size-4" strokeWidth={1.5} /> {t('editMeta.title')}
             </Button>
             <Button
               variant="ghost"
               onClick={() => onEditLyrics(song)}
-              title={lyrics ? 'Edit lyrics' : 'Add lyrics'}
+              title={lyrics ? t('player.editLyrics') : t('player.addLyrics')}
               className="app-no-drag text-text-dim hover:text-text"
             >
-              <Type className="size-4" strokeWidth={1.5} /> {lyrics ? 'Edit lyrics' : 'Add lyrics'}
+              <Type className="size-4" strokeWidth={1.5} />{' '}
+              {lyrics ? t('player.editLyrics') : t('player.addLyrics')}
             </Button>
           </>
         )}
@@ -311,19 +314,19 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
             <div className="flex h-full flex-col items-center justify-center gap-3">
               <p className="text-danger">{error}</p>
               <Button size="md" onClick={onExit}>
-                Back to library
+                {t('common.back')}
               </Button>
             </div>
           ) : !engine ? (
             <div className="flex h-full items-center justify-center gap-2 text-text-dim">
-              <Loader2 className="size-5 animate-spin" /> Loading stems…
+              <Loader2 className="size-5 animate-spin" /> {t('player.loadingStems')}
             </div>
           ) : lyrics ? (
             <LyricRenderer lyrics={lyrics} clock={clock} onSeek={seek} />
           ) : (
             <div className="flex h-full items-center justify-center">
               <Button variant="primary" size="md" onClick={() => onEditLyrics(song)}>
-                <Type className="size-4" strokeWidth={1.5} /> Add lyrics
+                <Type className="size-4" strokeWidth={1.5} /> {t('player.addLyrics')}
               </Button>
             </div>
           )}
@@ -348,7 +351,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
                 size="lg"
                 round
                 onClick={togglePlay}
-                title={playing ? 'Pause (Space)' : 'Play (Space)'}
+                title={playing ? t('player.pauseTip') : t('player.playTip')}
               >
                 {playing ? (
                   <Pause className="size-5" strokeWidth={1.5} />
@@ -363,7 +366,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
                 step={0.25}
                 value={position}
                 onChange={(e) => engine.seek(Number(e.target.value))}
-                title="Seek (←/→ ±5s)"
+                title={t('player.seekTip')}
                 className="h-11 flex-1"
               />
               <span className="text-sm text-text-dim tabular-nums">{fmt(engine.duration)}</span>
@@ -380,7 +383,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
                     setInstrVol(v)
                     engine.setInstrumentalVolume(v)
                   }}
-                  title="Instrumental volume"
+                  title={t('player.instrVolTip')}
                   className="h-11 w-24"
                 />
               </span>
@@ -394,14 +397,14 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
                   variant="ghost"
                   pressed={vocalOn}
                   onClick={toggleVocal}
-                  title="Guide vocal (V)"
+                  title={t('player.guideTip')}
                 >
                   {vocalOn ? (
                     <Mic className="size-4" strokeWidth={1.5} />
                   ) : (
                     <MicOff className="size-4" strokeWidth={1.5} />
                   )}
-                  Guide {vocalOn ? 'on' : 'off'}
+                  {vocalOn ? t('player.guideOn') : t('player.guideOff')}
                 </Toggle>
                 <Slider
                   min={0}
@@ -413,7 +416,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
                     setVocalVol(v)
                     engine.setVocalVolume(v)
                   }}
-                  title="Guide vocal volume"
+                  title={t('player.guideVolTip')}
                   className="h-8 w-20"
                 />
               </div>
@@ -428,19 +431,19 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
                   size="xs"
                   onClick={() => stepKey(-1)}
                   disabled={keyVal <= -6}
-                  title="Key down ([)"
+                  title={t('player.keyDownTip')}
                 >
                   <Minus className="size-4" strokeWidth={1.5} />
                 </IconButton>
                 <span className="w-14 whitespace-nowrap text-center text-sm tabular-nums">
-                  Key {keyVal > 0 ? `+${keyVal}` : keyVal}
+                  {t('player.key', { value: keyVal > 0 ? `+${keyVal}` : keyVal })}
                 </span>
                 <IconButton
                   variant="ghost"
                   size="xs"
                   onClick={() => stepKey(1)}
                   disabled={keyVal >= 6}
-                  title="Key up (])"
+                  title={t('player.keyUpTip')}
                 >
                   <Plus className="size-4" strokeWidth={1.5} />
                 </IconButton>
@@ -453,13 +456,13 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
                   className="right-0 bottom-full mb-2 w-max p-3"
                 >
                   <div className="flex items-center justify-between pb-2">
-                    <span className="text-text-dim text-xs">Tempo</span>
+                    <span className="text-text-dim text-xs">{t('player.tempo')}</span>
                     <Button
                       size="bare"
                       onClick={() => changeTempo(1)}
                       className="px-2 py-0.5 text-text-dim text-xs hover:text-text"
                     >
-                      Reset
+                      {t('common.reset')}
                     </Button>
                   </div>
                   <div className="grid grid-cols-4 gap-1">
@@ -481,7 +484,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
                   active={tempoVal !== 1}
                   onClick={() => setTempoOpen((o) => !o)}
                   aria-expanded={tempoOpen}
-                  title="Tempo"
+                  title={t('player.tempo')}
                   className="tabular-nums"
                 >
                   <Gauge className="size-4" strokeWidth={1.5} />
@@ -493,7 +496,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
                 size="lg"
                 pressed={pinned}
                 onClick={togglePin}
-                title={pinned ? 'Unpin bar (auto-hide)' : 'Pin bar (always visible)'}
+                title={pinned ? t('player.unpinTip') : t('player.pinTip')}
               >
                 {pinned ? (
                   <Pin className="size-4" strokeWidth={1.5} />
