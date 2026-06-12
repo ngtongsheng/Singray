@@ -1,6 +1,8 @@
 import { Loader2 } from 'lucide-react'
+import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import type { Language, ProbeResult } from '../../../shared/types'
+import { useMotionPresets } from '../lib/motionPresets'
 import { parseYoutubeTitle } from '../lib/parseTitle'
 
 interface Props {
@@ -29,6 +31,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
   const [submitting, setSubmitting] = useState(false)
   const urlRef = useRef<HTMLInputElement>(null)
   const probeSeq = useRef(0)
+  const { dialogScrim, dialogPanel } = useMotionPresets()
 
   useEffect(() => {
     urlRef.current?.focus()
@@ -94,8 +97,12 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-      <div
+    <motion.div
+      {...dialogScrim}
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/50"
+    >
+      <motion.div
+        {...dialogPanel}
         role="dialog"
         aria-modal="true"
         aria-label="Add song"
@@ -182,8 +189,8 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
             Add
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
 

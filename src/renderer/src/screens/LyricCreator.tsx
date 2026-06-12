@@ -1,4 +1,5 @@
 import { ArrowLeft, ArrowRight, Loader2, Wand2 } from 'lucide-react'
+import { AnimatePresence } from 'motion/react'
 import { useEffect, useState } from 'react'
 import type { Lyrics, SongListItem } from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -167,26 +168,28 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
         saved && <TimingStep songId={song.id} lyrics={saved} onChange={setSaved} />
       )}
 
-      {pending &&
-        (pending.action === 'align' ? (
-          <ConfirmDialog
-            title="Replace existing timing?"
-            body="Alignment re-times every line from scratch — all current taps will be overwritten."
-            confirmLabel="Align anyway"
-            onConfirm={() => void doAlign(pending.result)}
-            onCancel={() => setPending(null)}
-          />
-        ) : (
-          <ConfirmDialog
-            title="Discard timing on edited lines?"
-            body={`${pending.result.invalidated.length} timed line${
-              pending.result.invalidated.length === 1 ? '' : 's'
-            } changed and will need re-tapping, starting with "${pending.result.invalidated[0]}".`}
-            confirmLabel="Discard timing"
-            onConfirm={() => void save(pending.result)}
-            onCancel={() => setPending(null)}
-          />
-        ))}
+      <AnimatePresence>
+        {pending &&
+          (pending.action === 'align' ? (
+            <ConfirmDialog
+              title="Replace existing timing?"
+              body="Alignment re-times every line from scratch — all current taps will be overwritten."
+              confirmLabel="Align anyway"
+              onConfirm={() => void doAlign(pending.result)}
+              onCancel={() => setPending(null)}
+            />
+          ) : (
+            <ConfirmDialog
+              title="Discard timing on edited lines?"
+              body={`${pending.result.invalidated.length} timed line${
+                pending.result.invalidated.length === 1 ? '' : 's'
+              } changed and will need re-tapping, starting with "${pending.result.invalidated[0]}".`}
+              confirmLabel="Discard timing"
+              onConfirm={() => void save(pending.result)}
+              onCancel={() => setPending(null)}
+            />
+          ))}
+      </AnimatePresence>
     </div>
   )
 }

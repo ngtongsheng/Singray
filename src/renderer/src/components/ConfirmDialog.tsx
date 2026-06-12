@@ -1,4 +1,6 @@
+import { motion } from 'motion/react'
 import { useEffect, useRef } from 'react'
+import { useMotionPresets } from '../lib/motionPresets'
 
 interface Props {
   title: string
@@ -17,6 +19,7 @@ function ConfirmDialog({
   onCancel
 }: Props): React.JSX.Element {
   const cancelRef = useRef<HTMLButtonElement>(null)
+  const { dialogScrim, dialogPanel } = useMotionPresets()
 
   useEffect(() => {
     cancelRef.current?.focus()
@@ -28,8 +31,12 @@ function ConfirmDialog({
   }, [onCancel])
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-      <div
+    <motion.div
+      {...dialogScrim}
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/50"
+    >
+      <motion.div
+        {...dialogPanel}
         role="alertdialog"
         aria-modal="true"
         aria-label={title}
@@ -54,8 +61,8 @@ function ConfirmDialog({
             {confirmLabel}
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
 

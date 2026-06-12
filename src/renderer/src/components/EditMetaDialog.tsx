@@ -1,5 +1,7 @@
+import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import type { Language, SongListItem } from '../../../shared/types'
+import { useMotionPresets } from '../lib/motionPresets'
 
 interface Props {
   song: SongListItem
@@ -23,6 +25,7 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
   const [language, setLanguage] = useState<Language>(song.language)
   const [saving, setSaving] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
+  const { dialogScrim, dialogPanel } = useMotionPresets()
 
   useEffect(() => {
     titleRef.current?.focus()
@@ -49,8 +52,12 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-      <div
+    <motion.div
+      {...dialogScrim}
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/50"
+    >
+      <motion.div
+        {...dialogPanel}
         role="dialog"
         aria-modal="true"
         aria-label="Edit song details"
@@ -109,8 +116,8 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
             Save
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
 

@@ -1,4 +1,5 @@
 import { Heart, Mic2, Plus, Search, Settings as SettingsIcon, Type } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Language, SongListItem } from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -7,6 +8,7 @@ import SongCard from '../components/SongCard'
 import Titlebar from '../components/Titlebar'
 import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
+import { usePrefersReducedMotion } from '../lib/motionPresets'
 
 const LANGUAGE_LABEL: Record<Language, string> = {
   zh: '中文',
@@ -53,6 +55,7 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
   const [pendingDelete, setPendingDelete] = useState<SongListItem | null>(null)
   const [showImport, setShowImport] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
+  const reduced = usePrefersReducedMotion()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -173,14 +176,21 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
         </div>
       ) : (
         <div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 overflow-y-auto px-6 pb-6">
-          {filtered.map((song) => (
-            <SongCard
+          {filtered.map((song, i) => (
+            // Entrance stagger (SPEC §10.5): 30ms per card, capped, animates once per mount.
+            <motion.div
               key={song.id}
-              song={song}
-              importing={imports.get(song.id)}
-              onDelete={setPendingDelete}
-              onSing={onSing}
-            />
+              initial={reduced ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut', delay: Math.min(i * 0.03, 0.45) }}
+            >
+              <SongCard
+                song={song}
+                importing={imports.get(song.id)}
+                onDelete={setPendingDelete}
+                onSing={onSing}
+              />
+            </motion.div>
           ))}
           {filtered.length === 0 && (
             <p className="col-span-full py-12 text-center text-text-dim">No songs match.</p>
@@ -213,17 +223,18 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
           )
         })()}
 
-      {showImport && <ImportDialog onClose={() => setShowImport(false)} />}
-
-      {pendingDelete && (
-        <ConfirmDialog
-          title="Delete song?"
-          body={`"${pendingDelete.title}" by ${pendingDelete.artist} will be removed from your library, including its audio files and lyrics.`}
-          confirmLabel="Delete"
-          onConfirm={confirmDelete}
-          onCancel={() => setPendingDelete(null)}
-        />
-      )}
+      <AnimatePresence>
+        {showImport && <ImportDialog onClose={() => setShowImport(false)} />}
+        {pendingDelete && (
+          <ConfirmDialog
+            title="Delete song?"
+            body={`"${pendingDelete.title}" by ${pendingDelete.artist} will be removed from your library, including its audio files and lyrics.`}
+            confirmLabel="Delete"
+            onConfirm={confirmDelete}
+            onCancel={() => setPendingDelete(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

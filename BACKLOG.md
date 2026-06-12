@@ -4,7 +4,7 @@ Source: user feedback 2026-06-12 (`Some enhancement.md`), grilled + triaged. MVP
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → R2.2** (update this pointer whenever a story starts/finishes)
+> **Now → R2.3** (update this pointer whenever a story starts/finishes)
 >
 > R0.1 (ear batch) + R0.2 (AG06) are user-side, can run anytime in parallel with coding stories — they don't block the pointer.
 
@@ -68,7 +68,7 @@ Replace open-counts-as-play (S3.3 behavior): engine tracks accumulated playback 
 `frame: false`, custom titlebar: drag region, min/max/close (Windows snap via titlebar overlay or manual handling), doubles as persistent app header on every screen. Library: app name + settings gear. Player: back button + song title/artist (closes "no visual way back" feedback). Esc still exits player.
 - **Done when:** window has no native frame; drag, double-click maximize, snap layouts, min/max/close all work; every screen shows the titlebar; player titlebar shows correct song + back returns to library; fullscreen behavior sane.
 
-### [ ] R2.2 Motion pass
+### [x] R2.2 Motion pass
 Add `motion`. View transitions library↔player↔creator↔settings (AnimatePresence), card grid entrance stagger, dialog/popover spring in/out, control bar pin/unpin slide. Respect `prefers-reduced-motion`.
 - **Done when:** all four view switches animate smoothly; lyric wipe trace shows no added jank during/after transitions; reduced-motion OS setting disables them.
 
@@ -162,6 +162,7 @@ Release workflow adds macos job: electron-builder .dmg (unsigned), uploaded to s
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-12 · R2.2 · `motion@12` added. App.tsx: MotionConfig + AnimatePresence `mode="wait"` view fades (0.2s in / 0.14s out, slight scale) keyed per view+song. Library cards: 30ms entrance stagger (capped 0.45s). `lib/motionPresets.ts`: dialogScrim/dialogPanel/popover presets via `useMotionPresets()` hook → ConfirmDialog/EditMetaDialog/ImportDialog spring in/out, card menu + tempo popover too (AnimatePresence wrappers at every render site). Player bottom bar hide/show = fade+24px slide. Gotcha: motion's `useReducedMotion` reads matchMedia once at mount, never updates — wrote reactive `usePrefersReducedMotion` (matchMedia change listener); reduced mode collapses all presets to `{}` and skips view/card initial+exit. Verified by frame-sampling computed opacity: 4 view switches 10–17 mid-frames each; dialog spring in 4 / out 8 mid-frames; bar slide ends `opacity 0, translateY(24px)`; wipe trace during playback post-transition worst 17.1ms, zero >25ms over 600 frames; reduced-motion: 0 mid-frames everywhere, restoring preference re-enables (16 mid-frames). Note: library down to 2 songs (user deleted 3 between sessions at 6:55 — not script damage; verified timeline).
 - 2026-06-12 · R2.1 · Frameless via `titleBarStyle: hidden` + Windows `titleBarOverlay` (native caption buttons keep snap layouts/min/max/close). New `Titlebar` component: 40px drag region (`app-drag`/`app-no-drag` CSS utilities), caption strip reserved via `env(titlebar-area-*)`; replaces per-screen headers — library merged name/search/Add Song/gear into it, player got back + title/artist + chrome buttons (floating top-right chrome removed, buttons no longer fade since titlebar is persistent), creator/settings converted (controls normalized to h-8). Verified with real OS input (SendInput from PowerShell — synthetic CDP events bypass non-client hit testing): titlebar drag moves window, double-click maximizes/restores, native min/max/close clicks work, snap-layouts flyout appears on maximize hover (desktop screenshot); `navigator.windowControlsOverlay` confirms frameless overlay; titlebar on all four screens; Esc and back button both exit player; fullscreen keeps titlebar, sane. Gotcha: maximized window moves to (0,0) — screen-coord tests must recompute.
 - 2026-06-12 · R1.4b/R1.2b · Ad-hoc user feedback after Phase 1: (1) soundwave meant the creator-style waveform — added `StageWaveform` (whole-song peaks from `engine.peaks()` off the decoded buffers, accent progress fill + playhead line), analyser bars kept; `stageSoundwave` → `stageVisual: off|waveform|bars`, chrome button cycles. (2) top-chrome buttons normalized to h-8 (icon-only button was shorter). (3) tempo popover native radios → segmented preset buttons (4×2 grid, aria-pressed) + Reset. All re-verified via driver.
 - 2026-06-12 · R1.5 · Engine `playedSeconds`: per-stretch position-delta accumulator (banked on pause/seek/natural end) — seeks can't inflate it. Player sing gate in the coarse rAF clock: ≥60% → append ISO timestamp to `sings`, once per session; entry playCount/lastPlayedAt writes removed. `sings: []` added to SongMeta + import; listSongs normalizes missing arrays. Library sort select (added/most sung/recently sung), card shows count = playCount floor + sings. Verified live: 20s play no sing; 10s+jump-to-92% no sing; full play at 1.25× with seeks → exactly one timestamp; both sorts reorder correctly on legacy metas. Test left one real sing on Never Gonna Give You Up.

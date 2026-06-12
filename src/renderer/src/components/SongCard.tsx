@@ -8,8 +8,10 @@ import {
   RotateCcw,
   Trash2
 } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import type { ImportProgress, SongListItem } from '../../../shared/types'
+import { useMotionPresets } from '../lib/motionPresets'
 
 interface Props {
   song: SongListItem
@@ -61,6 +63,7 @@ function StatusBadge({
 function CardMenu({ song, onDelete }: Pick<Props, 'song' | 'onDelete'>): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const { popover } = useMotionPresets()
 
   useEffect(() => {
     if (!open) return
@@ -96,32 +99,38 @@ function CardMenu({ song, onDelete }: Pick<Props, 'song' | 'onDelete'>): React.J
       >
         <MoreHorizontal className="size-4" strokeWidth={1.5} />
       </button>
-      {open && (
-        <div className="absolute top-full left-0 z-20 mt-1 w-40 overflow-hidden rounded-control border border-border bg-surface py-1 shadow-raised">
-          <button
-            type="button"
-            className={itemClass}
-            onClick={(e) => {
-              e.stopPropagation()
-              setOpen(false)
-              window.singray.library.openFolder(song.id)
-            }}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            {...popover}
+            style={{ transformOrigin: 'top left' }}
+            className="absolute top-full left-0 z-20 mt-1 w-40 overflow-hidden rounded-control border border-border bg-surface py-1 shadow-raised"
           >
-            <Folder className="size-3.5" strokeWidth={1.5} /> Open folder
-          </button>
-          <button
-            type="button"
-            className={`${itemClass} text-danger`}
-            onClick={(e) => {
-              e.stopPropagation()
-              setOpen(false)
-              onDelete(song)
-            }}
-          >
-            <Trash2 className="size-3.5" strokeWidth={1.5} /> Delete
-          </button>
-        </div>
-      )}
+            <button
+              type="button"
+              className={itemClass}
+              onClick={(e) => {
+                e.stopPropagation()
+                setOpen(false)
+                window.singray.library.openFolder(song.id)
+              }}
+            >
+              <Folder className="size-3.5" strokeWidth={1.5} /> Open folder
+            </button>
+            <button
+              type="button"
+              className={`${itemClass} text-danger`}
+              onClick={(e) => {
+                e.stopPropagation()
+                setOpen(false)
+                onDelete(song)
+              }}
+            >
+              <Trash2 className="size-3.5" strokeWidth={1.5} /> Delete
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -16,6 +16,7 @@ import {
   Type,
   Volume2
 } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Lyrics, Settings, SongListItem } from '../../../shared/types'
 import EditMetaDialog from '../components/EditMetaDialog'
@@ -24,6 +25,7 @@ import Soundwave from '../components/Soundwave'
 import StageWaveform from '../components/StageWaveform'
 import Titlebar from '../components/Titlebar'
 import { AudioEngine } from '../lib/audioEngine'
+import { useMotionPresets } from '../lib/motionPresets'
 
 interface Props {
   song: SongListItem
@@ -75,6 +77,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
   const [peaks, setPeaks] = useState<Float32Array | null>(null)
   const [windowHidden, setWindowHidden] = useState(document.hidden)
   const hideTimer = useRef<number>(0)
+  const { popover } = useMotionPresets()
 
   useEffect(() => {
     let disposed = false
@@ -337,13 +340,18 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
           )}
         </div>
 
-        {editOpen && <EditMetaDialog song={song} onClose={() => setEditOpen(false)} />}
+        <AnimatePresence>
+          {editOpen && <EditMetaDialog song={song} onClose={() => setEditOpen(false)} />}
+        </AnimatePresence>
 
         {engine && (
-          <div
-            className={`absolute inset-x-0 bottom-0 z-10 transition-opacity duration-200 ${
-              barVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
-            }`}
+          // Pin/unpin slide (R2.2): bar dips and fades on auto-hide, rises on poke.
+          <motion.div
+            animate={barVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+            transition={
+              barVisible ? { duration: 0.2, ease: 'easeOut' } : { duration: 0.14, ease: 'easeIn' }
+            }
+            className={`absolute inset-x-0 bottom-0 z-10 ${barVisible ? '' : 'pointer-events-none'}`}
           >
             <div className="flex items-center gap-4 bg-gradient-to-t from-black/80 to-transparent px-6 pt-12 pb-5">
               <button
@@ -455,37 +463,43 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
               </div>
 
               <div className="relative">
-                {tempoOpen && (
-                  <div className="absolute right-0 bottom-full mb-2 rounded-control border border-border bg-surface p-3 shadow-lg">
-                    <div className="flex items-center justify-between pb-2">
-                      <span className="text-text-dim text-xs">Tempo</span>
-                      <button
-                        type="button"
-                        onClick={() => changeTempo(1)}
-                        className="rounded-control border border-border px-2 py-0.5 text-text-dim text-xs hover:text-text"
-                      >
-                        Reset
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-4 gap-1">
-                      {TEMPO_PRESETS.map((t) => (
+                <AnimatePresence>
+                  {tempoOpen && (
+                    <motion.div
+                      {...popover}
+                      style={{ transformOrigin: 'bottom right' }}
+                      className="absolute right-0 bottom-full mb-2 rounded-control border border-border bg-surface p-3 shadow-lg"
+                    >
+                      <div className="flex items-center justify-between pb-2">
+                        <span className="text-text-dim text-xs">Tempo</span>
                         <button
-                          key={t}
                           type="button"
-                          aria-pressed={tempoVal === t}
-                          onClick={() => changeTempo(t)}
-                          className={`rounded-control border px-2 py-1.5 text-sm tabular-nums ${
-                            tempoVal === t
-                              ? 'border-accent bg-accent/15 text-accent'
-                              : 'border-border text-text-dim hover:bg-surface-2 hover:text-text'
-                          }`}
+                          onClick={() => changeTempo(1)}
+                          className="rounded-control border border-border px-2 py-0.5 text-text-dim text-xs hover:text-text"
                         >
-                          {t.toFixed(2)}×
+                          Reset
                         </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      </div>
+                      <div className="grid grid-cols-4 gap-1">
+                        {TEMPO_PRESETS.map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            aria-pressed={tempoVal === t}
+                            onClick={() => changeTempo(t)}
+                            className={`rounded-control border px-2 py-1.5 text-sm tabular-nums ${
+                              tempoVal === t
+                                ? 'border-accent bg-accent/15 text-accent'
+                                : 'border-border text-text-dim hover:bg-surface-2 hover:text-text'
+                            }`}
+                          >
+                            {t.toFixed(2)}×
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 <button
                   type="button"
                   onClick={() => setTempoOpen((o) => !o)}
@@ -520,7 +534,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
                 )}
               </button>
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

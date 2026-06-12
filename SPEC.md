@@ -56,6 +56,7 @@ A personal-use desktop app: build a karaoke library from YouTube links (download
 | @types/react | ^19.2.17 |
 | tailwindcss | ^4.3.0 |
 | soundtouchjs | ^0.3.0 |
+| motion | ^12.40.0 (R2.2) |
 | @biomejs/biome | ^2.4.16 |
 | yt-dlp (pip) | 2026.6.9 |
 | audio-separator[gpu] (pip) | 0.44.2 |

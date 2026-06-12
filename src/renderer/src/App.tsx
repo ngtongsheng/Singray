@@ -1,5 +1,7 @@
+import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { useState } from 'react'
 import type { SongListItem } from '../../shared/types'
+import { usePrefersReducedMotion } from './lib/motionPresets'
 import Library from './screens/Library'
 import LyricCreator from './screens/LyricCreator'
 import Player from './screens/Player'
@@ -13,23 +15,56 @@ type View =
 
 function App(): React.JSX.Element {
   const [view, setView] = useState<View>({ name: 'library' })
+  const reduced = usePrefersReducedMotion()
 
-  if (view.name === 'settings') return <Settings onBack={() => setView({ name: 'library' })} />
-  if (view.name === 'creator')
-    return <LyricCreator song={view.song} onBack={() => setView({ name: 'library' })} />
-  if (view.name === 'player')
-    return (
+  let screen: React.JSX.Element
+  let key: string
+  if (view.name === 'settings') {
+    screen = <Settings onBack={() => setView({ name: 'library' })} />
+    key = 'settings'
+  } else if (view.name === 'creator') {
+    screen = <LyricCreator song={view.song} onBack={() => setView({ name: 'library' })} />
+    key = `creator:${view.song.id}`
+  } else if (view.name === 'player') {
+    screen = (
       <Player
         song={view.song}
         onExit={() => setView({ name: 'library' })}
         onEditLyrics={(song) => setView({ name: 'creator', song })}
       />
     )
+    key = `player:${view.song.id}`
+  } else {
+    screen = (
+      <Library
+        onOpenSettings={() => setView({ name: 'settings' })}
+        onSing={(song) => setView({ name: 'player', song })}
+      />
+    )
+    key = 'library'
+  }
+
+  // View transitions (R2.2, SPEC §10.5): quick fade + breath of scale, exit ≈ 70%
+  // of enter. mode="wait" so the outgoing screen (and its audio engine) unmounts
+  // before the next one mounts. Reduced motion: instant switch.
   return (
-    <Library
-      onOpenSettings={() => setView({ name: 'settings' })}
-      onSing={(song) => setView({ name: 'player', song })}
-    />
+    <MotionConfig reducedMotion="user">
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={key}
+          className="h-full"
+          initial={reduced ? false : { opacity: 0, scale: 0.985 }}
+          animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: 'easeOut' } }}
+          exit={
+            reduced
+              ? undefined
+              : { opacity: 0, scale: 0.985, transition: { duration: 0.14, ease: 'easeIn' } }
+          }
+        >
+          {screen}
+        </motion.div>
+      </AnimatePresence>
+    </MotionConfig>
   )
 }
 
