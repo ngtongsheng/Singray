@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { Lyrics } from '../../../shared/types'
+import { Button } from './ui'
 
 interface Props {
   lyrics: Lyrics
@@ -185,10 +186,10 @@ function LyricRenderer({ lyrics, clock, onSeek }: Props): React.JSX.Element {
               <span className="inline-block px-3 transition-opacity duration-150">●</span>
             </div>
           ) : (
-            <button
+            <Button
               // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable for a given lyrics object
               key={li}
-              type="button"
+              variant="bare"
               tabIndex={-1}
               ref={(el) => {
                 lineEls.current[li] = el
@@ -220,7 +221,7 @@ function LyricRenderer({ lyrics, clock, onSeek }: Props): React.JSX.Element {
                   {u.text}
                 </span>
               ))}
-            </button>
+            </Button>
           )
         )}
       </div>

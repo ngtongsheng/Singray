@@ -6,6 +6,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import ImportDialog from '../components/ImportDialog'
 import SongCard from '../components/SongCard'
 import Titlebar from '../components/Titlebar'
+import { Button, Chip, IconButton, Input, Select } from '../components/ui'
 import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
 import { usePrefersReducedMotion } from '../lib/motionPresets'
@@ -16,14 +17,6 @@ const LANGUAGE_LABEL: Record<Language, string> = {
   ja: '日本語',
   ko: '한국어',
   unknown: 'Unknown'
-}
-
-function chipClass(active: boolean): string {
-  return `flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors ${
-    active
-      ? 'border-accent bg-accent/15 text-accent'
-      : 'border-border text-text-dim hover:border-text-dim hover:text-text'
-  }`
 }
 
 const STRIP_LABEL: Record<string, string> = {
@@ -96,83 +89,65 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
     <div className="flex h-full flex-col">
       <Titlebar>
         <h1 className="font-semibold text-base">Singray</h1>
-        <div className="app-no-drag relative ml-2 w-72">
-          <Search className="-translate-y-1/2 absolute top-1/2 left-2.5 size-4 text-text-dim" />
-          <input
+        <div className="app-no-drag ml-2 w-72">
+          <Input
             ref={searchRef}
+            uiSize="sm"
+            icon={<Search className="size-4 text-text-dim" />}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search title or artist  ( / )"
-            className="h-8 w-full rounded-control border border-border bg-surface pr-3 pl-8 text-sm placeholder:text-text-dim/60"
           />
         </div>
         <div className="flex-1" />
-        <button
-          type="button"
-          onClick={() => setShowImport(true)}
-          className="app-no-drag flex h-8 items-center gap-1.5 rounded-control bg-accent px-3 font-medium text-sm text-text hover:bg-accent-soft"
-        >
+        <Button variant="primary" onClick={() => setShowImport(true)} className="app-no-drag">
           <Plus className="size-4" strokeWidth={2} /> Add Song
-        </button>
-        <button
-          type="button"
+        </Button>
+        <IconButton
           onClick={onOpenSettings}
           title="Settings"
-          className="app-no-drag flex size-8 items-center justify-center rounded-control border border-border text-text-dim hover:bg-surface hover:text-text"
+          className="app-no-drag text-text-dim hover:text-text"
         >
           <SettingsIcon className="size-4" strokeWidth={1.5} />
-        </button>
+        </IconButton>
       </Titlebar>
 
       <div className="flex items-center gap-2 px-6 py-3">
         {languages.map((lang) => (
-          <button
+          <Chip
             key={lang}
-            type="button"
+            active={language === lang}
             onClick={() => setLanguage(language === lang ? null : lang)}
-            className={chipClass(language === lang)}
           >
             {LANGUAGE_LABEL[lang]}
-          </button>
+          </Chip>
         ))}
-        <button
-          type="button"
-          onClick={() => setFavoritesOnly(!favoritesOnly)}
-          className={chipClass(favoritesOnly)}
-        >
+        <Chip active={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
           <Heart className="size-3.5" strokeWidth={1.5} /> Favorites
-        </button>
-        <button
-          type="button"
-          onClick={() => setNeedsLyricsOnly(!needsLyricsOnly)}
-          className={chipClass(needsLyricsOnly)}
-        >
+        </Chip>
+        <Chip active={needsLyricsOnly} onClick={() => setNeedsLyricsOnly(!needsLyricsOnly)}>
           <Type className="size-3.5" strokeWidth={1.5} /> Needs lyrics
-        </button>
+        </Chip>
         <div className="flex-1" />
-        <select
+        <Select
+          uiSize="sm"
           value={sort}
           onChange={(e) => setSort(e.target.value as SortMode)}
           title="Sort"
-          className="rounded-control border border-border bg-surface px-2 py-1 text-sm text-text-dim"
         >
           <option value="added">Recently added</option>
           <option value="mostSung">Most sung</option>
           <option value="recentSung">Recently sung</option>
-        </select>
+        </Select>
       </div>
 
       {songs.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-4">
           <Mic2 className="size-12 text-accent" strokeWidth={1.5} />
           <p className="text-text-dim">Paste a YouTube link to add your first song</p>
-          <button
-            type="button"
-            onClick={() => setShowImport(true)}
-            className="flex items-center gap-1.5 rounded-control bg-accent px-4 py-2 font-medium text-sm text-text hover:bg-accent-soft"
-          >
+          <Button variant="primary" size="md" onClick={() => setShowImport(true)}>
             <Plus className="size-4" strokeWidth={2} /> Add Song
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 overflow-y-auto px-6 pb-6">

@@ -1,6 +1,5 @@
-import { motion } from 'motion/react'
 import { useEffect, useRef } from 'react'
-import { useMotionPresets } from '../lib/motionPresets'
+import { Button, Dialog } from './ui'
 
 interface Props {
   title: string
@@ -19,50 +18,24 @@ function ConfirmDialog({
   onCancel
 }: Props): React.JSX.Element {
   const cancelRef = useRef<HTMLButtonElement>(null)
-  const { dialogScrim, dialogPanel } = useMotionPresets()
 
   useEffect(() => {
     cancelRef.current?.focus()
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onCancel()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onCancel])
+  }, [])
 
   return (
-    <motion.div
-      {...dialogScrim}
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/50"
-    >
-      <motion.div
-        {...dialogPanel}
-        role="alertdialog"
-        aria-modal="true"
-        aria-label={title}
-        className="w-[400px] rounded-card border border-border bg-surface-2 p-6 shadow-raised"
-      >
-        <h2 className="font-semibold text-base">{title}</h2>
-        <p className="mt-2 text-sm text-text-dim">{body}</p>
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            ref={cancelRef}
-            type="button"
-            onClick={onCancel}
-            className="rounded-control border border-border px-4 py-2 text-sm hover:bg-surface"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="rounded-control bg-danger px-4 py-2 font-medium text-sm text-text hover:opacity-90"
-          >
-            {confirmLabel}
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
+    <Dialog alert label={title} width="w-[400px]" onClose={onCancel}>
+      <h2 className="font-semibold text-base">{title}</h2>
+      <p className="mt-2 text-sm text-text-dim">{body}</p>
+      <div className="mt-6 flex justify-end gap-3">
+        <Button ref={cancelRef} size="md" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button variant="danger" size="md" onClick={onConfirm}>
+          {confirmLabel}
+        </Button>
+      </div>
+    </Dialog>
   )
 }
 

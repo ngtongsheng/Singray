@@ -2,6 +2,7 @@ import { ArrowLeft, CheckCircle2, Loader2, Volume2, XCircle } from 'lucide-react
 import { useEffect, useState } from 'react'
 import type { Settings as SettingsModel } from '../../../shared/types'
 import Titlebar from '../components/Titlebar'
+import { Button, IconButton, Input, Select } from '../components/ui'
 
 /** Play a short sine tone on a specific output device ('' = system default). */
 async function playTestTone(deviceId: string, freq: number): Promise<void> {
@@ -34,9 +35,6 @@ interface Props {
 }
 
 const TEST_URL = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-
-const inputClass =
-  'w-full rounded-control border border-border bg-surface px-3 py-2 text-sm placeholder:text-text-dim/60'
 
 type TestState =
   | { kind: 'idle' }
@@ -112,14 +110,13 @@ function Settings({ onBack }: Props): React.JSX.Element {
   return (
     <div className="flex h-full flex-col">
       <Titlebar>
-        <button
-          type="button"
+        <IconButton
           onClick={onBack}
           title="Back to library (Esc)"
-          className="app-no-drag flex size-8 items-center justify-center rounded-control border border-border text-text-dim hover:bg-surface hover:text-text"
+          className="app-no-drag text-text-dim hover:text-text"
         >
           <ArrowLeft className="size-4" strokeWidth={1.5} />
-        </button>
+        </IconButton>
         <h1 className="font-semibold text-base">Settings</h1>
       </Titlebar>
 
@@ -129,13 +126,12 @@ function Settings({ onBack }: Props): React.JSX.Element {
             <legend className="px-1 font-medium text-sm">Library</legend>
             <label className="block">
               <span className="mb-1 block text-text-dim text-xs">Library folder</span>
-              <input
+              <Input
                 defaultValue={settings.libraryDir}
                 onBlur={(e) => {
                   if (e.target.value.trim() && e.target.value !== settings.libraryDir)
                     patch({ libraryDir: e.target.value.trim() })
                 }}
-                className={inputClass}
               />
               <span className="mt-1 block text-text-dim text-xs">
                 Where downloaded songs are stored. One folder per song.
@@ -148,23 +144,22 @@ function Settings({ onBack }: Props): React.JSX.Element {
             <label className="block">
               <span className="mb-1 block text-text-dim text-xs">Python executable</span>
               <div className="flex gap-2">
-                <input
+                <Input
                   defaultValue={settings.pythonPath}
                   onBlur={(e) => {
                     if (e.target.value.trim() && e.target.value !== settings.pythonPath)
                       patch({ pythonPath: e.target.value.trim() })
                   }}
-                  className={inputClass}
                 />
-                <button
-                  type="button"
+                <Button
+                  size="md"
                   onClick={testPipeline}
                   disabled={test.kind === 'running'}
-                  className="flex shrink-0 items-center gap-1.5 rounded-control border border-border px-3 py-2 text-sm hover:bg-surface disabled:opacity-50"
+                  className="shrink-0"
                 >
                   {test.kind === 'running' && <Loader2 className="size-4 animate-spin" />}
                   Test pipeline
-                </button>
+                </Button>
               </div>
               <span className="mt-1 block text-text-dim text-xs">
                 Python from pipeline\.venv with yt-dlp and audio-separator installed.
@@ -187,16 +182,15 @@ function Settings({ onBack }: Props): React.JSX.Element {
             <div className="flex flex-col gap-4">
               <label className="block">
                 <span className="mb-1 block text-text-dim text-xs">Output mode</span>
-                <select
+                <Select
                   value={settings.audioOutputMode}
                   onChange={(e) =>
                     patch({ audioOutputMode: e.target.value as SettingsModel['audioOutputMode'] })
                   }
-                  className={inputClass}
                 >
                   <option value="single">Single — everything to one device</option>
                   <option value="dual">Dual — monitor + stream mixes (Phase 4)</option>
-                </select>
+                </Select>
                 <span className="mt-1 block text-text-dim text-xs">
                   Dual sends instrumental-only to the stream device while your monitor keeps the
                   guide vocal.
@@ -215,7 +209,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
                         : 'Stream device (virtual cable to the singing site)'}
                     </span>
                     <div className="flex gap-2">
-                      <select
+                      <Select
                         value={known ? value : ''}
                         disabled={settings.audioOutputMode === 'single'}
                         onChange={(e) =>
@@ -225,7 +219,6 @@ function Settings({ onBack }: Props): React.JSX.Element {
                               : { streamDeviceId: e.target.value }
                           )
                         }
-                        className={`${inputClass} disabled:opacity-50`}
                       >
                         <option value="">System default</option>
                         {outputs.map((d) => (
@@ -233,13 +226,13 @@ function Settings({ onBack }: Props): React.JSX.Element {
                             {d.label || `Output ${d.deviceId.slice(0, 8)}`}
                           </option>
                         ))}
-                      </select>
-                      <button
-                        type="button"
+                      </Select>
+                      <Button
+                        size="md"
                         onClick={() => testTone(which)}
                         disabled={toneBusy !== null || settings.audioOutputMode === 'single'}
                         title={`Play a test tone on the ${which} device`}
-                        className="flex shrink-0 items-center gap-1.5 rounded-control border border-border px-3 py-2 text-sm hover:bg-surface disabled:opacity-50"
+                        className="shrink-0"
                       >
                         {toneBusy === which ? (
                           <Loader2 className="size-4 animate-spin" />
@@ -247,7 +240,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
                           <Volume2 className="size-4" strokeWidth={1.5} />
                         )}
                         Test
-                      </button>
+                      </Button>
                     </div>
                     {!known && (
                       <span className="mt-1 block text-danger text-xs">

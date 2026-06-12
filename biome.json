@@ -30,6 +30,14 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "a11y": {
+        "noLabelWithoutControl": {
+          "level": "error",
+          "options": {
+            "inputComponents": ["Input", "Select", "Slider"]
+          }
+        }
+      },
       "suspicious": {
         "noExplicitAny": "warn"
       }

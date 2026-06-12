@@ -8,10 +8,8 @@ import {
   RotateCcw,
   Trash2
 } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
 import type { ImportProgress, SongListItem } from '../../../shared/types'
-import { useMotionPresets } from '../lib/motionPresets'
+import { Button, IconButton, Menu, MenuItem } from './ui'
 
 interface Props {
   song: SongListItem
@@ -60,81 +58,6 @@ function StatusBadge({
   return null
 }
 
-function CardMenu({ song, onDelete }: Pick<Props, 'song' | 'onDelete'>): React.JSX.Element {
-  const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-  const { popover } = useMotionPresets()
-
-  useEffect(() => {
-    if (!open) return
-    const onDown = (e: MouseEvent): void => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    window.addEventListener('mousedown', onDown)
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('mousedown', onDown)
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [open])
-
-  const itemClass =
-    'flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-surface-2'
-
-  return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation()
-          setOpen(!open)
-        }}
-        title="More actions"
-        className={`rounded-control bg-black/50 p-1 transition-opacity hover:bg-black/70 ${
-          open ? '' : 'opacity-0 group-hover:opacity-100'
-        }`}
-      >
-        <MoreHorizontal className="size-4" strokeWidth={1.5} />
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            {...popover}
-            style={{ transformOrigin: 'top left' }}
-            className="absolute top-full left-0 z-20 mt-1 w-40 overflow-hidden rounded-control border border-border bg-surface py-1 shadow-raised"
-          >
-            <button
-              type="button"
-              className={itemClass}
-              onClick={(e) => {
-                e.stopPropagation()
-                setOpen(false)
-                window.singray.library.openFolder(song.id)
-              }}
-            >
-              <Folder className="size-3.5" strokeWidth={1.5} /> Open folder
-            </button>
-            <button
-              type="button"
-              className={`${itemClass} text-danger`}
-              onClick={(e) => {
-                e.stopPropagation()
-                setOpen(false)
-                onDelete(song)
-              }}
-            >
-              <Trash2 className="size-3.5" strokeWidth={1.5} /> Delete
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
 function SongCard({ song, importing, onDelete, onSing }: Props): React.JSX.Element {
   const failed = !importing && (song.error !== null || !song.ready)
   const openable = !importing && !failed
@@ -166,10 +89,32 @@ function SongCard({ song, importing, onDelete, onSing }: Props): React.JSX.Eleme
         )}
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/70 to-transparent" />
         <div className="absolute top-2 left-2">
-          <CardMenu song={song} onDelete={onDelete} />
+          <Menu
+            origin="top left"
+            className="top-full left-0 mt-1 w-40 overflow-hidden py-1"
+            trigger={(open, toggle) => (
+              <IconButton
+                variant="bare"
+                onClick={toggle}
+                title="More actions"
+                className={`rounded-control bg-black/50 p-1 transition-opacity hover:bg-black/70 ${
+                  open ? '' : 'opacity-0 group-hover:opacity-100'
+                }`}
+              >
+                <MoreHorizontal className="size-4" strokeWidth={1.5} />
+              </IconButton>
+            )}
+          >
+            <MenuItem onSelect={() => window.singray.library.openFolder(song.id)}>
+              <Folder className="size-3.5" strokeWidth={1.5} /> Open folder
+            </MenuItem>
+            <MenuItem danger onSelect={() => onDelete(song)}>
+              <Trash2 className="size-3.5" strokeWidth={1.5} /> Delete
+            </MenuItem>
+          </Menu>
         </div>
-        <button
-          type="button"
+        <IconButton
+          variant="bare"
           onClick={(e) => {
             e.stopPropagation()
             window.singray.library.updateMeta(song.id, { favorite: !song.favorite })
@@ -183,21 +128,20 @@ function SongCard({ song, importing, onDelete, onSing }: Props): React.JSX.Eleme
             className={`size-5 ${song.favorite ? 'fill-accent text-accent' : 'text-text'}`}
             strokeWidth={1.5}
           />
-        </button>
+        </IconButton>
         <StatusBadge song={song} importing={importing} />
         {failed && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/55">
-            <button
-              type="button"
+            <Button
+              variant="primary"
               onClick={(e) => {
                 e.stopPropagation()
                 window.singray.import.retry(song.id)
               }}
               title="Retry import"
-              className="flex items-center gap-1.5 rounded-control bg-accent px-3 py-1.5 font-medium text-sm text-text hover:bg-accent-soft"
             >
               <RotateCcw className="size-4" strokeWidth={1.5} /> Retry
-            </button>
+            </Button>
           </div>
         )}
       </div>

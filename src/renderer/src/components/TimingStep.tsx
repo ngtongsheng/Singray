@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Lyrics } from '../../../shared/types'
 import { inferEnds } from '../lib/inferEnds'
 import ReviewPane from './ReviewPane'
+import { Button, IconButton, Slider, Toggle } from './ui'
 import WaveformStrip from './WaveformStrip'
 
 interface Props {
@@ -301,49 +302,43 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
       />
 
       <div className="flex items-center gap-4 border-border border-b px-6 py-3">
-        <button
-          type="button"
+        <IconButton
+          variant="primary"
+          size="md"
           onClick={(e) => {
             togglePlay()
             e.currentTarget.blur()
           }}
           title={playing ? 'Pause (Enter)' : 'Play (Enter)'}
-          className="rounded-control bg-accent p-2.5 text-text hover:bg-accent-soft"
         >
           {playing ? (
             <Pause className="size-5" strokeWidth={2} />
           ) : (
             <Play className="size-5" strokeWidth={2} />
           )}
-        </button>
+        </IconButton>
         <span className="font-semibold text-2xl tabular-nums">{fmt(time)}</span>
-        <input
-          type="range"
+        <Slider
           min={0}
           max={duration || 1}
           step={0.1}
           value={Math.min(time, duration)}
           onChange={(e) => seekTo(Number(e.target.value))}
           onMouseUp={(e) => e.currentTarget.blur()}
-          className="flex-1 accent-accent"
+          className="flex-1"
         />
         <span className="text-sm text-text-dim tabular-nums">{fmt(duration)}</span>
         <span className="rounded-control border border-border px-2 py-1 text-sm text-text-dim tabular-nums">
           {RATES[rateIdx]}×
         </span>
-        <button
-          type="button"
+        <Toggle
+          pressed={review}
           onClick={(e) => {
             if (review) exitReview()
             else setReview(true)
             e.currentTarget.blur()
           }}
           title={review ? 'Back to tap mode (Space)' : 'Review timing'}
-          className={`flex items-center gap-1.5 rounded-control border px-3 py-1.5 text-sm ${
-            review
-              ? 'border-accent text-accent-soft hover:bg-surface'
-              : 'border-border text-text-dim hover:bg-surface hover:text-text'
-          }`}
         >
           {review ? (
             <>
@@ -354,7 +349,7 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
               <Eye className="size-4" strokeWidth={1.5} /> Review
             </>
           )}
-        </button>
+        </Toggle>
       </div>
 
       <WaveformStrip songId={songId} audioRef={audioRef} stamps={stamps} onSeek={seekTo} />
@@ -400,10 +395,10 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
                   · · ·
                 </div>
               ) : (
-                <button
+                <Button
                   // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable while timing
                   key={li}
-                  type="button"
+                  variant="bare"
                   ref={(el) => {
                     if (el) lineRefs.current.set(li, el)
                     else lineRefs.current.delete(li)
@@ -423,7 +418,7 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
                   <span className={li === currentLine && !done ? 'text-lyric-active' : ''}>
                     {line.text}
                   </span>
-                </button>
+                </Button>
               )
             )}
           </div>
@@ -447,14 +442,14 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
           <Hint k="← →" label="±5s" />
           <Hint k="↑ ↓" label="speed" />
           <div className="flex-1" />
-          <button
-            type="button"
+          <IconButton
+            variant="bare"
             onClick={() => setShowKeys(false)}
             title="Hide shortcuts"
             className="rounded-control p-1 hover:bg-surface-2 hover:text-text"
           >
             <X className="size-3.5" strokeWidth={1.5} />
-          </button>
+          </IconButton>
         </div>
       )}
     </div>

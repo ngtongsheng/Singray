@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Button } from './ui'
 
 interface Props {
   songId: string
@@ -157,9 +158,9 @@ function WaveformStrip({ songId, audioRef, stamps, onSeek }: Props): React.JSX.E
 
   return (
     <div className="border-border border-b px-6 py-2">
-      <button
+      <Button
         ref={wrapRef}
-        type="button"
+        variant="bare"
         tabIndex={-1}
         title="Click to seek"
         className="relative block w-full cursor-pointer"
@@ -178,7 +179,7 @@ function WaveformStrip({ songId, audioRef, stamps, onSeek }: Props): React.JSX.E
             {failed ? 'Waveform unavailable' : 'Rendering waveform…'}
           </span>
         )}
-      </button>
+      </Button>
     </div>
   )
 }
