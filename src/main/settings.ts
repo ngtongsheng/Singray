@@ -11,7 +11,11 @@ function defaults(): Settings {
     streamDeviceId: '',
     audioOutputMode: 'single',
     playerBarPinned: true,
-    stageVisual: 'off'
+    stageVisual: 'off',
+    languages: [
+      { code: 'zh', label: '中文' },
+      { code: 'en', label: 'English' }
+    ]
   }
 }
 

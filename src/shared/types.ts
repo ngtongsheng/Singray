@@ -1,6 +1,16 @@
 // Single source of truth for types shared by main / preload / renderer (SPEC §8).
 
-export type Language = 'zh' | 'en' | 'ja' | 'ko' | 'unknown'
+/**
+ * Language code from the user-editable list in Settings (R2.4), or 'unknown'.
+ * Free-form so removing a language from Settings never invalidates song metas.
+ */
+export type Language = string
+
+/** One entry of the editable language list (Settings → Languages). */
+export interface LanguageDef {
+  code: Language
+  label: string
+}
 
 export interface SongMeta {
   schemaVersion: 1
@@ -63,6 +73,8 @@ export interface Settings {
   playerBarPinned: boolean
   /** Stage visual: whole-song waveform with playhead, live analyser bars, or none. */
   stageVisual: 'off' | 'waveform' | 'bars'
+  /** Editable language list (R2.4): drives import form, library filter chips, alignment. */
+  languages: LanguageDef[]
 }
 
 export interface ProbeResult {

@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle2, Loader2, Volume2, XCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Loader2, Plus, Volume2, X, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Settings as SettingsModel } from '../../../shared/types'
 import Titlebar from '../components/Titlebar'
@@ -90,6 +90,25 @@ function Settings({ onBack }: Props): React.JSX.Element {
     setSettings(await window.singray.settings.set(p))
   }
 
+  const [newCode, setNewCode] = useState('')
+  const [newLabel, setNewLabel] = useState('')
+  const newCodeClean = newCode.trim().toLowerCase()
+  const codeTaken = settings?.languages.some((l) => l.code === newCodeClean) ?? false
+
+  const addLanguage = (): void => {
+    if (!settings || !newCodeClean || !newLabel.trim() || codeTaken) return
+    void patch({
+      languages: [...settings.languages, { code: newCodeClean, label: newLabel.trim() }]
+    })
+    setNewCode('')
+    setNewLabel('')
+  }
+
+  const removeLanguage = (code: string): void => {
+    if (!settings) return
+    void patch({ languages: settings.languages.filter((l) => l.code !== code) })
+  }
+
   const testPipeline = async (): Promise<void> => {
     setTest({ kind: 'running' })
     const started = Date.now()
@@ -137,6 +156,62 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 Where downloaded songs are stored. One folder per song.
               </span>
             </label>
+          </fieldset>
+
+          <fieldset className="rounded-card border border-border p-4">
+            <legend className="px-1 font-medium text-sm">Languages</legend>
+            <div className="flex flex-col gap-2">
+              {settings.languages.map((l) => (
+                <div
+                  key={l.code}
+                  className="flex items-center gap-3 rounded-control border border-border px-3 py-1.5"
+                >
+                  <span className="w-12 text-text-dim text-xs tabular-nums">{l.code}</span>
+                  <span className="flex-1 text-sm">{l.label}</span>
+                  <IconButton
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => removeLanguage(l.code)}
+                    title={`Remove ${l.label}`}
+                    className="text-text-dim hover:text-text"
+                  >
+                    <X className="size-3.5" strokeWidth={1.5} />
+                  </IconButton>
+                </div>
+              ))}
+              <div className="flex gap-2">
+                <div className="w-24">
+                  <Input
+                    value={newCode}
+                    onChange={(e) => setNewCode(e.target.value)}
+                    placeholder="ja"
+                    aria-label="Language code"
+                  />
+                </div>
+                <Input
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') addLanguage()
+                  }}
+                  placeholder="日本語"
+                  aria-label="Language label"
+                />
+                <Button
+                  size="md"
+                  onClick={addLanguage}
+                  disabled={!newCodeClean || !newLabel.trim() || codeTaken}
+                  title={codeTaken ? `"${newCodeClean}" is already in the list` : 'Add language'}
+                  className="shrink-0"
+                >
+                  <Plus className="size-4" strokeWidth={1.5} /> Add
+                </Button>
+              </div>
+              <span className="text-text-dim text-xs">
+                Offered in the import form and library filters; the code is what alignment passes to
+                whisperx. Removing a language keeps existing songs intact.
+              </span>
+            </div>
           </fieldset>
 
           <fieldset className="rounded-card border border-border p-4">

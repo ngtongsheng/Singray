@@ -183,7 +183,13 @@ Conversion note: the legacy `karaoke.add('00:26.488','00:32.419','不是…','15
   "pythonPath": "C:\\Users\\PC\\Projects\\singray\\pipeline\\.venv\\Scripts\\python.exe",
   "monitorDeviceId": "",          // AG06 USB output
   "streamDeviceId": "",           // VB-Cable input
-  "audioOutputMode": "single"     // "single" | "dual"
+  "audioOutputMode": "single",    // "single" | "dual"
+  "playerBarPinned": true,        // R1.2: control bar pinned vs 3s auto-hide
+  "stageVisual": "off",           // R1.4: "off" | "waveform" | "bars"
+  "languages": [                  // R2.4: editable list — import form, filter chips,
+    { "code": "zh", "label": "中文" },     // alignment language (meta.json → whisperx).
+    { "code": "en", "label": "English" }   // Removing one never touches song metas;
+  ]                                        // "unknown" is always offered implicitly.
 }
 ```
 

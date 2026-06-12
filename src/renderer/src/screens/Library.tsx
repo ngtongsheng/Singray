@@ -1,7 +1,7 @@
 import { Heart, Mic2, Plus, Search, Settings as SettingsIcon, Type } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Language, SongListItem } from '../../../shared/types'
+import type { Language, LanguageDef, SongListItem } from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ImportDialog from '../components/ImportDialog'
 import SongCard from '../components/SongCard'
@@ -10,14 +10,6 @@ import { Button, Chip, IconButton, Input, Select } from '../components/ui'
 import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
 import { usePrefersReducedMotion } from '../lib/motionPresets'
-
-const LANGUAGE_LABEL: Record<Language, string> = {
-  zh: '中文',
-  en: 'English',
-  ja: '日本語',
-  ko: '한국어',
-  unknown: 'Unknown'
-}
 
 const STRIP_LABEL: Record<string, string> = {
   queued: 'Queued',
@@ -47,8 +39,13 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
   const [sort, setSort] = useState<SortMode>('added')
   const [pendingDelete, setPendingDelete] = useState<SongListItem | null>(null)
   const [showImport, setShowImport] = useState(false)
+  const [langDefs, setLangDefs] = useState<LanguageDef[]>([])
   const searchRef = useRef<HTMLInputElement>(null)
   const reduced = usePrefersReducedMotion()
+
+  useEffect(() => {
+    window.singray.settings.get().then((s) => setLangDefs(s.languages))
+  }, [])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -61,7 +58,14 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  const languages = useMemo(() => [...new Set(songs.map((s) => s.language))], [songs])
+  // Filter chips (R2.4): settings languages first, then any extra codes still on
+  // songs (e.g. a removed language) so every song stays filterable.
+  const languages = useMemo(
+    () => [...new Set([...langDefs.map((l) => l.code), ...songs.map((s) => s.language)])],
+    [langDefs, songs]
+  )
+  const langLabel = (code: Language): string =>
+    langDefs.find((l) => l.code === code)?.label ?? (code === 'unknown' ? 'Unknown' : code)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -119,7 +123,7 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
             active={language === lang}
             onClick={() => setLanguage(language === lang ? null : lang)}
           >
-            {LANGUAGE_LABEL[lang]}
+            {langLabel(lang)}
           </Chip>
         ))}
         <Chip active={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>

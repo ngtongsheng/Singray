@@ -1,20 +1,12 @@
 import { Loader2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import type { Language, ProbeResult } from '../../../shared/types'
+import type { Language, LanguageDef, ProbeResult } from '../../../shared/types'
 import { parseYoutubeTitle } from '../lib/parseTitle'
 import { Button, Dialog, Input, Select } from './ui'
 
 interface Props {
   onClose: () => void
 }
-
-const LANGUAGES: { value: Language; label: string }[] = [
-  { value: 'zh', label: '中文' },
-  { value: 'en', label: 'English' },
-  { value: 'ja', label: '日本語' },
-  { value: 'ko', label: '한국어' },
-  { value: 'unknown', label: 'Unknown' }
-]
 
 function ImportDialog({ onClose }: Props): React.JSX.Element {
   const [url, setUrl] = useState('')
@@ -24,12 +16,14 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
   const [title, setTitle] = useState('')
   const [artist, setArtist] = useState('')
   const [language, setLanguage] = useState<Language>('unknown')
+  const [languages, setLanguages] = useState<LanguageDef[]>([])
   const [submitting, setSubmitting] = useState(false)
   const urlRef = useRef<HTMLInputElement>(null)
   const probeSeq = useRef(0)
 
   useEffect(() => {
     urlRef.current?.focus()
+    window.singray.settings.get().then((s) => setLanguages(s.languages))
   }, [])
 
   useEffect(() => {
@@ -123,12 +117,15 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
             </label>
             <label className="block">
               <span className="mb-1 block text-text-dim text-xs">Language</span>
-              <Select value={language} onChange={(e) => setLanguage(e.target.value as Language)}>
-                {LANGUAGES.map((l) => (
-                  <option key={l.value} value={l.value}>
+              <Select value={language} onChange={(e) => setLanguage(e.target.value)}>
+                {languages.map((l) => (
+                  <option key={l.code} value={l.code}>
                     {l.label}
                   </option>
                 ))}
+                {!languages.some((l) => l.code === 'unknown') && (
+                  <option value="unknown">Unknown</option>
+                )}
               </Select>
             </label>
           </div>

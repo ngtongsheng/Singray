@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import type { Language, SongListItem } from '../../../shared/types'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { Language, LanguageDef, SongListItem } from '../../../shared/types'
 import { Button, Dialog, Input, Select } from './ui'
 
 interface Props {
@@ -7,24 +7,27 @@ interface Props {
   onClose: () => void
 }
 
-const LANGUAGES: { value: Language; label: string }[] = [
-  { value: 'zh', label: '中文' },
-  { value: 'en', label: 'English' },
-  { value: 'ja', label: '日本語' },
-  { value: 'ko', label: '한국어' },
-  { value: 'unknown', label: 'Unknown' }
-]
-
 function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
   const [title, setTitle] = useState(song.title)
   const [artist, setArtist] = useState(song.artist)
   const [language, setLanguage] = useState<Language>(song.language)
+  const [languages, setLanguages] = useState<LanguageDef[]>([])
   const [saving, setSaving] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     titleRef.current?.focus()
+    window.singray.settings.get().then((s) => setLanguages(s.languages))
   }, [])
+
+  // The song's current language stays selectable even if it was removed from Settings.
+  const options = useMemo(() => {
+    const opts = [...languages]
+    if (!opts.some((l) => l.code === song.language) && song.language !== 'unknown')
+      opts.push({ code: song.language, label: song.language })
+    if (!opts.some((l) => l.code === 'unknown')) opts.push({ code: 'unknown', label: 'Unknown' })
+    return opts
+  }, [languages, song.language])
 
   const save = async (): Promise<void> => {
     if (!title.trim()) return
@@ -56,9 +59,9 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
         </label>
         <label className="block">
           <span className="mb-1 block text-text-dim text-xs">Language</span>
-          <Select value={language} onChange={(e) => setLanguage(e.target.value as Language)}>
-            {LANGUAGES.map((l) => (
-              <option key={l.value} value={l.value}>
+          <Select value={language} onChange={(e) => setLanguage(e.target.value)}>
+            {options.map((l) => (
+              <option key={l.code} value={l.code}>
                 {l.label}
               </option>
             ))}
