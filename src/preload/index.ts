@@ -4,6 +4,7 @@ import type {
   AudioTrack,
   ImportProgress,
   ImportRequest,
+  LlmTestResult,
   Lyrics,
   ProbeResult,
   Settings,
@@ -38,6 +39,9 @@ const api: SingrayApi = {
   settings: {
     get: () => ipcRenderer.invoke('settings:get') as Promise<Settings>,
     set: (patch) => ipcRenderer.invoke('settings:set', patch) as Promise<Settings>
+  },
+  llm: {
+    test: () => ipcRenderer.invoke('llm:test') as Promise<LlmTestResult>
   },
   audio: {
     url: (id: string, track: AudioTrack) => `karaoke://${id}/${track}.m4a`,

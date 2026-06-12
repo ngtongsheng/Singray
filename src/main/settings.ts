@@ -16,7 +16,10 @@ function defaults(): Settings {
       { code: 'zh', label: '中文' },
       { code: 'en', label: 'English' }
     ],
-    uiLanguage: ''
+    uiLanguage: '',
+    llmBaseUrl: 'http://localhost:11434/v1',
+    llmModel: '',
+    llmApiKey: ''
   }
 }
 

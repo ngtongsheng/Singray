@@ -48,6 +48,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const [settings, setSettings] = useState<SettingsModel | null>(null)
   const [test, setTest] = useState<TestState>({ kind: 'idle' })
+  const [llmTest, setLlmTest] = useState<TestState>({ kind: 'idle' })
   const [outputs, setOutputs] = useState<MediaDeviceInfo[]>([])
   const [toneBusy, setToneBusy] = useState<'monitor' | 'stream' | null>(null)
   const [toneError, setToneError] = useState<string | null>(null)
@@ -121,6 +122,22 @@ function Settings({ onBack }: Props): React.JSX.Element {
       setTest({ kind: 'ok', detail: t('settings.probedIn', { title: result.title, secs }) })
     } catch (err) {
       setTest({
+        kind: 'fail',
+        detail: (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
+      })
+    }
+  }
+
+  const testLlm = async (): Promise<void> => {
+    setLlmTest({ kind: 'running' })
+    try {
+      const r = await window.singray.llm.test()
+      setLlmTest({
+        kind: 'ok',
+        detail: t('settings.llmOk', { reply: r.reply, secs: (r.ms / 1000).toFixed(1) })
+      })
+    } catch (err) {
+      setLlmTest({
         kind: 'fail',
         detail: (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
       })
@@ -277,6 +294,68 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 </span>
               )}
             </label>
+          </fieldset>
+
+          <fieldset className="rounded-card border border-border p-4">
+            <legend className="px-1 font-medium text-sm">{t('settings.llm')}</legend>
+            <div className="flex flex-col gap-4">
+              <label className="block">
+                <span className="mb-1 block text-text-dim text-xs">{t('settings.llmBaseUrl')}</span>
+                <Input
+                  defaultValue={settings.llmBaseUrl}
+                  placeholder="http://localhost:11434/v1"
+                  onBlur={(e) => {
+                    if (e.target.value.trim() && e.target.value.trim() !== settings.llmBaseUrl)
+                      patch({ llmBaseUrl: e.target.value.trim() })
+                  }}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-text-dim text-xs">{t('settings.llmModel')}</span>
+                <div className="flex gap-2">
+                  <Input
+                    defaultValue={settings.llmModel}
+                    placeholder="gemma4:12b-it-qat"
+                    onBlur={(e) => {
+                      if (e.target.value.trim() !== settings.llmModel)
+                        patch({ llmModel: e.target.value.trim() })
+                    }}
+                  />
+                  <Button
+                    size="md"
+                    onClick={testLlm}
+                    disabled={llmTest.kind === 'running'}
+                    title={t('settings.llmTestTip')}
+                    className="shrink-0"
+                  >
+                    {llmTest.kind === 'running' && <Loader2 className="size-4 animate-spin" />}
+                    {t('settings.test')}
+                  </Button>
+                </div>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-text-dim text-xs">{t('settings.llmApiKey')}</span>
+                <Input
+                  type="password"
+                  defaultValue={settings.llmApiKey}
+                  onBlur={(e) => {
+                    if (e.target.value.trim() !== settings.llmApiKey)
+                      patch({ llmApiKey: e.target.value.trim() })
+                  }}
+                />
+              </label>
+              <span className="text-text-dim text-xs">{t('settings.llmHelp')}</span>
+              {llmTest.kind === 'ok' && (
+                <span className="flex items-center gap-1.5 text-success text-xs">
+                  <CheckCircle2 className="size-3.5" /> {llmTest.detail}
+                </span>
+              )}
+              {llmTest.kind === 'fail' && (
+                <span className="flex items-center gap-1.5 text-danger text-xs">
+                  <XCircle className="size-3.5" /> {llmTest.detail}
+                </span>
+              )}
+            </div>
           </fieldset>
 
           <fieldset className="rounded-card border border-border p-4">

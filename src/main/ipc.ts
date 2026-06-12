@@ -2,6 +2,7 @@ import { ipcMain } from 'electron'
 import type { ImportRequest, Lyrics, Settings, SongMeta } from '../shared/types'
 import { cancelImport, retryImport, startImport } from './importQueue'
 import { deleteSong, getLyrics, listSongs, openSongFolder, saveLyrics, updateMeta } from './library'
+import { testLlm } from './llm'
 import { alignLyrics, probe } from './pipeline'
 import { getSettings, setSettings } from './settings'
 
@@ -23,6 +24,8 @@ export function registerIpc(): void {
   ipcMain.handle('lyrics:get', (_e, id: string) => getLyrics(id))
   ipcMain.handle('lyrics:save', (_e, id: string, lyrics: Lyrics) => saveLyrics(id, lyrics))
   ipcMain.handle('lyrics:align', (_e, id: string, text: string) => alignLyrics(id, text))
+
+  ipcMain.handle('llm:test', () => testLlm())
 
   ipcMain.handle('import:probe', (_e, url: string) => probe(url))
   ipcMain.handle('import:start', (_e, req: ImportRequest) => startImport(req))

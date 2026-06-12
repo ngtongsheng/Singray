@@ -20,7 +20,7 @@ A personal-use desktop app: build a karaoke library from YouTube links (download
 - No unit tests.
 - No in-app microphone capture or recording (AG06 + website chain owns voice).
 - No multi-user features, no cloud sync, no scoring.
-- No auto lyric fetching or LLM metadata enrichment (designed for, deferred — see §12).
+- No auto lyric fetching or LLM metadata enrichment (was deferred from MVP; landing in Round 1 Phase 3 — see §12).
 
 ---
 
@@ -189,7 +189,10 @@ Conversion note: the legacy `karaoke.add('00:26.488','00:32.419','不是…','15
   "languages": [                  // R2.4: editable list — import form, filter chips,
     { "code": "zh", "label": "中文" },     // alignment language (meta.json → whisperx).
     { "code": "en", "label": "English" }   // Removing one never touches song metas;
-  ]                                        // "unknown" is always offered implicitly.
+  ],                                       // "unknown" is always offered implicitly.
+  "llmBaseUrl": "http://localhost:11434/v1", // R3.1: OpenAI-compatible endpoint (Ollama default)
+  "llmModel": "",                 // R3.1: chat model name, user-set
+  "llmApiKey": ""                 // R3.1: bearer token for hosted endpoints, '' = none
 }
 ```
 
@@ -545,11 +548,12 @@ Dark theme only. No design system ceremony — plain CSS modules or Tailwind, wh
 
 ---
 
-## 12. Future Hooks (designed-in, not built)
+## 12. LLM Integration
 
-- **LLM metadata enrichment**: `meta.enrichment` field reserved. Planned flow: web-search title/artist → LLM structured-output parse → user confirms diff. Raw `youtubeTitle` retained as input.
-- **Lyric web fetch + LLM cleanup**: feeds the text step; tokenizer/timing untouched.
-- **Legacy format import**: `karaoke.add(...)` lines and `.lrc` map onto `lyrics.json` losslessly (§4.3).
+- **Client (R3.1, built)**: main-process module `src/main/llm.ts` — plain `fetch` against `<llmBaseUrl>/chat/completions` (OpenAI-compatible; covers Ollama, LM Studio, hosted providers), no SDK. Settings: `llmBaseUrl` (default `http://localhost:11434/v1`), `llmModel`, optional `llmApiKey` (Bearer header). 30s `AbortSignal.timeout` default; network/HTTP/shape errors rewritten to readable messages (connection refused, host not found, bad key, model not found, non-OpenAI response). Renderer reaches it only via typed IPC (`llm:test` today; enrichment/cleanup calls stay in main). Settings → AI assist fieldset has a Test button that round-trips a tiny prompt.
+- **Metadata enrichment (R3.2, planned)**: probe → LLM cleans title/artist before form prefill, heuristic fallback on timeout; `meta.enrichment` field reserved, raw `youtubeTitle` retained as input.
+- **Lyric cleanup (R3.6, planned)**: feeds the creator text step; tokenizer/timing untouched.
+- **Legacy format import**: `karaoke.add(...)` lines and `.lrc` map onto `lyrics.json` losslessly (§4.3, LRC import = R3.4).
 
 ---
 

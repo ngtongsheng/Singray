@@ -77,6 +77,19 @@ export interface Settings {
   languages: LanguageDef[]
   /** UI locale (R2.5): a folder name under src/renderer/locales, or '' = follow OS. */
   uiLanguage: string
+  /** OpenAI-compatible chat endpoint base URL (R3.1), e.g. http://localhost:11434/v1 for Ollama. */
+  llmBaseUrl: string
+  /** Model name passed to the endpoint, e.g. "gemma4:12b-it-qat" or "gpt-4o-mini". */
+  llmModel: string
+  /** Bearer token for hosted endpoints; '' = none (local Ollama needs no key). */
+  llmApiKey: string
+}
+
+/** Result of a successful LLM round-trip test (R3.1). */
+export interface LlmTestResult {
+  model: string
+  reply: string
+  ms: number
 }
 
 export interface ProbeResult {
@@ -143,6 +156,10 @@ export interface SingrayApi {
   settings: {
     get(): Promise<Settings>
     set(patch: Partial<Settings>): Promise<Settings>
+  }
+  llm: {
+    /** Round-trips a tiny prompt through the configured endpoint; rejects with a readable message. */
+    test(): Promise<LlmTestResult>
   }
   audio: {
     url(id: string, track: AudioTrack): string
