@@ -58,6 +58,8 @@
   },
   "import": {
     "title": "添加歌曲",
+    "tabYoutube": "YouTube",
+    "tabFile": "上传文件",
     "urlLabel": "YouTube 链接",
     "searchLabel": "搜索 YouTube",
     "searchPlaceholder": "歌曲或歌手…",

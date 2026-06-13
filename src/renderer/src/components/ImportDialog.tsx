@@ -2,11 +2,13 @@ import { FolderOpen, Loader2, Search } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Language, LanguageDef, ProbeResult, SearchResult } from '../../../shared/types'
-import { Button, Dialog, IconButton, Input, Select } from './ui'
+import { Button, Dialog, IconButton, Input, Select, Tabs } from './ui'
 
 interface Props {
   onClose: () => void
 }
+
+type SourceMode = 'youtube' | 'file'
 
 function formatDuration(sec: number): string {
   if (!sec) return ''
@@ -31,6 +33,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
   const [results, setResults] = useState<SearchResult[] | null>(null)
+  const [mode, setMode] = useState<SourceMode>('youtube')
   const searchRef = useRef<HTMLInputElement>(null)
   const probeSeq = useRef(0)
 
@@ -147,80 +150,98 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
     <Dialog label={t('import.title')} width="w-[640px]" onClose={onClose}>
       <h2 className="font-semibold text-base">{t('import.title')}</h2>
 
-      <label className="mt-4 block">
-        <span className="mb-1 block text-text-dim text-xs">{t('import.searchLabel')}</span>
-        <div className="flex gap-2">
-          <Input
-            ref={searchRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && runSearch()}
-            placeholder={t('import.searchPlaceholder')}
-            trailing={searching && <Loader2 className="size-4 animate-spin text-text-dim" />}
-          />
-          <IconButton
-            aria-label={t('import.searchLabel')}
-            onClick={runSearch}
-            disabled={!query.trim() || searching}
-          >
-            <Search className="size-4" />
-          </IconButton>
-        </div>
-        {searchError && <p className="mt-1 text-danger text-xs">{searchError}</p>}
-      </label>
+      <Tabs
+        className="mt-4"
+        tabs={[
+          { id: 'youtube', label: t('import.tabYoutube') },
+          { id: 'file', label: t('import.tabFile') }
+        ]}
+        active={mode}
+        onChange={setMode}
+      />
 
-      {results && (
-        <ul className="mt-2 max-h-64 divide-y divide-border overflow-y-auto rounded-card border border-border">
-          {results.length === 0 && (
-            <li className="px-3 py-4 text-center text-text-dim text-xs">{t('import.noResults')}</li>
-          )}
-          {results.map((r) => (
-            <li key={r.url}>
-              <Button
-                variant="bare"
-                size="bare"
-                onClick={() => pickResult(r)}
-                className="flex w-full items-center gap-3 px-2 py-2 text-left hover:bg-surface"
+      {mode === 'youtube' ? (
+        <>
+          <label className="mt-4 block">
+            <span className="mb-1 block text-text-dim text-xs">{t('import.searchLabel')}</span>
+            <div className="flex gap-2">
+              <Input
+                ref={searchRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && runSearch()}
+                placeholder={t('import.searchPlaceholder')}
+                trailing={searching && <Loader2 className="size-4 animate-spin text-text-dim" />}
+              />
+              <IconButton
+                aria-label={t('import.searchLabel')}
+                onClick={runSearch}
+                disabled={!query.trim() || searching}
               >
-                <div className="aspect-video w-24 shrink-0 overflow-hidden rounded bg-surface">
-                  {r.thumbnailUrl && (
-                    <img src={r.thumbnailUrl} alt="" className="h-full w-full object-cover" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">{r.title}</p>
-                  <p className="truncate text-text-dim text-xs">
-                    {r.channel}
-                    {r.duration > 0 && ` · ${formatDuration(r.duration)}`}
-                  </p>
-                </div>
-              </Button>
-            </li>
-          ))}
-        </ul>
+                <Search className="size-4" />
+              </IconButton>
+            </div>
+            {searchError && <p className="mt-1 text-danger text-xs">{searchError}</p>}
+          </label>
+
+          {results && (
+            <ul className="mt-2 max-h-64 divide-y divide-border overflow-y-auto rounded-card border border-border">
+              {results.length === 0 && (
+                <li className="px-3 py-4 text-center text-text-dim text-xs">
+                  {t('import.noResults')}
+                </li>
+              )}
+              {results.map((r) => (
+                <li key={r.url}>
+                  <Button
+                    variant="bare"
+                    size="bare"
+                    onClick={() => pickResult(r)}
+                    className="flex w-full items-center gap-3 px-2 py-2 text-left hover:bg-surface"
+                  >
+                    <div className="aspect-video w-24 shrink-0 overflow-hidden rounded bg-surface">
+                      {r.thumbnailUrl && (
+                        <img src={r.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm">{r.title}</p>
+                      <p className="truncate text-text-dim text-xs">
+                        {r.channel}
+                        {r.duration > 0 && ` · ${formatDuration(r.duration)}`}
+                      </p>
+                    </div>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <label className="mt-4 block">
+            <span className="mb-1 block text-text-dim text-xs">{t('import.urlLabel')}</span>
+            <Input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=…"
+              trailing={probing && <Loader2 className="size-4 animate-spin text-text-dim" />}
+            />
+            {probeError && <p className="mt-1 text-danger text-xs">{probeError}</p>}
+          </label>
+        </>
+      ) : (
+        <div className="mt-4 flex items-center gap-2">
+          <Button onClick={pickFile}>
+            <FolderOpen className="size-4" strokeWidth={1.5} /> {t('import.fromFile')}
+          </Button>
+          {filePath && (
+            <span className="min-w-0 truncate text-text-dim text-xs">
+              {filePath.split(/[\\/]/).pop()}
+            </span>
+          )}
+          {probeError && <p className="text-danger text-xs">{probeError}</p>}
+          {probing && <Loader2 className="size-4 animate-spin text-text-dim" />}
+        </div>
       )}
-
-      <label className="mt-4 block">
-        <span className="mb-1 block text-text-dim text-xs">{t('import.urlLabel')}</span>
-        <Input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://www.youtube.com/watch?v=…"
-          trailing={probing && <Loader2 className="size-4 animate-spin text-text-dim" />}
-        />
-        {probeError && <p className="mt-1 text-danger text-xs">{probeError}</p>}
-      </label>
-
-      <div className="mt-3 flex items-center gap-2">
-        <Button onClick={pickFile}>
-          <FolderOpen className="size-4" strokeWidth={1.5} /> {t('import.fromFile')}
-        </Button>
-        {filePath && (
-          <span className="min-w-0 truncate text-text-dim text-xs">
-            {filePath.split(/[\\/]/).pop()}
-          </span>
-        )}
-      </div>
 
       {probed && (
         <div className="mt-4 flex gap-4">

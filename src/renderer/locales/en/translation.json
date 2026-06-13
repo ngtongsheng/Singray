@@ -59,6 +59,8 @@
   },
   "import": {
     "title": "Add song",
+    "tabYoutube": "YouTube",
+    "tabFile": "Upload file",
     "urlLabel": "YouTube URL",
     "searchLabel": "Search YouTube",
     "searchPlaceholder": "Song or artist…",
