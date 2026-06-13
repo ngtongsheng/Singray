@@ -329,7 +329,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
           src={window.singray.audio.thumbUrl(song.id)}
           alt=""
           draggable={false}
-          className={`animate-ken-burns absolute inset-0 h-full w-full object-cover blur-3xl ${
+          className={`animate-ken-burns absolute inset-0 h-full w-full object-cover blur-2xl ${
             windowHidden || !playing ? 'paused' : ''
           }`}
         />
