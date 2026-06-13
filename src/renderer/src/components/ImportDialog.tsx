@@ -1,5 +1,5 @@
-import { Loader2, Search } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { FolderOpen, Loader2, Search } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Language, LanguageDef, ProbeResult, SearchResult } from '../../../shared/types'
 import { Button, Dialog, IconButton, Input, Select } from './ui'
@@ -18,6 +18,7 @@ function formatDuration(sec: number): string {
 function ImportDialog({ onClose }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const [url, setUrl] = useState('')
+  const [filePath, setFilePath] = useState<string | null>(null)
   const [probing, setProbing] = useState(false)
   const [probeError, setProbeError] = useState<string | null>(null)
   const [probed, setProbed] = useState<ProbeResult | null>(null)
@@ -61,28 +62,57 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
     setUrl(r.url)
   }
 
+  /** Shared prefill: probe result → form, with LLM enrichment (heuristic fallback in main). */
+  const prefill = useCallback(async (result: ProbeResult, seq: number): Promise<void> => {
+    if (seq !== probeSeq.current) return
+    setProbed(result)
+    const enriched = await window.singray.llm.enrichProbe(result)
+    if (seq !== probeSeq.current) return
+    setTitle(enriched.title)
+    setArtist(enriched.artist)
+  }, [])
+
+  /** "From file" (R3.7): native picker → probe the local file → same prefill flow. */
+  const pickFile = async (): Promise<void> => {
+    const path = await window.singray.import.pickFile()
+    if (!path) return
+    setUrl('')
+    setResults(null)
+    setSearchError(null)
+    setProbeError(null)
+    setFilePath(path)
+    const seq = ++probeSeq.current
+    setProbing(true)
+    try {
+      await prefill(await window.singray.import.probeFile(path), seq)
+    } catch (err) {
+      if (seq !== probeSeq.current) return
+      setProbed(null)
+      setProbeError(
+        (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
+      )
+    } finally {
+      if (seq === probeSeq.current) setProbing(false)
+    }
+  }
+
   useEffect(() => {
     const trimmed = url.trim()
     if (!/^https?:\/\/\S+$/.test(trimmed)) {
-      setProbed(null)
-      setProbeError(null)
+      if (!filePath) {
+        setProbed(null)
+        setProbeError(null)
+      }
       return
     }
+    setFilePath(null) // a typed URL takes precedence over a previously picked file
     const seq = ++probeSeq.current
     setProbing(true)
     setProbeError(null)
     const timer = setTimeout(() => {
       window.singray.import
         .probe(trimmed)
-        .then(async (result) => {
-          if (seq !== probeSeq.current) return
-          setProbed(result)
-          // LLM cleanup races a ~3s budget in main; falls back to the heuristic parser.
-          const enriched = await window.singray.llm.enrichProbe(result)
-          if (seq !== probeSeq.current) return
-          setTitle(enriched.title)
-          setArtist(enriched.artist)
-        })
+        .then((result) => prefill(result, seq))
         .catch((err: Error) => {
           if (seq !== probeSeq.current) return
           setProbed(null)
@@ -93,18 +123,19 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
         })
     }, 400)
     return () => clearTimeout(timer)
-  }, [url])
+  }, [url, filePath, prefill])
 
   const submit = async (): Promise<void> => {
     if (!probed || !title.trim()) return
     setSubmitting(true)
     try {
       await window.singray.import.start({
-        url: url.trim(),
+        url: filePath ? '' : url.trim(),
         title: title.trim(),
         artist: artist.trim(),
         language,
-        youtubeTitle: probed.title
+        youtubeTitle: probed.title,
+        ...(filePath ? { filePath } : {})
       })
       onClose()
     } finally {
@@ -179,6 +210,17 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
         />
         {probeError && <p className="mt-1 text-danger text-xs">{probeError}</p>}
       </label>
+
+      <div className="mt-3 flex items-center gap-2">
+        <Button onClick={pickFile}>
+          <FolderOpen className="size-4" strokeWidth={1.5} /> {t('import.fromFile')}
+        </Button>
+        {filePath && (
+          <span className="min-w-0 truncate text-text-dim text-xs">
+            {filePath.split(/[\\/]/).pop()}
+          </span>
+        )}
+      </div>
 
       {probed && (
         <div className="mt-4 flex gap-4">

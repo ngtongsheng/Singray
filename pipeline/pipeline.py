@@ -54,8 +54,83 @@ def emit(obj: dict) -> None:
     print(json.dumps(obj, ensure_ascii=False), file=_STDOUT, flush=True)
 
 
+def _ffprobe(path: Path) -> dict:
+    """Run ffprobe → parsed JSON (format + streams)."""
+    proc = subprocess.run(
+        [
+            "ffprobe", "-hide_banner", "-loglevel", "error",
+            "-show_format", "-show_streams", "-of", "json", str(path),
+        ],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+    )  # fmt: skip
+    if proc.returncode != 0:
+        raise RuntimeError(f"ffprobe failed: {proc.stderr.strip() or 'unreadable file'}")
+    return json.loads(proc.stdout or "{}")
+
+
+def _local_meta(path: Path) -> dict:
+    """Probe a local media file: duration, tag title/artist, and thumbnail source flags."""
+    info = _ffprobe(path)
+    fmt = info.get("format") or {}
+    tags = {str(k).lower(): v for k, v in (fmt.get("tags") or {}).items()}
+    streams = info.get("streams") or []
+    # Stream-level tags too (some containers stash title/artist on the audio stream).
+    for s in streams:
+        for k, v in (s.get("tags") or {}).items():
+            tags.setdefault(str(k).lower(), v)
+
+    def is_pic(s: dict) -> bool:
+        return bool((s.get("disposition") or {}).get("attached_pic"))
+
+    return {
+        "title": (tags.get("title") or path.stem).strip(),
+        "artist": (tags.get("artist") or tags.get("album_artist") or "").strip(),
+        "track": tags.get("title"),
+        "duration": float(fmt.get("duration") or 0),
+        "has_attached": any(s.get("codec_type") == "video" and is_pic(s) for s in streams),
+        "has_video": any(s.get("codec_type") == "video" and not is_pic(s) for s in streams),
+    }
+
+
+def _extract_local_thumb(src: Path, meta: dict, dl_dir: Path) -> Path | None:
+    """Embedded cover art → else a frame ~20% into the video → else None (placeholder)."""
+    out = dl_dir / "thumb_src.jpg"
+    cmd = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error"]
+    if meta["has_attached"]:
+        cmd += ["-i", str(src), "-map", "0:v:0", "-frames:v", "1", str(out)]
+    elif meta["has_video"]:
+        cmd += ["-ss", f"{meta['duration'] * 0.2:.2f}", "-i", str(src), "-frames:v", "1", str(out)]
+    else:
+        return None
+    try:
+        subprocess.run(cmd, stdin=subprocess.DEVNULL, capture_output=True, check=True)
+    except subprocess.CalledProcessError:
+        return None
+    return out if out.exists() else None
+
+
 def cmd_probe(args: argparse.Namespace) -> int:
     """Print one JSON object: {title, channel, track, artist, duration, thumbnailUrl}."""
+    if args.file:
+        try:
+            m = _local_meta(Path(args.file))
+            print(
+                json.dumps(
+                    {
+                        "title": m["title"],
+                        "channel": "",
+                        "track": m["track"],
+                        "artist": m["artist"] or None,
+                        "duration": m["duration"],
+                        "thumbnailUrl": "",
+                    },
+                    ensure_ascii=False,
+                )
+            )
+            return 0
+        except Exception as exc:  # noqa: BLE001 — any failure becomes the error contract
+            print(json.dumps({"stage": "error", "message": str(exc)}, ensure_ascii=False))
+            return 1
     try:
         opts = {"quiet": True, "no_warnings": True, "noprogress": True, "noplaylist": True}
         with yt_dlp.YoutubeDL(opts) as ydl:
@@ -216,6 +291,7 @@ def _encode_m4a(src: Path, dst: Path, gain_db: float) -> None:
             [
                 "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
                 "-i", str(src),
+                "-vn",  # drop any video stream (local-file imports can be mp4)
                 "-af", f"volume={gain_db:.2f}dB",
                 "-c:a", "aac", "-b:a", "256k",
                 "-movflags", "+faststart",
@@ -240,7 +316,7 @@ def _encode_thumb(src: Path, dst: Path) -> None:
 
 
 def cmd_process(args: argparse.Namespace) -> int:
-    """Download → separate → loudness-matched AAC ×3 (+thumb) into --out."""
+    """Download (or use a local --file) → separate → loudness-matched AAC ×3 (+thumb) into --out."""
     out_dir = Path(args.out)
     try:
         with tempfile.TemporaryDirectory(prefix="singray_") as tmp_str:
@@ -249,7 +325,16 @@ def cmd_process(args: argparse.Namespace) -> int:
             for d in (dl_dir, stems_dir, m4a_dir):
                 d.mkdir()
 
-            audio, thumb, duration = _download(args.url, dl_dir)
+            if args.file:
+                # Local import: no download stage. Probe-equivalent + thumb via ffmpeg.
+                src = Path(args.file)
+                if not src.exists():
+                    raise RuntimeError(f"file not found: {src}")
+                m = _local_meta(src)
+                audio, duration = src, m["duration"]
+                thumb = _extract_local_thumb(src, m, dl_dir)
+            else:
+                audio, thumb, duration = _download(args.url, dl_dir)
             vocals_wav, instrumental_wav = _separate(audio, stems_dir, args.model)
 
             # One gain for all three files: preserves vocal/instrumental balance,
@@ -367,16 +452,20 @@ def main() -> int:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    probe = sub.add_parser("probe", help="fetch YouTube metadata as one JSON object")
-    probe.add_argument("--url", required=True)
+    probe = sub.add_parser("probe", help="fetch YouTube or local-file metadata as one JSON object")
+    probe_src = probe.add_mutually_exclusive_group(required=True)
+    probe_src.add_argument("--url")
+    probe_src.add_argument("--file", help="local media file to probe instead of a URL")
     probe.set_defaults(func=cmd_probe)
 
     search = sub.add_parser("search", help="ytsearch10 → JSON-lines result list")
     search.add_argument("--query", required=True)
     search.set_defaults(func=cmd_search)
 
-    process = sub.add_parser("process", help="download, separate, transcode into --out")
-    process.add_argument("--url", required=True)
+    process = sub.add_parser("process", help="download or use a local file, separate, transcode")
+    process_src = process.add_mutually_exclusive_group(required=True)
+    process_src.add_argument("--url")
+    process_src.add_argument("--file", help="local media file to import instead of a URL")
     process.add_argument("--out", required=True)
     process.add_argument("--model", default=DEFAULT_MODEL)
     process.set_defaults(func=cmd_process)

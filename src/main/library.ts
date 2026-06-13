@@ -55,6 +55,7 @@ export async function listSongs(): Promise<SongListItem[]> {
       songs.push({
         ...meta,
         sings: meta.sings ?? [], // pre-R1.5 metas have no sings array
+        sourceFile: meta.sourceFile ?? null, // pre-R3.7 metas have no sourceFile
         id: entry.name, // folder name is the id authority
         hasLyrics: await exists(join(dir, 'lyrics.json')),
         error: await readImportError(dir),

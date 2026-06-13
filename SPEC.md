@@ -211,13 +211,13 @@ Conversion note: the legacy `karaoke.add('00:26.488','00:32.419','不是…','15
 ### 5.2 `pipeline.py` contract
 
 ```
-python pipeline.py probe   --url <url>
+python pipeline.py probe   (--url <url> | --file <path>)
 python pipeline.py search  --query <text>                          # ytsearch10 result list
-python pipeline.py process --url <url> --out <songDir> [--model 6_HP-Karaoke-UVR.pth]
+python pipeline.py process (--url <url> | --file <path>) --out <songDir> [--model 6_HP-Karaoke-UVR.pth]
 python pipeline.py align   --song <songDir> --text <lyrics.txt>     # forced alignment (§6.6)
 ```
 
-- `probe`: prints one JSON object to stdout — `{title, channel, track, artist, duration, thumbnailUrl}`.
+- `probe`: prints one JSON object to stdout — `{title, channel, track, artist, duration, thumbnailUrl}`. With `--file` (R3.7) it ffprobes a local media file: duration + tag title/artist (title falls back to the filename stem), `channel`/`thumbnailUrl` empty.
 - `search`: streams up to 10 `ytsearch10` hits as JSON-lines — `{title, channel, duration, thumbnailUrl, url}` per line, then exits. Uses yt-dlp **flat extraction** (`extract_flat`, no per-video metadata fetch) so the whole query returns in ~2s; the full `probe` runs only when the user picks a result. Errors use the same `{"stage": "error", "message": …}` + non-zero exit contract. Renderer's Add Song dialog shows the result list alongside the URL-paste box; picking a hit fills the URL field and runs the existing probe/prefill flow.
 - `process`: streams JSON-lines progress to stdout:
 
@@ -230,6 +230,7 @@ python pipeline.py align   --song <songDir> --text <lyrics.txt>     # forced ali
 ```
 
 - `align`: streams JSON-lines like `process` (`{"stage": "align", "progress": …}`); final line `{"stage": "done", "tokens": [{"text", "start", "score"}]}` — one token per CJK char or Latin word, `start`/`score` null when the aligner could not place it. Language read from the song's `meta.json` (`unknown` → `en`). All pipeline stdout is UTF-8 (`sys.stdout.reconfigure` — Windows defaults to cp1252, which cannot encode CJK tokens).
+- `process --file <path>` (R3.7): skips the download stage — the local file is the source audio (duration via ffprobe; thumbnail from embedded cover art, else a video frame ~20% in, else placeholder). Accepts anything ffmpeg decodes (mp4/m4a/mp3/flac/wav/ogg/…); `-vn` drops video on encode. The renderer's "From file" picker uses a native `dialog.showOpenDialog`; the chosen path rides `ImportRequest.filePath` and is stored as `SongMeta.sourceFile` for retry.
 - Steps inside `process`: yt-dlp best-audio download (+ thumbnail) → audio-separator (VR arch, window 320, aggression 5, GPU) → **loudness normalization**: measure integrated loudness of the original (ffmpeg `loudnorm` print_format json, target −14 LUFS), apply the *same linear gain* to original + both stems (preserves vocal/instrumental balance — never per-file loudnorm on stems) → ffmpeg AAC 256k `-movflags +faststart` for all three → write files into `--out`.
 - Temp work in `%TEMP%`, cleaned on success and on failure.
 - Cookies: reuse the existing yt-dlp cookie setup if age-restricted videos fail; native Windows yt-dlp can use `--cookies-from-browser` directly (no WSL DPAPI workaround needed).

@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { BrowserWindow, dialog, ipcMain } from 'electron'
 import type {
   ImportRequest,
   LrclibQuery,
@@ -12,7 +12,7 @@ import { cancelImport, retryImport, startImport } from './importQueue'
 import { deleteSong, getLyrics, listSongs, openSongFolder, saveLyrics, updateMeta } from './library'
 import { testLlm } from './llm'
 import { findLyrics } from './lyricsFinder'
-import { alignLyrics, probe, searchYoutube } from './pipeline'
+import { alignLyrics, probe, probeFile, searchYoutube } from './pipeline'
 import { getSettings, setSettings } from './settings'
 
 /** Registers all IPC handlers (SPEC §8). */
@@ -46,6 +46,34 @@ export function registerIpc(): void {
   )
 
   ipcMain.handle('import:probe', (_e, url: string) => probe(url))
+  ipcMain.handle('import:probeFile', (_e, path: string) => probeFile(path))
+  ipcMain.handle('import:pickFile', async () => {
+    const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+    const result = await dialog.showOpenDialog(win as BrowserWindow, {
+      title: 'Import audio or video file',
+      properties: ['openFile'],
+      filters: [
+        {
+          name: 'Media',
+          extensions: [
+            'mp4',
+            'm4a',
+            'mp3',
+            'flac',
+            'wav',
+            'ogg',
+            'opus',
+            'webm',
+            'aac',
+            'mkv',
+            'mov'
+          ]
+        },
+        { name: 'All files', extensions: ['*'] }
+      ]
+    })
+    return result.canceled ? null : (result.filePaths[0] ?? null)
+  })
   ipcMain.handle('import:search', (_e, query: string) => searchYoutube(query))
   ipcMain.handle('import:start', (_e, req: ImportRequest) => startImport(req))
   ipcMain.handle('import:retry', (_e, id: string) => retryImport(id))

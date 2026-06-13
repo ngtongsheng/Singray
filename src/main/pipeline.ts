@@ -14,8 +14,17 @@ export function pipelineScript(): string {
 
 /** Runs `pipeline.py probe --url <url>`, resolves with the one-line JSON result. */
 export function probe(url: string): Promise<ProbeResult> {
+  return runProbe(['probe', '--url', url])
+}
+
+/** Probe a local media file (`probe --file <path>`): duration + tag title/artist (R3.7). */
+export function probeFile(path: string): Promise<ProbeResult> {
+  return runProbe(['probe', '--file', path])
+}
+
+function runProbe(args: string[]): Promise<ProbeResult> {
   return new Promise((resolve, reject) => {
-    const proc = spawn(getSettings().pythonPath, [pipelineScript(), 'probe', '--url', url], {
+    const proc = spawn(getSettings().pythonPath, [pipelineScript(), ...args], {
       windowsHide: true
     })
     let stdout = ''

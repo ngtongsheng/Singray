@@ -12,7 +12,10 @@ import { getSettings } from './settings'
 interface Job {
   jobId: string
   songId: string
+  /** YouTube URL for a download import; empty when importing a local file. */
   url: string
+  /** Local media path for a "From file" import (R3.7); null for URL imports. */
+  filePath: string | null
 }
 
 const queue: Job[] = []
@@ -61,13 +64,14 @@ export async function startImport(req: ImportRequest): Promise<string> {
     playCount: 0,
     lastPlayedAt: null,
     sings: [],
+    sourceFile: req.filePath || null,
     separationModel: '6_HP-Karaoke-UVR',
     enrichment: null
   }
   await mkdir(songDir(songId), { recursive: true })
   await writeFile(join(songDir(songId), 'meta.json'), JSON.stringify(meta, null, 2), 'utf-8')
 
-  enqueue({ jobId, songId, url: req.url })
+  enqueue({ jobId, songId, url: req.url, filePath: req.filePath || null })
   notifyLibraryChanged()
   return jobId
 }
@@ -76,7 +80,7 @@ export async function retryImport(songId: string): Promise<void> {
   const dir = songDir(songId)
   const meta = JSON.parse(await readFile(join(dir, 'meta.json'), 'utf-8')) as SongMeta
   await rm(join(dir, 'error.json'), { force: true })
-  enqueue({ jobId: randomUUID(), songId, url: meta.youtubeUrl })
+  enqueue({ jobId: randomUUID(), songId, url: meta.youtubeUrl, filePath: meta.sourceFile ?? null })
   notifyLibraryChanged()
 }
 
@@ -105,9 +109,10 @@ function pump(): void {
 
 function run(job: Job): void {
   const dir = songDir(job.songId)
+  const source = job.filePath ? ['--file', job.filePath] : ['--url', job.url]
   const proc = spawn(
     getSettings().pythonPath,
-    [pipelineScript(), 'process', '--url', job.url, '--out', dir],
+    [pipelineScript(), 'process', ...source, '--out', dir],
     { windowsHide: true }
   )
   activeProc = proc

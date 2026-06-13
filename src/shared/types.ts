@@ -30,6 +30,8 @@ export interface SongMeta {
   lastPlayedAt: string | null
   /** ISO timestamps, one appended per session that crosses ≥60% accumulated playback (R1.5). */
   sings: string[]
+  /** Local source path for file imports (R3.7); null for URL imports. Used to retry. */
+  sourceFile: string | null
   separationModel: string
   enrichment: null
 }
@@ -139,6 +141,8 @@ export interface ImportRequest {
   language: Language
   /** Raw YouTube title, kept in meta.json for future re-enrichment. */
   youtubeTitle: string
+  /** Local media path for a "From file" import (R3.7); omitted/empty for URL imports. */
+  filePath?: string
 }
 
 /** One aligned token from `pipeline.py align` (SPEC §6.6): CJK char or Latin word. */
@@ -189,6 +193,10 @@ export interface SingrayApi {
   }
   import: {
     probe(url: string): Promise<ProbeResult>
+    /** Probe a local media file for duration + tag title/artist prefill (R3.7). */
+    probeFile(path: string): Promise<ProbeResult>
+    /** Native open dialog for a local audio/video file; resolves the path or null if cancelled (R3.7). */
+    pickFile(): Promise<string | null>
     /** ytsearch10 for the query; rejects with a readable message on bad query / no network. */
     search(query: string): Promise<SearchResult[]>
     start(req: ImportRequest): Promise<string>
