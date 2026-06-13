@@ -1,196 +1,186 @@
-# Singray — Story Backlog (Round 1: Enhancement)
+# Singray — Story Backlog (Round 2)
 
-Source: user feedback 2026-06-12 (`Some enhancement.md`), grilled + triaged. MVP backlog archived at `docs/rounds/00-mvp.md`.
+Round 1 (Enhancement) archived at `docs/rounds/01-enhancement.md`. MVP at `docs/rounds/00-mvp.md`.
+Round 2 feature source: user feedback 2026-06-14 (`docs/feedback/2026-06-14-round2.md`), grilled + triaged. Decisions from the grilling session are baked into each story below.
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → Round 1 complete** (R1–R3 done; R4–R5 code landed)
->
-> R4.2, R4.3, R4.4, R5.1, R5.2 carry `[~]` — code landed + compiles (+ where possible smoke-checked), but their done-when verifications need owner/clean-machine/GPU/macOS-runner/real-Release (see each story + the owner checklist in the Session Log). User-side R0.1/R0.2 remain. Next coding round = Round 2 candidates.
->
-> Phase 3 (integrations) complete. R4 is production/OSS prep.
->
-> R0.1 (ear batch) + R0.2 (AG06) are user-side, can run anytime in parallel with coding stories — they don't block the pointer.
+> **Now → AIC2** (data-loss bug), then top-to-bottom. Phase order = execution order chosen in grilling: safety/quick bugs → shared primitives → nav redesign → feature views → polish. Phase 0 (Round 1 verification) is env-blocked / user-side and doesn't block the coding pointer.
 
-Workflow: one story at a time, top to bottom. A story is done only when every "Done when" line passes by actually running the app/script. On finish: mark `[x]`, move the **Now** pointer, append one line to the Session Log. Commit subjects: `R<story>: <what>`.
+**ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
 
-Triage decisions (from grilling session):
-- Dropped: per-unit timing nudge editor, fullscreen two-line stage mode, playlists/up-next queue → Unscheduled.
-- Tempo UI: radio presets inside existing popover (Gauge button stays).
-- "Progress bar to bottom" = import progress strip → bottom status bar.
-- Soundwave = AnalyserNode on monitor output mix (no mic capture).
-- LLM: one OpenAI-compatible client (covers Ollama); triggers = probe prefill + edit-meta button + lyric cleanup.
-- Lyrics: LRCLIB finder paired with LRC import (synced hit = auto-timed song).
-- Python deps: first-run bootstrapper (no giant installer).
-- macOS: CI build only, labeled community-tested.
-- Repo: public, MIT.
-- Window: frameless + custom titlebar that doubles as persistent app header.
-- Motion: `motion` (framer-motion).
-- Sing history (added 2026-06-12): ≥60% accumulated playback = one sing; timestamped `sings: []` log in meta.json, not bare counter.
-- i18n (added 2026-06-12): i18next, locale folders for contributor PRs, follow OS locale with en fallback.
-- Stems (added 2026-06-12): flac default (lossless post-separation), m4a via setting; local-file import for anything ffmpeg decodes.
-- Record singing / effects / EQ: explicitly Round 2, recorded in candidates section.
+Workflow: one story at a time, top to bottom. A story is done only when every "Done when" line passes by actually running the app/script. On finish: mark `[x]`, move the **Now** pointer, append one Session Log line.
 
 ---
 
-## Phase 0 — MVP carry-over (user-side)
+## Phase 0 — Round 1 verification carry-over (non-blocking)
 
-### [ ] R0.1 Ear-check batch
-From MVP: S4.1 test tone audibly from each chosen device · S4.2 dual-output 5-min song no audible drift + first real sing-through (S3 sync/click-free/wipe-vs-voice piggyback) · S5.1 ±2 semitones clean on both outputs · S5.2 eyeball wipe during sing-through at −2 key and 0.85× tempo.
-- **Done when:** all four checks confirmed by ear; failures spawn fix stories in this round.
+### [ ] R0.1 Ear-check batch (user-side)
+From MVP: S4.1 test tone audibly from each chosen device · S4.2 dual-output 5-min song no audible drift + first real sing-through · S5.1 ±2 semitones clean on both outputs · S5.2 eyeball wipe during sing-through at −2 key and 0.85× tempo.
+- **Done when:** all four checks confirmed by ear; failures spawn fix stories.
 
-### [!] R0.2 Live AG06 validation (blocked: VB-Cable + VoiceMeeter install + AG06 session — user-side setup)
-Ex-S4.3 verbatim: routing per SPEC §9.5, AG06 TO PC = INPUT MIX, end-to-end with singing website, write `docs/ROUTING.md`.
+### [!] R0.2 Live AG06 validation (blocked: VB-Cable + VoiceMeeter + AG06 session — user-side)
+Routing per SPEC §9.5, AG06 TO PC = INPUT MIX, end-to-end with singing website, write `docs/ROUTING.md`.
 - **Done when:** recording from website side has voice + instrumental, zero guide vocal, while monitor phones had vocal on.
 
-## Phase 1 — UX fixes (library + player)
-
-### [x] R1.1 Card + navigation simplification
-Remove hover action overlay (Sing/Lyrics/edit) from cards — whole card click → player. Heart (favorite) stays on card; fix favorite toggle bug (currently not toggling — diagnose, likely click swallowed by card-level handler). Edit-details + Lyrics entry points move into player (header menu or chrome — placement finalized with R2.1 titlebar in mind). Import progress strip moves from under top bar to a thin bottom status bar.
-- **Done when:** clicking anywhere on card opens player; heart toggles + persists + survives restart; no hover overlay remains; edit-meta dialog and lyric creator both reachable from inside player; URL import shows progress in bottom status bar.
-
-### [x] R1.2 Player chrome rework
-No autoplay on enter (explicit play). Bar pinned/visible by default; new unpin toggle switches to current auto-hide behavior (preference persists in settings). Control order: play → seek bar → instrumental volume → guide cluster → pitch → tempo. Guide cluster = vocal toggle + vocal volume grouped as one visual unit; guide vocal OFF by default. ←/→ seek ±5s. Fix pitch stepper wrap bug (`+n` text drops to second line — fixed width/tabular nums). Tempo popover: slider → radio preset list (0.75 / 0.85 / 0.9 / 0.95 / 1 / 1.05 / 1.1 / 1.25) + Reset.
-- **Done when:** entering player is paused at 0:00; bar stays visible through a full song when pinned; unpin → 3s auto-hide returns; arrows seek ±5s; first play of any song has guide off; control order matches spec above; +6 pitch renders one line; tempo set via radio updates clock/wipe same as before.
-
-### [x] R1.3 Lyric fixes
-Tokenizer: apostrophe (`'`/`’`) between letters is word-internal — "We're" = 1 unit, "don't" = 1 unit (fix in `src/shared/tokenize.ts` word-run logic; existing saved lyrics untouched, only new tokenization). Player no-lyrics state: drop the "No lyrics yet — time them in the lyric creator first" copy, show just an Add lyrics button (same affordance R1.1 adds).
-- **Done when:** dev-console check `We're don't I've gone` → 4 units; alignment merge still works on a contraction-heavy English line; lyric-less song in player shows single button that opens creator on the right song.
-
-### [x] R1.4 Stage visuals
-Blurred thumb background gets slow Ken Burns pan/zoom (transform-only, ~60s loop, paused when window hidden). Soundwave option: AnalyserNode on monitor context master → canvas wave/bars layered into stage (transform/paint only, no layout shift), toggle in player overflow, default off, persisted.
-- **Done when:** pan visibly drifts over a minute with 0 layout-shift entries; wave moves with the music and stops when paused; toggle state survives restart; lyric wipe perf trace unchanged.
-- **Amended (user feedback 2026-06-12):** intended soundwave = creator-style whole-song waveform (peaks + playhead), not live analyser bars. Both kept: `stageVisual` setting `off | waveform | bars` (replaces `stageSoundwave` boolean), one chrome button cycles modes. Waveform peaks come from the engine's already-decoded stem buffers (no refetch), accent fill up to the audible playhead.
-
-### [x] R1.5 Sing history
-Replace open-counts-as-play (S3.3 behavior): engine tracks accumulated playback time per session (seeks don't inflate it); when ≥60% of song duration → append ISO timestamp to `sings: []` in meta.json (once per session). `playCount`/`lastPlayedAt` migrate: existing playCount kept as legacy floor for sort, new sings array is source of truth going forward. Library: sort control (added / most sung / recently sung), card shows sing count.
-- **Done when:** play 30s and exit → no sing logged; play >60% with a few seeks → exactly one timestamp appended; sort by most sung and recently sung both reorder correctly; old songs without `sings` don't crash and sort sanely.
-
-## Phase 2 — App shell
-
-### [x] R2.1 Frameless window + unified titlebar
-`frame: false`, custom titlebar: drag region, min/max/close (Windows snap via titlebar overlay or manual handling), doubles as persistent app header on every screen. Library: app name + settings gear. Player: back button + song title/artist (closes "no visual way back" feedback). Esc still exits player.
-- **Done when:** window has no native frame; drag, double-click maximize, snap layouts, min/max/close all work; every screen shows the titlebar; player titlebar shows correct song + back returns to library; fullscreen behavior sane.
-
-### [x] R2.2 Motion pass
-Add `motion`. View transitions library↔player↔creator↔settings (AnimatePresence), card grid entrance stagger, dialog/popover spring in/out, control bar pin/unpin slide. Respect `prefers-reduced-motion`.
-- **Done when:** all four view switches animate smoothly; lyric wipe trace shows no added jank during/after transitions; reduced-motion OS setting disables them.
-
-### [x] R2.3 Design system components
-`src/renderer/components/ui/`: Button, IconButton, Input, Select, Slider, Toggle, Chip, Dialog, Popover, Menu — semantic tokens only, variants via props. Migrate all screens; visual parity or better.
-- **Done when:** grep finds no raw `<button>`/`<input>`/`<select>` outside `ui/`; every screen screenshot-compared sane; `npm run check` green.
-
-### [x] R2.4 Editable languages
-Settings: language list (code + label), add/remove, defaults zh + en. Drives import form select, library filter chips, alignment language passed to whisperx. Removing a language keeps existing songs intact (chip still renders from song meta).
-- **Done when:** add `ja` → appears in import form + filter chips; align on a ja song passes `ja`; remove `ja` → existing ja song still filterable; settings survive restart.
-
-### [x] R2.5 Localisation (zh + en)
-i18next + react-i18next, locale JSON files under `src/renderer/locales/<lang>/` (contributor-friendly: one folder = one PR for a new language). All UI strings extracted; first run detects OS locale (zh* → zh, else en), override in settings. CONTRIBUTING gains a "add a translation" section (R4.1 if not landed yet, else amend).
-- **Done when:** every screen renders fully in both languages with no hardcoded strings left (grep for literals in JSX); switching language in settings is instant, persists; OS set to zh → first run comes up Chinese; adding a stub `ja` folder makes it appear in the language select with no code change.
-
-## Phase 3 — Integrations (LLM + lyrics + search)
-
-### [x] R3.1 LLM client + settings
-Settings fieldset: base URL (default `http://localhost:11434/v1`), model, optional API key, Test button. Main-process OpenAI-compatible chat client (plain fetch, no SDK), timeout + friendly errors. SPEC §12 updated to match.
-- **Done when:** Test round-trips against local Ollama AND one hosted OpenAI-compatible endpoint; wrong URL/model shows readable error, never hangs UI.
-
-### [x] R3.2 Metadata enrichment
-Probe → LLM cleans title/artist before form prefill (local-name-first artist: "Khalil Fong (方大同)" → 方大同; strip decoration: "黑洞裡 Official Music Video" → 黑洞裡), heuristic fallback when LLM unreachable/slow (~3s budget, race). Edit-meta dialog: "Clean up with AI" button for existing songs (preview before apply).
-- **Done when:** both example cases from feedback produce the expected clean values via real local model; LLM stopped → import prefill still works via heuristic at normal speed; existing song cleaned via button with confirm.
-
-### [x] R3.3 YouTube search in Add Song
-`pipeline.py search --query` → `ytsearch10` JSON-lines (title/channel/duration/thumb/url). Add Song dialog: search box alongside URL paste → result list → pick → existing probe/prefill flow.
-- **Done when:** real query returns ~10 results with thumbs in <5s; picking one lands in prefilled form; URL paste path unchanged; bad query/no network handled.
-
-### [x] R3.4 LRC import
-File picker in creator text step. Parse LRC: line timestamps → line starts; per-unit times linearly interpolated within line (marked estimated); enhanced LRC word timestamps used when present. End inference reused. Re-edit guard rules apply.
-- **Done when:** plain LRC file → review mode shows line-accurate highlight; enhanced LRC shows believable per-word wipe; malformed file rejected with message, creator unharmed.
-
-### [x] R3.5 LRCLIB lyric finder
-"Find lyrics" in creator text step: LRCLIB API by title/artist/duration (free, keyless). Synced hit → R3.4 import path (auto-timed); plain hit → fills textarea. Multiple candidates → small picker.
-- **Done when:** a known song fetches synced lyrics and plays believably in review with zero taps; plain-only song fills text step; no-hit shows graceful empty state; works for zh and en songs.
-
-### [x] R3.6 LLM lyric cleanup
-"Clean up with AI" in text step: strips credits/section tags ([Chorus], 作詞: …), normalizes line breaks, preserves language. Diff preview before apply; re-edit guard still protects timed lines.
-- **Done when:** messy pasted lyric (credits + section tags + bad breaks) comes out clean on real model; apply after timing exists triggers existing invalidation dialog only for changed lines.
-
-### [x] R3.7 Local file import
-Add Song dialog: "From file" alongside URL/search — picker accepts anything ffmpeg decodes (mp4, flac, wav, mp3, m4a, ogg, …). `pipeline.py process --file <path>` skips download stage (probe equivalent via ffprobe: duration, tags → title/artist prefill; embedded art or video frame → thumbnail, placeholder if none). Same separation/normalization/convert chain after.
-- **Done when:** an mp4 and a flac each import end-to-end and sing correctly; tags prefill the form when present; tagless file falls back to filename; unsupported/corrupt file errors cleanly with retry/delete.
-
-### [x] R3.8 Stem output format setting
-Setting `stemFormat: flac | m4a`, default flac (lossless after separation — avoids second lossy encode; original stays source-quality as-is). Pipeline convert stage honors it; library scan + player + protocol + waveform accept both extensions per file (existing m4a songs untouched, mixed library fine). Loudness normalization unchanged.
-- **Done when:** new import lands flac stems that play in player and load in creator waveform; flipping setting to m4a → next import lands m4a; pre-existing m4a songs still play; meta/scan handles a library containing both.
-
-## Phase 4 — Production + open source
-
-### [x] R4.1 OSS prep
-README (what/screenshots/features/install/dev-setup/architecture pointer to SPEC), MIT LICENSE, CONTRIBUTING.md (story workflow, check commands, + "add a translation" section deferred from R2.5: one folder under `src/renderer/locales/` = one PR), issue/PR templates, yt-dlp/UVR usage disclaimer.
-- **Done when:** fresh clone on another machine reaches `npm run dev` + pipeline setup using README alone; license/contributing render correctly on GitHub.
-
 ### [~] R4.2 Public repo + branch protection + CI checks
-CI workflow landed + lint commands verified locally; **remaining = owner-only GitHub actions** (no `gh` CLI / repo-admin from dev env): make repo public, branch protection on `main` (require PR, owner-only merge), and the live red/green PR test. Commands for owner in Session Log.
-Repo public on GitHub. Branch protection on `main`: PRs required, owner-only merge. Actions workflow: `npm run check` + `ruff check`/`format --check` on every PR.
-- **Done when:** direct push to `main` rejected; PR from feature branch shows both checks green and red appropriately (test one deliberate failure); only owner can merge.
+CI workflow landed + verified locally; **owner-only GitHub actions remain** (make public, branch protection on `main`, live red/green PR test). Commands in the archived Session Log.
+- **Done when:** direct push to `main` rejected; PR shows both checks green + red appropriately; only owner can merge.
 
 ### [~] R4.3 Python first-run bootstrapper
-Code landed + compiles + runtime-smoke (status IPC shape, gate skip-when-ready, installer renders). **Unverified**: the actual download→venv→torch→import install (done-when needs a clean no-venv machine + GPU — testing here would wipe the working dev venv).
-App-managed pipeline env: on first run / Settings button, download embeddable Python (or uv standalone) into `userData`, create venv, install pinned deps with GPU detect (nvidia-smi → cu128, else CPU torch), fetch static ffmpeg if not on PATH, JSON progress → install UI. Python-path setting becomes advanced override. `setup.ps1` stays for dev.
-- **Done when:** machine state with no venv + no manual python config: first run → guided install → URL import → song separates and plays, zero manual steps; GPU box gets CUDA torch, install survives app restart mid-download (resume or clean retry).
+Code landed + smoke-checked. **Unverified**: real download→venv→torch→import on a clean no-venv + GPU machine (testing here would wipe the dev venv).
+- **Done when:** clean machine: first run → guided install → URL import → separates + plays, zero manual steps; GPU box gets CUDA torch; survives restart mid-download.
 
 ### [~] R4.4 Release pipeline
-Workflow landed (`.github/workflows/release.yml`). **Unverified**: needs push + real GitHub Release + clean-machine .exe install.
-Actions on push to `main`: electron-builder NSIS, version from package.json, tag + GitHub Release with .exe artifact. Release notes from merged PR titles.
-- **Done when:** merging a PR produces a downloadable Release; installing that .exe on a clean machine + R4.3 bootstrap → full import + sing smoke passes.
-
-## Phase 5 — macOS (CI-built, community-tested)
+`.github/workflows/release.yml` landed. **Unverified**: needs push + real Release + clean-machine .exe install.
+- **Done when:** merging a PR produces a downloadable Release; that .exe installs on a clean machine + R4.3 bootstrap → import + sing smoke passes.
 
 ### [~] R5.1 Pipeline mac support
-Code landed (`setup.sh`, MPS→CPU device select in `cmd_align`, darwin ffmpeg in bootstrapper, `pipeline-macos.yml` smoke). **Unverified**: needs the macOS Actions runner to actually run setup.sh + probe + separation.
-`pipeline/setup.sh`, torch device select (MPS → CPU fallback) in separate step, platform-aware paths in bootstrapper (R4.3) + ffmpeg fetch for darwin.
-- **Done when:** GitHub Actions macos runner: setup.sh completes, `pipeline.py probe` real URL succeeds, separation smoke on a short file completes on CPU within runner limits.
+`setup.sh`, MPS→CPU device select, darwin ffmpeg, `pipeline-macos.yml` landed. **Unverified**: needs the macOS Actions runner.
+- **Done when:** macos runner: setup.sh completes, `probe` real URL succeeds, separation smoke on a short file completes on CPU within runner limits.
 
 ### [~] R5.2 mac build in release
-`release-mac` job in release.yml (unsigned .dmg → same Release) + README community-tested/unsigned-open section. **Unverified**: needs a real macOS-runner release build.
-Release workflow adds macos job: electron-builder .dmg (unsigned), uploaded to same Release. README labels mac builds community-tested.
-- **Done when:** Release contains .dmg alongside .exe; README section explains unsigned-app open steps + status.
+`release-mac` job (unsigned .dmg) + README section landed. **Unverified**: needs a real macOS-runner release build.
+- **Done when:** Release contains .dmg alongside .exe; README explains unsigned-open steps + status.
 
-## Round 2 candidates (user-requested, explicitly NOT in Round 1)
-- [ ] Record singing (mic capture + mix-down to file)
-- [ ] Vocal effects (reverb/echo on monitor path)
-- [ ] EQ (per-output or master)
+---
+
+## Phase 1 — Safety + quick bugs
+
+### [ ] AIC2 Lyric cleanup must not delete real lyrics (bug — data loss) ⚠ Now
+`cleanLyrics` (enrich.ts) takes the model's free-form rewrite wholesale, so a quantized model can silently delete sung lines. **Decision (grilled): prompt-harden, not restructure** — strengthen `LYRICS_PROMPT` (few-shot, emphatic "keep every sung line verbatim") **+ a `>40%` removed guard**: if cleanup drops more than ~40% of non-empty lines, surface a warning instead of presenting it as clean. The AIC1 diff-before-apply is the real safety gate (Apply stays an explicit click).
+- **Done when:** a messy lyric (lyrics + section tags + credits) cleans on the real model with **all original lyric lines intact**, only tags/credits removed; a lyrics-only input returns unchanged; a cleanup that would drop >40% of lines shows the warning instead of a result; the previously-damaged song re-cleans without losing lyrics.
+
+### [ ] EL1 Disable stamping in preview (bug)
+In timing's review/preview mode, **Space** currently calls `exitReview()` (jumps back to tap, next Space stamps) — that's the "stamp key fires in preview" leak (note: Space is the stamp key, Tab is gap-nav and already guarded). **Decision: in preview, Space = play/pause** (Player muscle memory), stamping fully disabled; leaving preview happens only via Ctrl+Tab / the tab UI (EL4). Enter=play, arrows=seek/speed unchanged. **SPEC §6.7 change** (Space no longer re-enters tap) — update in same commit.
+- **Done when:** in preview, Space toggles play/pause and never stamps or exits; tap mode still stamps with Space; re-entering tap works via the EL4 switch.
+
+### [ ] EL2 Partial-completed line indicator (bug)
+A line prints its start timestamp the moment its *first* unit is stamped, so a partly-timed line reads as complete. **Decision: tri-color timestamp** in the tap-mode line list — `—` dim (untimed), amber time (partial: ≥1 timed & ≥1 untimed), normal/green time (all units timed). Off `line.units.filter(u => u.t !== null)`.
+- **Done when:** a line with ≥1 untimed unit shows amber; fully-timed shows complete color; untimed shows `—`; stamping the last unit flips amber→complete live.
+
+### [ ] EL5 Back from creator → song page (bug)
+Creator is reachable only from the Player (`onEditLyrics`), but `LyricCreator onBack` routes to `library` (App.tsx:42). **Decision: `onBack → setView({name:'player', song})`** — no origin tracking needed.
+- **Done when:** open creator from a song, Back returns to that song's player.
+
+## Phase 2 — Shared UI primitives
+
+### [ ] UI6 Tabs primitive
+New `src/renderer/components/ui/Tabs.tsx`: clickable tab bar (semantic tokens, aria, motion) **+ `Ctrl+Tab` / `Ctrl+Shift+Tab`** cycle. Consumed by EL4 (add/tab/preview) and ADD1 (search-URL / file).
+- **Done when:** tab bar renders + switches on click; Ctrl+Tab cycles both directions; keyboard-accessible; `npm run check` green.
+
+### [ ] UI1 Custom Select (drop native look)
+Replace native `<select>` in the `Select` primitive with a styled popover list (keyboard up/down/enter/esc, matches Menu/Popover).
+- **Done when:** no native dropdown chrome anywhere; keyboard nav works; every Select-using screen consistent; check green.
+
+### [ ] UI3 Outside-click closes Dialog
+Popover/Menu already close on outside-click; add scrim-click-to-close to `Dialog`. **Guard destructive/confirm dialogs** — those keep explicit buttons so an accidental click can't discard unsaved edits.
+- **Done when:** non-destructive dialogs/popups close on outside click; confirm/discard dialogs still require an explicit choice; Esc still works everywhere.
+
+## Phase 3 — Navigation / app-shell redesign
+> Reverses R2.1's single native titlebar. **SPEC §10** + `src/main/index.ts` updated with NAV1.
+
+### [ ] NAV1 Two-row header + custom window controls
+Top row: app logo (left) + **custom** minimize / maximize-restore / close (right). **Decision (grilled): go custom** — drop `titleBarOverlay`, add IPC `window:minimize|toggleMaximize|close`, style buttons to the app. **Accepted trade-off: lose the native snap-layouts hover flyout** (edge-drag snap + double-click-maximize still work).
+- **Done when:** every screen shows the top row (logo left, custom min/max/close right); all three buttons work; drag region moves the window; double-click drag region maximizes/restores; edge-snap still works.
+
+### [ ] NAV2 Page-level controls on the second row
+Per-screen controls move to row 2 below the app header: library = search / Add / sort / `Songs|Artists` toggle / grid-list toggle; player = back; creator = its action buttons.
+- **Done when:** each screen's controls render on row 2 under the logo row; nothing overlaps the window buttons; holds at min width.
+
+### [ ] NAV3 Floating backgroundless header (gradient scrim)
+**Decision: floating overlay** — header is positioned over content, the library grid / lyric list scroll *beneath* it; a top gradient scrim (opaque→transparent) throughout keeps text + window buttons legible. Screens get top padding = header height.
+- **Done when:** header has no solid fill (gradient scrim only); content scrolls under it and stays legible; window buttons readable over moving content; matches the player control-bar treatment; semantic tokens only.
+
+### [ ] NAV4 Vertical title + artist
+Player header stacks title over artist (was inline).
+- **Done when:** player header shows title on top, artist beneath; both truncate; back-button alignment intact.
+
+## Phase 4 — Feature views
+
+### [ ] HOME1 Songs grid/list view
+`Songs | Artists` segmented toggle in row 2 (NAV2). Songs view gains a **grid/list** toggle; list = compact rows (thumb, title, artist, favorite). View choice persists in settings.
+- **Done when:** grid↔list toggles; list rows open the player; favorite/sort work in list; choice survives restart.
+
+### [ ] ART1 Artists view
+The `Artists` toggle shows a list of artists (name · song count). **Decision: artist detail = filtered Songs view** (clicking an artist sets a removable "Artist: …" filter chip on the Songs list, reusing grid/list) — no separate screen type.
+- **Done when:** Artists lists every artist with song count; unknown/empty-artist handled; clicking one shows the Songs list filtered to that artist with a clear-able chip; back/clear returns to all songs.
+
+### [ ] ART2 Artist name links to artist filter
+Clicking an artist name (card, player header, details modal) navigates to Songs filtered by that artist (ART1's chip).
+- **Done when:** clicking an artist name anywhere opens the filtered Songs view; works for CJK + latin names; non-artist clicks unaffected.
+
+### [ ] ADD1 Tabs in Add Song (search-URL / file)
+Use the UI6 Tabs primitive to switch between "YouTube (search + URL)" and "Upload from file".
+- **Done when:** tabs switch the two modes; each mode's state survives switching away and back in-session; keyboard-accessible.
+
+### [ ] ADD2 Drag-and-drop file load
+The "from file" pane accepts a dragged file (drop zone + hover state) alongside the picker.
+- **Done when:** dropping a supported file starts the same probe/prefill flow; unsupported file rejected with a message; drag-over shows a visible drop affordance.
+
+### [ ] ADD3 Auto-detect language from user's languages
+**Decision: heuristic script detection** — dominant Unicode script of the probe title → matching language in `settings.languages` (Han→zh, kana→ja, Hangul→ko, Latin→en/…); ambiguous/none keeps the default. Preselects the import form's language; user can override.
+- **Done when:** an obviously-zh and an obviously-en import each preselect the right language from the user's list; ambiguous falls back to a sane default; override still works.
+
+### [ ] SNG1 Song details modal
+Player overflow entry opens a modal: title, artist, sung count, sing history, duration, source, language. Closes on outside-click (UI3) + Esc; artist name links via ART2.
+- **Done when:** modal opens from the player, shows correct metadata, closes on outside click + Esc; artist link navigates to the artist filter.
+
+### [ ] SNG2 Lyrics behind player controls
+Scrolling lyrics currently overlap the waveform + control bar. **Decision: lyric layer z-below the control bar + bottom gradient fade** so text dissolves before reaching the bar (not a hard clip).
+- **Done when:** at every scroll position waveform + controls are fully visible and clickable; lyric text fades out above the bar, never overlapping it; wipe/highlight still readable.
+
+### [ ] SNG3 Animated singing background
+Stage background reads static. **Decision: investigate** whether R1.4's Ken Burns is absent in the player stage or just imperceptible, then make the motion subtly visible; paused when hidden / not playing.
+- **Done when:** background shows subtle continuous motion during playback; pauses when hidden / paused; 0 layout-shift entries; wipe perf trace unchanged.
+
+## Phase 5 — Polish
+
+### [ ] EL3 Progress strip replaces the done banner
+Remove the centered `timing.done` ("全部打完 - 可以预览了") banner. **Decision: full-width progress strip directly under WaveformStrip** (mirrors the import strip), measuring timed/total units (`stamps.length / flatUnits.length`), filling live; at 100% reads "ready to preview". Keep the large current-line focus display.
+- **Done when:** centered banner gone; full-width strip under the waveform shows `timed/total · %` and fills as you stamp; 100% reads ready-to-preview; focus display unchanged.
+
+### [ ] EL4 Tab-cycle the three creator steps (+ tab UI)
+**Decision: `Ctrl+Tab` / `Ctrl+Shift+Tab`** cycle `text → tap → review`, plus the UI6 Tabs bar in the creator. Plain Tab stays gap-nav in timing; textarea Tab unaffected. Cycle keeps current shape (review is a toggle, not a 4th route).
+- **Done when:** Ctrl+Tab moves between all three steps both directions; the tab bar does the same on click; never collides with the stamp (Space) or gap-nav (Tab); works zh + en.
+
+### [ ] AIC1 Unified inline diff for cleanup preview
+Replace `CleanLyricsDialog`'s two-pane view with a **unified inline diff** (one column, removed lines red `−`, kept neutral; line-level LCS). This is AIC2's apply gate.
+- **Done when:** preview renders a unified line-level diff (removed marked); Apply writes only the cleaned text; re-edit guard unchanged.
+
+### [ ] UI2 Custom scrollbars
+Styled thin scrollbar in scroll regions (library grid, lyric list, dialogs), respecting reduced-motion.
+- **Done when:** scroll regions show the custom scrollbar; wheel/drag/touchpad scroll still work; no layout shift.
+
+### [ ] UI4 De-native audit
+Sweep remaining native-looking controls (checkboxes, range thumbs, file inputs, tooltips) through the `ui/` primitives.
+- **Done when:** grep + visual pass finds no raw native control in screens; all chrome uses `ui/` components.
+
+### [ ] UI5 Hide sung count on card
+Remove the sung-count badge from library cards (R1.5). Count stays in the SNG1 details modal; sort-by-most-sung unaffected.
+- **Done when:** cards show no sung-count badge; sort-by-most-sung still works; count visible in details modal.
+
+### [ ] META1 Align AI cleanup button with Cancel/Save
+Edit-meta dialog: put "Clean up with AI" on the same action row as Cancel/Save.
+- **Done when:** the three buttons sit on one aligned row; sane at min width in zh + en.
+
+## Phase 6 — Audio (deferred Round-2 candidates)
+
+### [ ] FX1 Record singing — mic capture + mix-down to file.
+### [ ] FX2 Vocal effects — reverb/echo on monitor path.
+### [ ] FX3 EQ — per-output or master.
 
 ## Unscheduled
-- [ ] Playlists / up-next queue (dropped from R1 by user)
+- [ ] Playlists / up-next queue (dropped from R1)
 - [ ] Fullscreen two-line stage mode (dropped)
-- [ ] Per-unit timing nudge editor (dropped after explanation)
-- [ ] Mic-input waveform via getUserMedia (chose output-mix analyser instead)
+- [ ] Per-unit timing nudge editor (dropped)
+- [ ] Mic-input waveform via getUserMedia (chose output-mix analyser)
 - [ ] Per-song key/tempo persistence (MVP decision was per-session)
 
 ---
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
-- 2026-06-13 · R5.1+R5.2 · [~] macOS support. **R5.1:** `pipeline/setup.sh` (bash port of setup.ps1 — macOS installs PyPI torch 2.8.0 = MPS+CPU, Linux picks cu128 vs cpu index by `nvidia-smi`, `audio-separator[gpu|cpu]`, ffmpeg-on-PATH guard, `--update` bumps yt-dlp). `pipeline.py cmd_align` device select CUDA→MPS→CPU (`torch.backends.mps.is_available()`) with fallback to CPU on `OutOfMemoryError`/`RuntimeError` (unsupported MPS op). `bootstrap.ts` ffmpeg: `ffmpegAsset()` now a union — win/linux single archive, darwin = evermeet.cx per-tool zips (`installFfmpegBinary` fetches ffmpeg + ffprobe separately). `.github/workflows/pipeline-macos.yml` (workflow_dispatch + pipeline/** push): brew ffmpeg → setup.sh → probe real URL → separate a generated 5s tone → assert instrumental.flac+vocals.flac. **R5.2:** `release-mac` job in release.yml (`needs: release`, gated on `released==true`) — macos-latest, `electron-builder --mac --publish never` (CSC_IDENTITY_AUTO_DISCOVERY=false → unsigned), `gh release upload <tag> dist/*.dmg --clobber`. README "Platform status" section: macOS community-tested + unsigned-open steps (right-click Open / `xattr -dr com.apple.quarantine`). `npm run build` + ruff green. SPEC §5.2.1 extended (setup.sh, device select, release/mac). **NOT verified** (no macOS here): setup.sh run, MPS align, evermeet ffmpeg fetch, dmg build, unsigned-open flow.
-- 2026-06-13 · R4.4 · [~] Release workflow `.github/workflows/release.yml` — push to `main`, `windows-latest`: read version from package.json → if tag `v<version>` doesn't already exist, `npm ci` → `npm run build:win -- --publish never` (electron-vite + electron-builder NSIS) → `gh release create v<version> dist/*-setup.exe --title "Singray v<version>" --generate-notes` (notes from merged PR titles). `concurrency: release` guard, `permissions: contents:write`, skips cleanly when the version tag exists (re-push without bump = no-op). **NOT verified**: needs push + real Release + clean-machine .exe install (later extended with the R5.2 macOS job).
-- 2026-06-13 · R4.3 · [~] App-managed pipeline bootstrapper. `src/main/pipelineEnv.ts`: managed dirs under `userData/pipeline-env/` (uv/, venv/, ffmpeg/, python/), `effectivePythonPath()` (existing `settings.pythonPath` override wins, else managed venv) + `pipelineSpawnOptions()` (prepends managed ffmpeg to PATH when not on system PATH). All 4 pipeline spawn sites (pipeline.ts ×3, importQueue.ts ×1) switched from `getSettings().pythonPath`+`{windowsHide}` → `effectivePythonPath()`+`pipelineSpawnOptions()` (pipeline.ts no longer imports getSettings). `src/main/bootstrap.ts`: `installPipeline(emit)` — steps uv→venv→torch→deps→ffmpeg→verify; uv standalone from GitHub release per platform/arch, `uv venv --python 3.13` (UV_PYTHON_INSTALL_DIR under pipeline-env), GPU detect via `nvidia-smi -L` → cu128 wheels + audio-separator[gpu] else cpu index + [cpu], ffmpeg static fetch (win gyan.dev zip / linux johnvansickle tar.xz / mac→brew error), extract via `tar -xf` (bsdtar), `findBinary` recursive locate + copy into managed dirs. Resume: `.install-state.json` marks done steps (skipped on re-run, verify always reruns); downloads stream to `<f>.part`→rename (clean retry on interrupt); fetch AbortController + tracked child procs → `cancelInstall()`. `pipelineStatus()` = {ready,python,ffmpeg,gpu,pythonSource,ffmpegSource,installing}. IPC `pipeline:status`/`install`(streams `pipeline:install:progress`)/`cancelInstall` + preload `pipeline` api + SingrayApi/types (`PipelineStatus`,`InstallStep`,`InstallEvent`). Renderer: `PipelineInstaller.tsx` (status chips, per-step progress list, install/reinstall/cancel), `PipelineSetup.tsx` first-run gate (shown when !ready, "Skip for now" dismiss), embedded in Settings Pipeline fieldset (python field relabeled "advanced override"). Locale `settings.setup.*` (en+zh), pythonHelp updated. `npm run check` + `electron-vite build` green. Smoke (verify-r43.mjs, dev env has ready pipeline): `pipeline.status()` → `{ready:true,python:true,pythonSource:override,ffmpeg:true,ffmpegSource:path,gpu:true}` correct shape; first-run gate correctly NOT shown (ready) → library; Settings opens, installer block + chips render. **NOT verified** (would wipe working venv / need clean machine + GPU): real uv download, managed python install, torch/deps install, ffmpeg fetch, import success from a clean state, mid-download resume. SPEC §5.2.1 added.
-- 2026-06-13 · R4.2 · [~] CI workflow `.github/workflows/ci.yml` — two jobs on `pull_request`+`push` to `main`: **check** (ubuntu, node 20, `npm ci --ignore-scripts` to skip electron-builder install-app-deps + git hooks that `npm run check` doesn't need → `npm run check` = Biome + tsc) and **ruff** (python 3.13, `pip install ruff==0.15.16` matching setup.ps1 pin — no torch needed to lint → `ruff check pipeline` + `ruff format --check pipeline`). Both verified locally green (Biome 70 files, tsc node+web, ruff "All checks passed"/"1 file already formatted"). **Blocked on owner (no gh CLI / repo admin here, did NOT push):** after pushing this commit, owner runs — `gh repo edit ngtongsheng/Singray --visibility public --accept-visibility-change-warnings`; branch protection requiring PR + both checks + owner-only merge via `gh api -X PUT repos/ngtongsheng/Singray/branches/main/protection` (required_status_checks contexts `["check","ruff"]`, `enforce_admins`, `required_pull_request_reviews`, `restrictions` to owner) or the GitHub Settings→Branches UI; then test a deliberate-fail PR (red) + a passing PR (green) and confirm direct `git push origin main` is rejected. Mark [x] once those pass.
-- 2026-06-13 · R4.1 · OSS prep docs. `LICENSE` (MIT, © 2026 ngtongsheng). `README.md` rewritten from stub → what / screenshots placeholder / features / install / dev-setup (prereqs: Node 20+, Python 3.13/3.11 via py, ffmpeg on PATH, NVIDIA/cu128; `npm install`/`dev`/`check`/`build:win` + `pipeline\setup.ps1` verified against package.json scripts + setup.ps1) / architecture diagram pointing to SPEC / third-party usage notice (yt-dlp ToS+copyright personal-use disclaimer, UVR/audio-separator + ffmpeg/torch/whisperx/LRCLIB license note, "no copyrighted content ships"). `CONTRIBUTING.md`: story workflow (Now pointer, done-when-by-running, finish ritual, `R<story>:` commits), check commands (`check`/`check:fix`/`check:py`), conventions (no tests, IPC-only renderer, semantic tokens, dep pinning), **"add a translation"** = copy `locales/en/`→`<code>/`, translate values, set `languageName`, zero code change (deferred from R2.5). `.github/`: issue templates (bug_report.yml + feature_request.yml forms, config.yml disables blank + links BACKLOG), pull_request_template.md (what/why/verification/checklist). Screenshots left as placeholder (no release images yet). Gotcha: done-when "fresh clone on another machine" not literally executed here — README commands verified against actual package.json scripts + setup.ps1 instead; markdown/yml valid.
-- 2026-06-13 · R3.8 · Stem format setting `stemFormat: flac | m4a` (default **flac** — lossless, avoids a 2nd lossy encode after separation). Pipeline: `process --format` (choices flac/m4a, default flac); `_encode_m4a`→`_encode_audio(src,dst,gain,fmt)` (flac=`-c:a flac`, m4a=AAC 256k + faststart), output `original/instrumental/vocals.<ext>`; temp `m4a_dir`→`enc_dir`. `cmd_align` now finds `vocals.flac` else `vocals.m4a`. Main: `importQueue` passes `--format getSettings().stemFormat`; settings default + `Settings.stemFormat` type. **Mixed-library resolution without per-song meta:** `audio.url(id,track)` now returns extensionless `karaoke://<id>/<track>`; the protocol handler resolves a bare track (`original|instrumental|vocals`) to whichever encode exists (`firstExisting`, flac-first), MIME map gains `.flac`→`audio/flac`. `listSongs.ready` checks original.flac OR original.m4a. Settings → Pipeline fieldset gains a stem-format Select (`settings.stemFormat*` locale en+zh). Verified (real separation, build): existing m4a 南音 → extensionless URL still 200 `audio/mp4`, decodes 216.9s (no regression); default-flac import → `original.flac`+`vocals.flac` both `audio/flac`, `decodeAudioData` → 8s (player + creator-waveform path works on flac); flip setting to m4a → next import lands `audio/mp4`; three-song mixed library all resolve. Loudness/gain path unchanged. SPEC §5.2 updated. Cleaned test songs + restored stemFormat=flac after. **Phase 3 done.**
-- 2026-06-13 · R3.7 · Local file import. Pipeline: `probe` and `process` gained mutually-exclusive `--url`/`--file`. `_ffprobe`/`_local_meta` read duration + tag title/artist (format + stream tags, title falls back to filename stem) and flag embedded cover art vs real video; `_extract_local_thumb` pulls cover art (`-map 0:v:0 -frames:v 1`) else a frame ~20% in, else none (placeholder). `cmd_process --file` skips the download stage (audio = the file). `_encode_m4a` gained `-vn` so mp4 inputs drop video. Main: `probeFile()` (refactored shared `runProbe`), IPC `import:probeFile` + `import:pickFile` (native `dialog.showOpenDialog`, renderer never sees fs). `ImportRequest.filePath?` + `SongMeta.sourceFile` (string|null, normalized in listSongs); importQueue `Job.filePath`, `run()` picks `--file`/`--url`, `startImport` stores `sourceFile`, `retryImport` reuses it. ImportDialog: "From file…" button → `pickFile` → `probeFile` → shared `prefill` (LLM enrich, heuristic fallback); typed URL clears a picked file and vice-versa; submit sends `filePath` (url '') for file imports. `import.fromFile` locale (en+zh). Verified: pipeline CLI — tagged flac/mp4 probe → title/artist from tags, tagless wav → filename + null; full `process --file` mp4 → 3 stems + thumb.jpg (from frame, no download stage) durationSec 8.0, flac → 3 stems no thumb, missing file → `{stage:error}`. App driver (verify-r37/37c, real separation): `probeFile` prefill correct, From file button present, `import.start({filePath})` → song ready with `sourceFile` persisted in meta.json, opened in player → seek slider advances 1.5→3.0 (plays). Gotcha: prod build strips DEV-only `window.__playerEngine`/`__lrTime`, so read the seek `<input type=range>` value to confirm playback; native file dialog can't be Playwright-driven so the picker's IPC was exercised directly. SPEC §5.2 updated. Cleaned the test-imported song from the real library after.
-- 2026-06-13 · R3.6 · `cleanLyrics({text,language})` added to `src/main/enrich.ts` — reuses the R3.1 `chat` client (temperature 0, `noReasoning`, 60s timeout for long lyrics), system prompt strips section headers (`[Verse]`/`[Chorus]`/副歌…) + credit lines (作詞/作曲/編曲/監製, "Produced by"…), collapses blank runs, forbids translation/rephrase/reorder; strips stray code fences from the reply. No fallback (rejects readably). IPC `llm:cleanLyrics`, preload + `SingrayApi.llm.cleanLyrics`. `CleanLyricsDialog.tsx`: two-pane before/after, removed lines struck red (line not in cleaned set), "将移除 N 行" count. Creator text step "AI 清理" (Sparkles) button → `onClean` (busy spinner, errors inline via `lrcError`) → preview dialog; Apply just `setText(cleaned)` (non-destructive — re-edit guard fires only on Continue/Align via existing `buildLyrics` LCS diff). `clean` locale block (en+zh). Verified live (real Ollama gemma4:12b-it-qat): messy zh lyrics (作詞/作曲/[Verse 1]/[Chorus]/Produced by + double blanks) → 5 lines removed, 3 real lyric lines kept, blanks collapsed; diff preview correct; Apply updated textarea; Continue on the timed 南音 → existing invalidation dialog fired for changed lines → Cancelled (no persist, 南音 timing intact). SPEC §12 updated. Gotcha: set React controlled textarea in the driver via the native value setter + `input` event.
-- 2026-06-13 · R3.5 · `src/main/lyricsFinder.ts` `findLyrics({title,artist,durationSec})` — LRCLIB keyless `GET /api/search` (structured `track_name`/`artist_name`, free `q` fallback), `User-Agent` + `Lrclib-Client` headers, 12s timeout. Hits filtered (drop instrumentals + lyric-less), ranked synced-first then closest duration, capped 8. Friendly errors (timeout/no-network/HTTP). Fetched in main (renderer CSP `default-src 'self'` blocks cross-origin). New `LrclibQuery`/`LrclibHit` types, IPC `lyrics:findLyrics`, preload + `SingrayApi.lyrics.findLyrics`. `LrclibFinderDialog.tsx`: fetches on open, loading/empty/error states, candidate list (track · artist · album · dur + synced/plain badge). Creator "Find lyrics" (Search icon) button left of Import LRC → dialog; `onPickHit`: syncedLyrics → shared `ingestLrc` (R3.4 parse → inferEnds → confirm-if-timing → timing step), plain-only → fills textarea. `finder` locale block (en+zh). Verified (real network): direct LRCLIB en "Never Gonna Give You Up"/Rick Astley → 20 hits synced, zh 南音/方大同 → 18 hits synced, nonsense → 0 (graceful, no throw); app driver — open creator → 查找歌词 → 8 candidates with badges → pick synced → replace-timing confirm → timing rows show real line-accurate zh lyrics (0:13.8/0:16.4…) zero taps → review @45s highlights correct current line. Side benefit: restored 南音's lyrics that R3.4 verification had overwritten. Plain-only path is a one-line `setText(plainLyrics)` (verified by code). Gotcha: LRCLIB cold fetch can take >4s — driver polls for `<li>` up to 12s. SPEC §6.2 LRC import note extended with LRCLIB.
-- 2026-06-13 · R3.4 · `src/shared/lrc.ts` `parseLrc(content, language)` — plain + enhanced LRC → Lyrics. Leading `[mm:ss.xx]` (one or more = repeated-line form) → line starts; metadata tags (`[ti:]`/`[ar:]`…, non-numeric) fall through and are skipped; `[offset:±ms]` subtracts globally. Enhanced `<mm:ss.xx>` word markers (single-start lines only) → unit anchors via `tokenizeLine(prefix).length`. `fillTimes` linearly interpolates `t` between anchors with a sentinel `[units.length, lineEnd]`; interpolated (non-anchor) units get `estimated: true` (new optional `LyricUnit.estimated` field). Plain line span = `min(nextStart, lastAnchor + units×0.4s)` so words never stretch across an instrumental; a `≥5s` gap to the next line inserts an empty break marker. Line ends left null → `inferEnds` fills them (same path as tap/align). Throws "No timestamped lyric lines found" on metadata-only/prose files. Creator text step: `FileDown` "Import LRC" button → hidden `<input type=file accept=.lrc,.txt>` → `FileReader.readAsText` (renderer-only, no fs/IPC) → parse → `inferEnds(song.durationSec)` → if existing timing, ConfirmDialog (lrcReplace copy) else straight to timing step; bad file → inline `lrcError`, creator untouched. Locale keys importLrc/lrcInvalid/lrcReplace* (en+zh). Verified: node strip-types parser test (plain interpolates+estimated capped by next start, break on >5s gap, enhanced anchors each word, malformed throws, CJK per-char); real app driver (verify-r34/34b) — plain import → timing rows 0:01.0/0:04.0/0:30.0, review mode at ~2s highlights line 1 (line-accurate); enhanced → "I am singing loud" each word anchored; malformed → 无法解析 error + textarea intact; persisted lyrics.json shows interpolated `~` units + inferred ends (line2 end 10.2 = lastUnit+5) + inserted break. Gotcha: app uiLanguage=zh, drive buttons by `title`/zh text + DOM position; `setInputFiles` works on the hidden input. Gotcha: verification overwrote test song 南音's real lyrics (clicked through replace-timing confirm) — restored via R3.5 LRCLIB. SPEC §6.2 notes LRC import path.
-- 2026-06-13 · R3.3 · `pipeline.py search --query` → `ytsearch10:` via yt-dlp **flat extraction** (`extract_flat`+`skip_download`, no per-video probe) → JSON-lines `{title, channel, duration, thumbnailUrl, url}` (thumb from entry else constructed `i.ytimg.com/vi/<id>/hqdefault.jpg`; url always built from `id`). Same `{stage:error}` + non-zero exit contract as probe. `searchYoutube()` in `main/pipeline.ts` (readline JSON-lines collect, rejects on error line / stderr tail), IPC `import:search`, preload + `SearchResult` type + `SingrayApi.import.search`. ImportDialog: search Input + IconButton (Enter or click) above the URL field; result list = scrollable `<ul>` of `Button variant="bare"` rows (thumb + title + channel·duration), picking one sets `url` → fires the existing probe/enrich `useEffect` unchanged. Search keys added to en/zh locales. Verified via driver (verify-r33.mjs, real network): "rick astley…" → 10 hits all with thumbs in 1.7s (<5s); pick → url=dQw4…XcQ, probe prefilled "Never Gonna Give You Up"/"Rick Astley"; URL-paste path intact (BliOkLi4fss → 黑洞裡/Khalil Fong); gibberish query → no crash, renderer alive. Gotcha: app runs uiLanguage=zh, so placeholder-text selectors fail — drive search input by DOM position, URL input by its hardcoded `youtube.com` placeholder. Gotcha: CSP `script-src 'self'` (no unsafe-eval) blocks playwright `waitForFunction` (string predicate) — replaced with a `page.evaluate(fn)` poll loop. SPEC §5.2 updated (search command + flat-extraction note).
-- 2026-06-12 · R3.2 · `src/main/enrich.ts`: `llm:enrichProbe` (import prefill — LLM under 3s budget, falls back to heuristic on any failure, never rejects, `EnrichResult.source` says which) + `llm:cleanMeta` (edit-meta "Clean up with AI", no fallback, readable errors). Heuristic = old renderer prefill logic (probe tags else `parseYoutubeTitle`); `parseTitle.ts` moved renderer lib → `src/shared/` so main can use it. Big gotcha: `gemma4:12b-it-qat` is a thinking model — ~220 hidden tokens per reply pushed enrich to ~8.5s, always losing the 3s race. Fix: `ChatOptions.noReasoning` → body `reasoning_effort: 'none'` (Ollama /v1 honors it → ~2s; native-API `think:false` equivalent; strict providers that 400 get one retry without the param). EditMetaDialog: Sparkles button → preview card (suggested title · artist) with Apply/Dismiss, noop → "already clean" line, errors inline. ImportDialog prefill awaits enrich inside the probe chain (spinner spans both). Verified via driver (verify-r32, real Ollama + real probe of BliOkLi4fss "Khalil Fong (方大同) - 黑洞裡 Official Music Video"): both feedback examples → 黑洞裡/方大同 via llm (~2s); LLM down → heuristic in 7ms, UI prefill normal speed; edit-meta preview→apply fills inputs; LLM down on button → connection-refused message. SPEC §12 updated.
-- 2026-06-12 · R3.1 · `src/main/llm.ts`: plain-fetch OpenAI-compatible client — `chat(messages, {timeoutMs, temperature})` + `testLlm()` ("Reply with the single word: pong" round-trip), default 30s `AbortSignal.timeout`. Friendly error map: TimeoutError (gotcha: `AbortSignal.timeout` rejects with `TimeoutError`, not `AbortError`) → "No response within Ns"; fetch cause.code ECONNREFUSED/ENOTFOUND → "Cannot reach …"; !ok → OpenAI-style `error.message` from body, special-cased 401/403 (key) and bare 404 (wrong URL/model); non-string content → "not an OpenAI-compatible /v1 URL?". New settings `llmBaseUrl` (default `http://localhost:11434/v1`) / `llmModel` / `llmApiKey`; Settings AI-assist fieldset (URL, model + Test, password key input, ok/fail line mirrors pipeline test incl. IPC-prefix strip). IPC `llm:test` → `LlmTestResult {model, reply, ms}`; renderer-side errors arrive readable. Verified via driver (verify-r31): Ollama `gemma4:12b-it-qat` → pong 10.7s (cold-load); hosted keyless `https://api.llm7.io/v1` `qwen3-235b` → pong 0.5s (pollinations.ai kept 429ing — llm7.io is the reliable keyless OpenAI-compatible test target; their kimi/gpt models 402 without key, qwen3-235b/codestral work); wrong port → connection-refused message in ms; bogus model → "Server error: model 'totally-bogus-model' not found"; unreachable IP (10.255.255.1) → spinner pending, renderer fully responsive. SPEC §4.5 settings block + §12 ("Future Hooks" → "LLM Integration") updated. Left user settings configured: Ollama default URL + gemma4:12b-it-qat.
-- 2026-06-12 · R2.5 · i18next@26 + react-i18next@17. `lib/i18n.ts`: `import.meta.glob('locales/*/translation.json', eager)` → resources, so a new locale folder appears in the Settings select with zero code change (`localeName()` reads each locale's own `languageName` key); `resolveLocale('' | code)` = saved pref if available else OS lang else en. New `settings.uiLanguage` ('' = follow OS); main.tsx awaits settings before first render. All UI strings extracted (~120 keys: common/stage/library/card/import/editMeta/player/creator/timing/settings) incl. titles, placeholders, aria-labels, ConfirmDialog props, plural `discardBody` via i18next count. Kept literal: "Singray" brand, example placeholders ja/日本語. Settings gains Interface fieldset; switch = patch + `i18n.changeLanguage` (instant, verified h1 flips same tick). Verified via driver (verify-r25): full zh screenshots library/settings/player/creator; persists across restart; OS-locale case emulated with `--lang=zh-CN` (navigator.language=zh-CN → first run Chinese); stub `ja` folder → select gains 日本語 with no code change (removed after). CONTRIBUTING "add a translation" section deferred to R4.1 (file doesn't exist yet — noted in R4.1 story). `Language` → free-form string + `LanguageDef {code,label}`; `settings.languages` (defaults zh/en) drives import-form select, edit-meta select, and library filter chips (chips = settings codes ∪ song codes, label falls back to bare code for removed languages — keeps every song filterable). Settings gains Languages fieldset (rows + code/label add form, dup-code guard, Enter adds). 'unknown' always offered implicitly in selects. Alignment needed no change: pipeline `cmd_align` already reads `meta.json` language. SPEC §4.5 settings block updated (was stale: + playerBarPinned/stageVisual/languages). Verified via driver (verify-r24/24b): add ja → chip 日本語 + import select option (real probe); song set to ja → meta.json `"language": "ja"` on disk; restart keeps ja; remove ja → bare `ja` chip filters to the song; live ja whisperx align not run (≈1 GB model download) — contract is the meta field cmd_align reads, exercised with zh in MVP. `components/ui/`: Button (variants primary/secondary/ghost/danger/bare, sizes sm/md/lg/bare, `active` accent-engaged state), IconButton (xs/sm/md/lg, `round`), Toggle (= Button + aria-pressed), Input (`uiSize`, `icon`/`trailing` adornments — wrapper always renders so a conditional spinner can't remount the input), Select, Slider, Chip, Dialog (scrim+panel+Esc, motion presets), Popover, Menu/MenuItem (outside-click/Esc, context-close). All 11 screens/components migrated; grep clean for raw button/input/select outside ui/ (one comment hit only). Biome: `noLabelWithoutControl` needs `options.inputComponents: [Input, Select, Slider]` or labels over custom components fail lint. Found+fixed pre-existing bug: tempo popover shrink-to-fit collapsed to anchor width (grid-cols minmax(0,1fr) lets cells shrink → preset labels overlapped) — `w-max` on the popover. Verified via driver (verify-r23.mjs, 16 shots + interaction checks: favorite/sort/chips/menu/dialogs/play/guide/key/tempo/pin/stage-visual/creator steps); check green. `motion@12` added. App.tsx: MotionConfig + AnimatePresence `mode="wait"` view fades (0.2s in / 0.14s out, slight scale) keyed per view+song. Library cards: 30ms entrance stagger (capped 0.45s). `lib/motionPresets.ts`: dialogScrim/dialogPanel/popover presets via `useMotionPresets()` hook → ConfirmDialog/EditMetaDialog/ImportDialog spring in/out, card menu + tempo popover too (AnimatePresence wrappers at every render site). Player bottom bar hide/show = fade+24px slide. Gotcha: motion's `useReducedMotion` reads matchMedia once at mount, never updates — wrote reactive `usePrefersReducedMotion` (matchMedia change listener); reduced mode collapses all presets to `{}` and skips view/card initial+exit. Verified by frame-sampling computed opacity: 4 view switches 10–17 mid-frames each; dialog spring in 4 / out 8 mid-frames; bar slide ends `opacity 0, translateY(24px)`; wipe trace during playback post-transition worst 17.1ms, zero >25ms over 600 frames; reduced-motion: 0 mid-frames everywhere, restoring preference re-enables (16 mid-frames). Note: library down to 2 songs (user deleted 3 between sessions at 6:55 — not script damage; verified timeline).
-- 2026-06-12 · R2.1 · Frameless via `titleBarStyle: hidden` + Windows `titleBarOverlay` (native caption buttons keep snap layouts/min/max/close). New `Titlebar` component: 40px drag region (`app-drag`/`app-no-drag` CSS utilities), caption strip reserved via `env(titlebar-area-*)`; replaces per-screen headers — library merged name/search/Add Song/gear into it, player got back + title/artist + chrome buttons (floating top-right chrome removed, buttons no longer fade since titlebar is persistent), creator/settings converted (controls normalized to h-8). Verified with real OS input (SendInput from PowerShell — synthetic CDP events bypass non-client hit testing): titlebar drag moves window, double-click maximizes/restores, native min/max/close clicks work, snap-layouts flyout appears on maximize hover (desktop screenshot); `navigator.windowControlsOverlay` confirms frameless overlay; titlebar on all four screens; Esc and back button both exit player; fullscreen keeps titlebar, sane. Gotcha: maximized window moves to (0,0) — screen-coord tests must recompute.
-- 2026-06-12 · R1.4b/R1.2b · Ad-hoc user feedback after Phase 1: (1) soundwave meant the creator-style waveform — added `StageWaveform` (whole-song peaks from `engine.peaks()` off the decoded buffers, accent progress fill + playhead line), analyser bars kept; `stageSoundwave` → `stageVisual: off|waveform|bars`, chrome button cycles. (2) top-chrome buttons normalized to h-8 (icon-only button was shorter). (3) tempo popover native radios → segmented preset buttons (4×2 grid, aria-pressed) + Reset. All re-verified via driver.
-- 2026-06-12 · R1.5 · Engine `playedSeconds`: per-stretch position-delta accumulator (banked on pause/seek/natural end) — seeks can't inflate it. Player sing gate in the coarse rAF clock: ≥60% → append ISO timestamp to `sings`, once per session; entry playCount/lastPlayedAt writes removed. `sings: []` added to SongMeta + import; listSongs normalizes missing arrays. Library sort select (added/most sung/recently sung), card shows count = playCount floor + sings. Verified live: 20s play no sing; 10s+jump-to-92% no sing; full play at 1.25× with seeks → exactly one timestamp; both sorts reorder correctly on legacy metas. Test left one real sing on Never Gonna Give You Up.
-- 2026-06-12 · R1.4 · Ken Burns: CSS keyframes (transform-only, 60s loop) on blurred art, `animation-play-state: paused` on visibilitychange. Soundwave: `engine.createMonitorAnalyser()` (cached tap off both stem gains, audio path untouched) → canvas frequency bars (96 bars, accent token via getComputedStyle), draw loop gated on `playing`; toggle in player top chrome, persisted as `stageSoundwave` (default off). Verified: transform drifts, 0 layout-shift entries during 12s pan+wave, wave freezes on pause, worst rAF frame 17ms, toggle survives restart.
-- 2026-06-12 · R1.3 · Tokenizer: `'`/`’` joins word run only when flanked by letters (lookahead on segment list) — "We're don't I've gone" → 4 units; trailing/quoting apostrophes still attach as punctuation; merge verified 10/10 on contraction-heavy line (core() already strips apostrophes, so token match unaffected). Player no-lyrics state = single Add lyrics button → creator (verified opens on right song). Node `--experimental-strip-types` runs shared TS directly for logic checks.
-- 2026-06-12 · R1.2 · No autoplay (enter paused at 0:00, guide vocal off via `engine.setVocal(false)` post-load); new `playerBarPinned` setting (default true) + pin/unpin button at bar end — unpin restores 3s auto-hide; control order play → seek → instr vol → guide cluster (toggle+volume in one bordered unit) → key → tempo; ←/→ seek ±5s; Key span `w-14 whitespace-nowrap` fixes +n wrap; tempo slider → radio presets (0.75–1.25) + Reset. All done-when checks verified via playwright driver (full-song pinned check proxied at 4.5s idle; ear-grade wipe check stays in R0.1).
-- 2026-06-12 · R1.1 · Whole card click → player; hover overlay removed — overlay was the favorite-bug root cause (its `absolute inset-0` div sat over the heart and swallowed clicks). Card keeps heart + small ⋯ menu (Open folder / Delete); Edit details + Edit/Add lyrics moved to player top-right chrome (EditMetaDialog renders in player; Esc guard added so closing dialog doesn't exit player). Import strip moved to bottom status bar. All done-when checks verified by driving the built app with playwright-core `_electron` (scripts in `%TEMP%\singray-drive`, reusable pattern for future UI verification).
-- 2026-06-12 · — · Backlog additions: R1.5 sing history (≥60% gate, timestamped log, library sort), R2.5 localisation (i18next, OS-locale default), R3.7 local file import (ffmpeg-decodable formats), R3.8 flac stem default with m4a setting. Round 2 candidates section added: record singing, effects, EQ.
-- 2026-06-12 · — · Round 1 backlog created from `Some enhancement.md` feedback + grilling session; MVP backlog archived to `docs/rounds/00-mvp.md`. Key decisions recorded in Triage block above. Tokenizer apostrophe bug confirmed in code (`'` not in `\p{L}` word run). Dropped: nudge editor, fullscreen stage, playlists.
+- 2026-06-14 · — · Grilled the Round 2 backlog; baked decisions into every story + reordered phases to execution order (safety/bugs → primitives → nav → views → polish). Resolutions: **EL** "preview"=timing review toggle (kept as toggle, not a 4th route); stamp key is **Space** (Tab=gap-nav, already guarded) — EL1 = Space→play/pause in preview, stamping disabled (**SPEC §6.7 change**); EL2 tri-color timestamp; EL3 full-width progress strip under WaveformStrip replacing the centered done banner; EL4 **Ctrl+Tab** cycle + new **UI6 Tabs** primitive (also serves ADD1); EL5 onBack→player (App.tsx:42 bug). **NAV1** go custom min/max/close + new window IPC, drop `titleBarOverlay`, accept loss of native snap-hover flyout (**SPEC §10 + main/index.ts**); NAV3 floating overlay + gradient scrim throughout, content scrolls under; NAV2/NAV4 as triaged. **AIC2** (data loss) = prompt-harden + `>40%`-removed guard + AIC1 diff as apply gate (user chose hardening over classify-and-filter); **AIC1** unified inline diff. **ADD3** heuristic script detection. **HOME1/ART1/ART2** `Songs|Artists` row-2 toggle + grid/list; artist click = filtered Songs view with removable chip (no new screen). Now pointer = AIC2.
+- 2026-06-14 · — · Round 2 feature triage. Saved raw feedback to `docs/feedback/2026-06-14-round2.md`; triaged ~26 items into area-code stories.
+- 2026-06-14 · — · Round 1 closed + archived to `docs/rounds/01-enhancement.md`. Phase 0 = the five `[~]` carry-overs + user-side R0.1/R0.2 (kept Round 1 IDs). Record/effects/EQ → Phase 6.
