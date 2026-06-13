@@ -76,13 +76,33 @@ function uvAssetUrl(): string {
   return `${base}/uv-${triple}`
 }
 
-/** ffmpeg static-build URL, or null when the platform has no automatic source (mac → brew). */
-function ffmpegAssetUrl(): string | null {
+/**
+ * ffmpeg static-build source. Windows/Linux ship a single archive containing
+ * both binaries; macOS (evermeet) serves one zip per tool (R5.1).
+ */
+type FfmpegAsset =
+  | { kind: 'archive'; url: string }
+  | { kind: 'binaries'; urls: Record<'ffmpeg' | 'ffprobe', string> }
+
+function ffmpegAsset(): FfmpegAsset {
   if (process.platform === 'win32')
-    return 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip'
+    return {
+      kind: 'archive',
+      url: 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip'
+    }
   if (process.platform === 'linux')
-    return 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz'
-  return null // darwin: handled in R5.1 / expected on PATH via brew
+    return {
+      kind: 'archive',
+      url: 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz'
+    }
+  // darwin: evermeet.cx serves single-binary zips per tool.
+  return {
+    kind: 'binaries',
+    urls: {
+      ffmpeg: 'https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip',
+      ffprobe: 'https://evermeet.cx/ffmpeg/getrelease/ffprobe/zip'
+    }
+  }
 }
 
 // ── primitives ───────────────────────────────────────────────────────────────
@@ -275,17 +295,35 @@ async function stepDeps(emit: Emit, gpu: boolean): Promise<void> {
   )
 }
 
+async function installFfmpegBinary(tool: 'ffmpeg' | 'ffprobe', url: string): Promise<void> {
+  const dir = managedFfmpegDir()
+  const archive = join(dir, `${tool}.zip`)
+  await download(url, archive, () => {})
+  const tmp = join(dir, `extract-${tool}`)
+  await extract(archive, tmp)
+  const bin = await findBinary(tmp, tool)
+  if (!bin) throw new Error(`${tool} not found in archive`)
+  const out = join(dir, tool)
+  await copyFile(bin, out)
+  await chmod(out, 0o755)
+  await rm(archive, { force: true })
+  await rm(tmp, { recursive: true, force: true })
+}
+
 async function stepFfmpeg(emit: Emit): Promise<void> {
   if (ffmpegOnPath() || managedFfmpegPresent()) return
-  const url = ffmpegAssetUrl()
-  if (!url) {
-    throw new Error('ffmpeg not found on PATH — install it (e.g. `brew install ffmpeg`) and retry')
-  }
   emit({ step: 'ffmpeg', status: 'start', message: 'Downloading ffmpeg…' })
   const dir = managedFfmpegDir()
   await mkdir(dir, { recursive: true })
-  const archive = join(dir, url.endsWith('.zip') ? 'ffmpeg.zip' : 'ffmpeg.tar.xz')
-  await download(url, archive, (pct) => emit({ step: 'ffmpeg', status: 'progress', pct }))
+  const asset = ffmpegAsset()
+  if (asset.kind === 'binaries') {
+    // macOS: one zip per tool (evermeet).
+    await installFfmpegBinary('ffmpeg', asset.urls.ffmpeg)
+    await installFfmpegBinary('ffprobe', asset.urls.ffprobe)
+    return
+  }
+  const archive = join(dir, asset.url.endsWith('.zip') ? 'ffmpeg.zip' : 'ffmpeg.tar.xz')
+  await download(asset.url, archive, (pct) => emit({ step: 'ffmpeg', status: 'progress', pct }))
   const tmp = join(dir, 'extract')
   await extract(archive, tmp)
   for (const tool of ['ffmpeg', 'ffprobe']) {

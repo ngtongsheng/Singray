@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+# Don't let two pushes race on the same release.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build + publish Windows installer
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      released: ${{ steps.ver.outputs.exists == 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need tags + history for release notes
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Version drives the tag; skip the whole release if that tag already
+      # exists (re-push of main without a version bump shouldn't re-release).
+      - id: ver
+        shell: pwsh
+        run: |
+          $v = node -p "require('./package.json').version"
+          "version=$v" >> $env:GITHUB_OUTPUT
+          git fetch --tags --quiet
+          if (git tag -l "v$v") { "exists=true" >> $env:GITHUB_OUTPUT }
+          else { "exists=false" >> $env:GITHUB_OUTPUT }
+
+      - if: steps.ver.outputs.exists == 'false'
+        run: npm ci
+
+      # build:win = npm run build (check + electron-vite) && electron-builder --win.
+      # --publish never: the gh step below owns publishing so we can attach notes.
+      - if: steps.ver.outputs.exists == 'false'
+        run: npm run build:win -- --publish never
+
+      - if: steps.ver.outputs.exists == 'false'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "v${{ steps.ver.outputs.version }}"
+          $exe = Get-ChildItem dist -Filter *-setup.exe | Select-Object -First 1
+          if (-not $exe) { throw "No NSIS installer found in dist/" }
+          # --generate-notes builds release notes from merged PR titles since the last tag.
+          gh release create $tag $exe.FullName --title "Singray $tag" --generate-notes
+
+  # macOS build (R5.2): community-tested, unsigned .dmg uploaded to the same Release.
+  release-mac:
+    name: Build macOS dmg (community-tested, unsigned)
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # Unsigned: electron-builder.yml sets notarize:false / no signing identity.
+      - run: npm run build && npx electron-builder --mac --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="v${{ needs.release.outputs.version }}"
+          dmg=$(ls dist/*.dmg | head -n1)
+          [ -n "$dmg" ] || { echo "No .dmg found in dist/"; exit 1; }
+          gh release upload "$tag" "$dmg" --clobber

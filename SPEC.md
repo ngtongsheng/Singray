@@ -242,11 +242,12 @@ For end users (no dev checkout), the app installs and owns the pipeline env unde
 
 - **uv** standalone (downloaded from the GitHub release matching the platform/arch) is the package manager. It installs a managed CPython 3.13 (into `pipeline-env/python`) and creates the venv (`pipeline-env/venv`).
 - **GPU detect**: `nvidia-smi -L` succeeds → CUDA wheels (`torch 2.8.0` + torchvision/torchaudio from the `cu128` index, `audio-separator[gpu]`); else CPU wheels (`cpu` index, `audio-separator[cpu]`). Versions match `setup.ps1`.
-- **ffmpeg**: if not already on PATH, a static build is fetched (Windows: gyan.dev essentials zip; Linux: johnvansickle static; macOS: expected via `brew`, R5.1) into `pipeline-env/ffmpeg` and prepended to the child process PATH when spawning the pipeline.
+- **ffmpeg**: if not already on PATH, a static build is fetched into `pipeline-env/ffmpeg` and prepended to the child process PATH when spawning the pipeline — Windows: gyan.dev essentials zip; Linux: johnvansickle static; macOS (R5.1): evermeet.cx single-binary zips (ffmpeg + ffprobe fetched separately).
 - **Resume / clean retry**: each install step is recorded in `pipeline-env/.install-state.json` and skipped on re-run; downloads write to a `<file>.part` and rename on completion, so an interrupted transfer is re-fetched cleanly. `verify` always re-runs (imports torch, checks CUDA on GPU boxes).
 - **Path resolution** (`pipelineEnv.ts`): `effectivePythonPath()` = an existing `settings.pythonPath` (advanced override) wins, else the managed venv interpreter. So `pythonPath` becomes an optional override only; the dev `setup.ps1` venv default still works in a checkout. All pipeline spawns use `effectivePythonPath()` + `pipelineSpawnOptions()` (ffmpeg PATH injection).
 - **UI**: IPC `pipeline:status` / `pipeline:install` (streams `pipeline:install:progress` events) / `pipeline:cancelInstall`. A first-run gate screen (shown when `status.ready` is false, dismissible via "Skip for now") and a Pipeline-fieldset installer in Settings both render `PipelineInstaller` (status chips + per-step progress + install/cancel).
-- `setup.ps1` stays for dev.
+- `setup.ps1` stays for dev (Windows). `setup.sh` (R5.1) is the macOS/Linux dev equivalent: macOS installs PyPI torch (MPS+CPU), Linux picks CUDA vs CPU index by `nvidia-smi`. Forced alignment (`cmd_align`) selects device CUDA → MPS → CPU with a runtime fallback to CPU on OOM/unsupported-op.
+- **Release (R4.4/R5.2):** push to `main` → CI builds the NSIS `.exe` (Windows) and, in a dependent macOS job, an unsigned `.dmg`, both attached to a GitHub Release tagged `v<package.json version>` with notes auto-generated from merged PR titles. A separate manual/path-triggered `pipeline-macos` workflow smoke-tests `setup.sh` + probe + a short CPU separation on a macOS runner. macOS builds are labeled community-tested.
 
 ### 5.3 Main-process import queue
 

@@ -401,10 +401,23 @@ def _align_tokens(vocals: Path, text: str, lang: str) -> list[dict]:
             segments, model, metadata, audio, device, return_char_alignments=char_mode
         )
 
+    # Device preference: CUDA (Windows/Linux NVIDIA) → MPS (Apple Silicon) → CPU.
+    mps = getattr(torch.backends, "mps", None)
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif mps is not None and mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
+
     try:
-        result = run("cuda" if torch.cuda.is_available() else "cpu")
-    except torch.cuda.OutOfMemoryError:
-        torch.cuda.empty_cache()
+        result = run(device)
+    except (torch.cuda.OutOfMemoryError, RuntimeError):
+        # OOM (cuda) or an unsupported-op error (mps) → fall back to CPU.
+        if device == "cpu":
+            raise
+        if device == "cuda":
+            torch.cuda.empty_cache()
         emit({"stage": "align", "progress": 0.3})
         result = run("cpu")
 

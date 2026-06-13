@@ -72,8 +72,15 @@ npm run build:win  # NSIS installer via electron-builder
 ### Python pipeline
 
 ```powershell
-pipeline\setup.ps1            # creates pipeline\.venv with pinned deps (one time)
+pipeline\setup.ps1            # Windows: creates pipeline\.venv with pinned deps (one time)
 pipeline\setup.ps1 -Update    # bumps yt-dlp only
+```
+
+On macOS / Linux use the bash equivalent:
+
+```bash
+pipeline/setup.sh             # picks CUDA (Linux+NVIDIA), CPU, or MPS (macOS) torch
+pipeline/setup.sh --update    # bumps yt-dlp only
 ```
 
 This installs `torch` (cu128), `audio-separator[gpu]`, `yt-dlp`, and `whisperx`
@@ -97,6 +104,15 @@ renderer (React): library ·      python pipeline.py:
 ```
 
 Full detail, data model, pipeline contract, and audio routing: [`SPEC.md`](SPEC.md).
+
+## Platform status
+
+Windows is the primary, tested target. **macOS builds are community-tested** —
+the release workflow produces an **unsigned** `.dmg`, so on first launch macOS
+will refuse to open it: right-click the app → **Open** → confirm, or run
+`xattr -dr com.apple.quarantine /Applications/Singray.app`. Separation runs on
+Apple Silicon (MPS) or CPU. Linux is supported for the pipeline/dev but has no
+packaged build yet.
 
 ## Third-party tools & usage notice
 

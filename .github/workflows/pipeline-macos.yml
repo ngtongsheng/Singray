@@ -1,0 +1,49 @@
+name: Pipeline (macOS smoke)
+
+# R5.1: confirms the Python pipeline builds and runs on a macOS runner (CPU).
+# Not on every PR — it's heavy (torch install + a real separation). Run on
+# demand, or when the pipeline itself changes.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'pipeline/**'
+      - '.github/workflows/pipeline-macos.yml'
+
+jobs:
+  smoke:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ffmpeg
+        run: brew install ffmpeg
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Create venv + install pinned deps (setup.sh)
+        run: |
+          # setup.sh keys the base interpreter off python3.13; expose it.
+          ln -sf "$(command -v python3.13)" /usr/local/bin/python3.13 || true
+          bash pipeline/setup.sh
+
+      - name: Probe a real URL
+        run: |
+          pipeline/.venv/bin/python pipeline/pipeline.py probe \
+            --url "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
+      - name: Separation smoke on a short local clip (CPU)
+        run: |
+          # Generate a 5s tone so the run is deterministic and tiny.
+          ffmpeg -y -f lavfi -i "sine=frequency=440:duration=5" -ac 2 /tmp/clip.wav
+          mkdir -p /tmp/song
+          pipeline/.venv/bin/python pipeline/pipeline.py process \
+            --file /tmp/clip.wav --out /tmp/song --format flac
+          ls -la /tmp/song
+          test -f /tmp/song/instrumental.flac
+          test -f /tmp/song/vocals.flac
