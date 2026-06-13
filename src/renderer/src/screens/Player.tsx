@@ -251,9 +251,9 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
         >
           <ArrowLeft className="size-4" strokeWidth={1.5} />
         </IconButton>
-        <div className="flex min-w-0 items-baseline gap-2">
-          <h1 className="truncate font-semibold text-sm">{song.title}</h1>
-          <p className="truncate text-text-dim text-xs">{song.artist}</p>
+        <div className="flex min-w-0 flex-col justify-center gap-0.5">
+          <h1 className="truncate font-semibold text-sm leading-tight">{song.title}</h1>
+          <p className="truncate text-text-dim text-xs leading-tight">{song.artist}</p>
         </div>
         <div className="flex-1" />
         {!error && (
