@@ -107,9 +107,35 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
         </label>
       </div>
 
-      <div className="mt-3">
+      {(cleanError || preview) && (
+        <div className="mt-3">
+          {cleanError && <p className="text-danger text-xs">{cleanError}</p>}
+          {preview &&
+            (previewIsNoop ? (
+              <p className="text-text-dim text-xs">{t('editMeta.noChanges')}</p>
+            ) : (
+              <div className="rounded-card border border-border bg-surface p-3">
+                <p className="text-text-dim text-xs">{t('editMeta.preview')}</p>
+                <p className="mt-1 text-sm">
+                  {preview.title}
+                  {preview.artist && <span className="text-text-dim"> · {preview.artist}</span>}
+                </p>
+                <div className="mt-2 flex gap-2">
+                  <Button variant="primary" size="sm" onClick={applyPreview}>
+                    {t('editMeta.apply')}
+                  </Button>
+                  <Button size="sm" onClick={() => setPreview(null)}>
+                    {t('editMeta.dismiss')}
+                  </Button>
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
+
+      <div className="mt-6 flex items-center justify-between gap-3">
         <Button
-          size="sm"
+          size="md"
           onClick={cleanWithAi}
           disabled={cleaning || !title.trim()}
           title={t('editMeta.cleanTip')}
@@ -121,36 +147,14 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
           )}
           {t('editMeta.clean')}
         </Button>
-        {cleanError && <p className="mt-2 text-danger text-xs">{cleanError}</p>}
-        {preview &&
-          (previewIsNoop ? (
-            <p className="mt-2 text-text-dim text-xs">{t('editMeta.noChanges')}</p>
-          ) : (
-            <div className="mt-2 rounded-card border border-border bg-surface p-3">
-              <p className="text-text-dim text-xs">{t('editMeta.preview')}</p>
-              <p className="mt-1 text-sm">
-                {preview.title}
-                {preview.artist && <span className="text-text-dim"> · {preview.artist}</span>}
-              </p>
-              <div className="mt-2 flex gap-2">
-                <Button variant="primary" size="sm" onClick={applyPreview}>
-                  {t('editMeta.apply')}
-                </Button>
-                <Button size="sm" onClick={() => setPreview(null)}>
-                  {t('editMeta.dismiss')}
-                </Button>
-              </div>
-            </div>
-          ))}
-      </div>
-
-      <div className="mt-6 flex justify-end gap-3">
-        <Button size="md" onClick={onClose}>
-          {t('common.cancel')}
-        </Button>
-        <Button variant="primary" size="md" onClick={save} disabled={!title.trim() || saving}>
-          {t('common.save')}
-        </Button>
+        <div className="flex gap-3">
+          <Button size="md" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <Button variant="primary" size="md" onClick={save} disabled={!title.trim() || saving}>
+            {t('common.save')}
+          </Button>
+        </div>
       </div>
     </Dialog>
   )
