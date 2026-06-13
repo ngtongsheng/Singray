@@ -31,6 +31,20 @@ function unitT(lyrics: Lyrics, pos: UnitPos): number | null {
   return lyrics.lines[pos.line]?.units[pos.unit]?.t ?? null
 }
 
+type LyricLine = Lyrics['lines'][number]
+
+/** EL2: tri-color timestamp — dim `—` (untimed), amber (partial), success (fully timed). */
+function lineTimestamp(line: LyricLine): string {
+  const firstTimed = line.units.find((u) => u.t !== null)?.t
+  return firstTimed != null ? fmt(line.start ?? firstTimed) : '—'
+}
+
+function lineTimestampClass(line: LyricLine): string {
+  const timed = line.units.filter((u) => u.t !== null).length
+  if (timed === 0) return 'text-text-dim'
+  return timed === line.units.length ? 'text-success' : 'text-warning'
+}
+
 /** Tap-along timing step (SPEC §6.3): Space stamps, original.m4a as reference. */
 function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
   const { t } = useTranslation()
@@ -412,8 +426,10 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
                     li === currentLine && !done ? '' : 'opacity-40'
                   }`}
                 >
-                  <span className="w-14 shrink-0 text-text-dim text-xs tabular-nums">
-                    {line.start !== null ? fmt(line.start) : '—'}
+                  <span
+                    className={`w-14 shrink-0 text-xs tabular-nums ${lineTimestampClass(line)}`}
+                  >
+                    {lineTimestamp(line)}
                   </span>
                   <span className={li === currentLine && !done ? 'text-lyric-active' : ''}>
                     {line.text}
