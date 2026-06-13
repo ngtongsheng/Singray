@@ -330,7 +330,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
           alt=""
           draggable={false}
           className={`animate-ken-burns absolute inset-0 h-full w-full object-cover blur-3xl ${
-            windowHidden ? 'paused' : ''
+            windowHidden || !playing ? 'paused' : ''
           }`}
         />
         <div className="absolute inset-0 bg-black/55" />
