@@ -1,11 +1,18 @@
-import { Loader2 } from 'lucide-react'
+import { Loader2, Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Language, LanguageDef, ProbeResult } from '../../../shared/types'
-import { Button, Dialog, Input, Select } from './ui'
+import type { Language, LanguageDef, ProbeResult, SearchResult } from '../../../shared/types'
+import { Button, Dialog, IconButton, Input, Select } from './ui'
 
 interface Props {
   onClose: () => void
+}
+
+function formatDuration(sec: number): string {
+  if (!sec) return ''
+  const m = Math.floor(sec / 60)
+  const s = Math.floor(sec % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
 }
 
 function ImportDialog({ onClose }: Props): React.JSX.Element {
@@ -19,13 +26,40 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
   const [language, setLanguage] = useState<Language>('unknown')
   const [languages, setLanguages] = useState<LanguageDef[]>([])
   const [submitting, setSubmitting] = useState(false)
-  const urlRef = useRef<HTMLInputElement>(null)
+  const [query, setQuery] = useState('')
+  const [searching, setSearching] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [results, setResults] = useState<SearchResult[] | null>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
   const probeSeq = useRef(0)
 
   useEffect(() => {
-    urlRef.current?.focus()
+    searchRef.current?.focus()
     window.singray.settings.get().then((s) => setLanguages(s.languages))
   }, [])
+
+  const runSearch = async (): Promise<void> => {
+    const q = query.trim()
+    if (!q || searching) return
+    setSearching(true)
+    setSearchError(null)
+    setResults(null)
+    try {
+      setResults(await window.singray.import.search(q))
+    } catch (err) {
+      setSearchError(
+        (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
+      )
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  const pickResult = (r: SearchResult): void => {
+    setResults(null)
+    setSearchError(null)
+    setUrl(r.url)
+  }
 
   useEffect(() => {
     const trimmed = url.trim()
@@ -83,9 +117,61 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
       <h2 className="font-semibold text-base">{t('import.title')}</h2>
 
       <label className="mt-4 block">
+        <span className="mb-1 block text-text-dim text-xs">{t('import.searchLabel')}</span>
+        <div className="flex gap-2">
+          <Input
+            ref={searchRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && runSearch()}
+            placeholder={t('import.searchPlaceholder')}
+            trailing={searching && <Loader2 className="size-4 animate-spin text-text-dim" />}
+          />
+          <IconButton
+            aria-label={t('import.searchLabel')}
+            onClick={runSearch}
+            disabled={!query.trim() || searching}
+          >
+            <Search className="size-4" />
+          </IconButton>
+        </div>
+        {searchError && <p className="mt-1 text-danger text-xs">{searchError}</p>}
+      </label>
+
+      {results && (
+        <ul className="mt-2 max-h-64 divide-y divide-border overflow-y-auto rounded-card border border-border">
+          {results.length === 0 && (
+            <li className="px-3 py-4 text-center text-text-dim text-xs">{t('import.noResults')}</li>
+          )}
+          {results.map((r) => (
+            <li key={r.url}>
+              <Button
+                variant="bare"
+                size="bare"
+                onClick={() => pickResult(r)}
+                className="flex w-full items-center gap-3 px-2 py-2 text-left hover:bg-surface"
+              >
+                <div className="aspect-video w-24 shrink-0 overflow-hidden rounded bg-surface">
+                  {r.thumbnailUrl && (
+                    <img src={r.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm">{r.title}</p>
+                  <p className="truncate text-text-dim text-xs">
+                    {r.channel}
+                    {r.duration > 0 && ` · ${formatDuration(r.duration)}`}
+                  </p>
+                </div>
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <label className="mt-4 block">
         <span className="mb-1 block text-text-dim text-xs">{t('import.urlLabel')}</span>
         <Input
-          ref={urlRef}
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://www.youtube.com/watch?v=…"

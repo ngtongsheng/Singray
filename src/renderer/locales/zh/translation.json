@@ -51,6 +51,10 @@
   "import": {
     "title": "添加歌曲",
     "urlLabel": "YouTube 链接",
+    "searchLabel": "搜索 YouTube",
+    "searchPlaceholder": "歌曲或歌手…",
+    "searching": "搜索中…",
+    "noResults": "没有结果",
     "add": "添加"
   },
   "editMeta": {

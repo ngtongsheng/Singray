@@ -51,6 +51,10 @@
   "import": {
     "title": "Add song",
     "urlLabel": "YouTube URL",
+    "searchLabel": "Search YouTube",
+    "searchPlaceholder": "Song or artist…",
+    "searching": "Searching…",
+    "noResults": "No results",
     "add": "Add"
   },
   "editMeta": {

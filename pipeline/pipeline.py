@@ -80,6 +80,47 @@ def cmd_probe(args: argparse.Namespace) -> int:
         return 1
 
 
+def cmd_search(args: argparse.Namespace) -> int:
+    """Stream up to 10 `ytsearch` hits as JSON-lines: {title, channel, duration, thumbnailUrl, url}.
+
+    Uses flat extraction (no per-video metadata fetch) so the whole query
+    returns in a couple of seconds — the result list only needs enough to
+    pick from; the full probe runs when the user chooses one.
+    """
+    try:
+        opts = {
+            "quiet": True,
+            "no_warnings": True,
+            "noprogress": True,
+            "extract_flat": True,
+            "skip_download": True,
+        }
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(f"ytsearch10:{args.query}", download=False)
+        for entry in info.get("entries") or []:
+            if not entry:
+                continue
+            vid = entry.get("id") or ""
+            thumbs = entry.get("thumbnails") or []
+            thumb = entry.get("thumbnail") or (thumbs[-1]["url"] if thumbs else "")
+            if not thumb and vid:
+                thumb = f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg"
+            url = f"https://www.youtube.com/watch?v={vid}" if vid else (entry.get("url") or "")
+            emit(
+                {
+                    "title": entry.get("title") or "",
+                    "channel": entry.get("channel") or entry.get("uploader") or "",
+                    "duration": float(entry.get("duration") or 0),
+                    "thumbnailUrl": thumb,
+                    "url": url,
+                }
+            )
+        return 0
+    except Exception as exc:  # noqa: BLE001 — any failure becomes the error contract
+        emit({"stage": "error", "message": str(exc)})
+        return 1
+
+
 def _download(url: str, dl_dir: Path) -> tuple[Path, Path | None, float]:
     """Best-audio download + thumbnail. Returns (audio, thumb_or_none, durationSec)."""
     last_emitted = -1.0
@@ -329,6 +370,10 @@ def main() -> int:
     probe = sub.add_parser("probe", help="fetch YouTube metadata as one JSON object")
     probe.add_argument("--url", required=True)
     probe.set_defaults(func=cmd_probe)
+
+    search = sub.add_parser("search", help="ytsearch10 → JSON-lines result list")
+    search.add_argument("--query", required=True)
+    search.set_defaults(func=cmd_search)
 
     process = sub.add_parser("process", help="download, separate, transcode into --out")
     process.add_argument("--url", required=True)

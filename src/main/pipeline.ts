@@ -4,7 +4,7 @@ import { rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
 import { app } from 'electron'
-import type { AlignToken, ProbeResult } from '../shared/types'
+import type { AlignToken, ProbeResult, SearchResult } from '../shared/types'
 import { songDir } from './library'
 import { getSettings } from './settings'
 
@@ -36,6 +36,43 @@ export function probe(url: string): Promise<ProbeResult> {
       } catch {
         reject(new Error(stderr.trim() || `probe exited with code ${code}`))
       }
+    })
+  })
+}
+
+/** Runs `pipeline.py search --query <q>`, collects the JSON-lines hits. */
+export function searchYoutube(query: string): Promise<SearchResult[]> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(getSettings().pythonPath, [pipelineScript(), 'search', '--query', query], {
+      windowsHide: true
+    })
+    const results: SearchResult[] = []
+    let lastError = ''
+    let stderrTail = ''
+
+    const rl = createInterface({ input: proc.stdout })
+    rl.on('line', (line) => {
+      let msg: (SearchResult & { stage?: string; message?: string }) | null
+      try {
+        msg = JSON.parse(line)
+      } catch {
+        return // non-JSON noise, ignore
+      }
+      if (msg?.stage === 'error') lastError = msg.message ?? 'search failed'
+      else if (msg?.url) results.push(msg)
+    })
+    proc.stderr?.on('data', (d: Buffer) => {
+      stderrTail = (stderrTail + d.toString()).slice(-2000)
+    })
+    proc.on('error', reject)
+    proc.on('close', (code) => {
+      if (code === 0 && !lastError) resolve(results)
+      else
+        reject(
+          new Error(
+            lastError || stderrTail.trim().split('\n').pop() || `search exited with code ${code}`
+          )
+        )
     })
   })
 }

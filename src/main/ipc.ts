@@ -4,7 +4,7 @@ import { cleanMeta, enrichProbe } from './enrich'
 import { cancelImport, retryImport, startImport } from './importQueue'
 import { deleteSong, getLyrics, listSongs, openSongFolder, saveLyrics, updateMeta } from './library'
 import { testLlm } from './llm'
-import { alignLyrics, probe } from './pipeline'
+import { alignLyrics, probe, searchYoutube } from './pipeline'
 import { getSettings, setSettings } from './settings'
 
 /** Registers all IPC handlers (SPEC §8). */
@@ -34,6 +34,7 @@ export function registerIpc(): void {
   )
 
   ipcMain.handle('import:probe', (_e, url: string) => probe(url))
+  ipcMain.handle('import:search', (_e, query: string) => searchYoutube(query))
   ipcMain.handle('import:start', (_e, req: ImportRequest) => startImport(req))
   ipcMain.handle('import:retry', (_e, id: string) => retryImport(id))
 }

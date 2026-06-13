@@ -109,6 +109,15 @@ export interface ProbeResult {
   thumbnailUrl: string
 }
 
+/** One `pipeline.py search` hit (flat extraction — enough to pick from, no full probe yet). */
+export interface SearchResult {
+  title: string
+  channel: string
+  duration: number
+  thumbnailUrl: string
+  url: string
+}
+
 export type ImportStage = 'queued' | 'download' | 'separate' | 'convert' | 'done' | 'error'
 
 export interface ImportProgress {
@@ -157,6 +166,8 @@ export interface SingrayApi {
   }
   import: {
     probe(url: string): Promise<ProbeResult>
+    /** ytsearch10 for the query; rejects with a readable message on bad query / no network. */
+    search(query: string): Promise<SearchResult[]>
     start(req: ImportRequest): Promise<string>
     retry(id: string): Promise<void>
     onProgress(cb: (p: ImportProgress) => void): () => void

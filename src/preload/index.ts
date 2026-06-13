@@ -8,6 +8,7 @@ import type {
   LlmTestResult,
   Lyrics,
   ProbeResult,
+  SearchResult,
   Settings,
   SingrayApi,
   SongListItem,
@@ -29,6 +30,7 @@ const api: SingrayApi = {
   },
   import: {
     probe: (url) => ipcRenderer.invoke('import:probe', url) as Promise<ProbeResult>,
+    search: (query) => ipcRenderer.invoke('import:search', query) as Promise<SearchResult[]>,
     start: (req: ImportRequest) => ipcRenderer.invoke('import:start', req) as Promise<string>,
     retry: (id) => ipcRenderer.invoke('import:retry', id) as Promise<void>,
     onProgress: (cb) => {

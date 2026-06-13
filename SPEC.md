@@ -212,11 +212,13 @@ Conversion note: the legacy `karaoke.add('00:26.488','00:32.419','不是…','15
 
 ```
 python pipeline.py probe   --url <url>
+python pipeline.py search  --query <text>                          # ytsearch10 result list
 python pipeline.py process --url <url> --out <songDir> [--model 6_HP-Karaoke-UVR.pth]
 python pipeline.py align   --song <songDir> --text <lyrics.txt>     # forced alignment (§6.6)
 ```
 
 - `probe`: prints one JSON object to stdout — `{title, channel, track, artist, duration, thumbnailUrl}`.
+- `search`: streams up to 10 `ytsearch10` hits as JSON-lines — `{title, channel, duration, thumbnailUrl, url}` per line, then exits. Uses yt-dlp **flat extraction** (`extract_flat`, no per-video metadata fetch) so the whole query returns in ~2s; the full `probe` runs only when the user picks a result. Errors use the same `{"stage": "error", "message": …}` + non-zero exit contract. Renderer's Add Song dialog shows the result list alongside the URL-paste box; picking a hit fills the URL field and runs the existing probe/prefill flow.
 - `process`: streams JSON-lines progress to stdout:
 
 ```json
