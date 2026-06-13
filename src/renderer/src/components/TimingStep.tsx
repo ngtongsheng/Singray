@@ -299,6 +299,8 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
   }, [currentLine])
 
   const done = cursor >= flatUnits.length
+  const progressPct =
+    flatUnits.length === 0 ? 0 : Math.round((stamps.length / flatUnits.length) * 100)
   let flatIdx = 0
   const lineStartIdx = lyrics.lines.map((l) => {
     const s = flatIdx
@@ -370,35 +372,50 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
 
       <WaveformStrip songId={songId} audioRef={audioRef} stamps={stamps} onSeek={seekTo} />
 
+      <div className="relative border-border border-b bg-surface px-6 py-1.5">
+        <div className="flex items-center gap-2 text-xs">
+          {done ? (
+            <span className="font-medium text-success">{t('timing.done')}</span>
+          ) : (
+            <>
+              <span className="text-text-dim">
+                {stamps.length}/{flatUnits.length}
+              </span>
+              <span className="font-medium text-accent">{progressPct}%</span>
+            </>
+          )}
+        </div>
+        <div
+          className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
+          style={{ width: `${progressPct}%` }}
+        />
+      </div>
+
       {review ? (
         <ReviewPane lyrics={lyrics} audioRef={audioRef} onSeek={seekTo} />
       ) : (
         <>
           <div className="flex min-h-28 items-center justify-center px-6 py-6">
-            {done ? (
-              <p className="font-lyric text-2xl text-success">{t('timing.done')}</p>
-            ) : (
-              <p className="max-w-full text-center font-lyric text-4xl leading-snug">
-                {lyrics.lines[currentLine]?.units.map((u, ui) => {
-                  const idx = (lineStartIdx[currentLine] ?? 0) + ui
-                  return (
-                    <span
-                      // biome-ignore lint/suspicious/noArrayIndexKey: unit order is stable for a given line
-                      key={ui}
-                      className={
-                        idx < cursor
-                          ? 'text-lyric-sung'
-                          : idx === cursor
-                            ? 'border-accent border-b-2 text-lyric-active'
-                            : 'text-lyric-pending/50'
-                      }
-                    >
-                      {u.text}
-                    </span>
-                  )
-                })}
-              </p>
-            )}
+            <p className="max-w-full text-center font-lyric text-4xl leading-snug">
+              {lyrics.lines[currentLine]?.units.map((u, ui) => {
+                const idx = (lineStartIdx[currentLine] ?? 0) + ui
+                return (
+                  <span
+                    // biome-ignore lint/suspicious/noArrayIndexKey: unit order is stable for a given line
+                    key={ui}
+                    className={
+                      idx < cursor
+                        ? 'text-lyric-sung'
+                        : idx === cursor
+                          ? 'border-accent border-b-2 text-lyric-active'
+                          : 'text-lyric-pending/50'
+                    }
+                  >
+                    {u.text}
+                  </span>
+                )
+              })}
+            </p>
           </div>
 
           <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-6 pb-4">
