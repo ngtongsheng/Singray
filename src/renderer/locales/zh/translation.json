@@ -54,8 +54,7 @@
     "favorite": "加入收藏",
     "unfavorite": "取消收藏",
     "retry": "重试",
-    "retryTip": "重试导入",
-    "timesSung": "演唱次数"
+    "retryTip": "重试导入"
   },
   "import": {
     "title": "添加歌曲",

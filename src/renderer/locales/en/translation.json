@@ -55,8 +55,7 @@
     "favorite": "Add to favorites",
     "unfavorite": "Remove from favorites",
     "retry": "Retry",
-    "retryTip": "Retry import",
-    "timesSung": "Times sung"
+    "retryTip": "Retry import"
   },
   "import": {
     "title": "Add song",

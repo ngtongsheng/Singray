@@ -3,7 +3,6 @@ import {
   Folder,
   Heart,
   Loader2,
-  Mic2,
   MoreHorizontal,
   RotateCcw,
   Trash2
@@ -153,26 +152,17 @@ function SongCard({ song, importing, onDelete, onSing, onArtistClick }: Props): 
         <p className="truncate font-medium text-sm" title={song.title}>
           {song.title}
         </p>
-        <div className="flex items-baseline justify-between gap-2">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              onArtistClick(song.artist)
-            }}
-            title={t('library.viewArtist', { name: song.artist })}
-            className="min-w-0 truncate text-text-dim text-xs hover:text-text hover:underline"
-          >
-            {song.artist}
-          </button>
-          <span
-            className="flex shrink-0 items-center gap-1 text-text-dim text-xs tabular-nums"
-            title={t('card.timesSung')}
-          >
-            <Mic2 className="size-3" strokeWidth={1.5} />
-            {song.playCount + song.sings.length}
-          </span>
-        </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onArtistClick(song.artist)
+          }}
+          title={t('library.viewArtist', { name: song.artist })}
+          className="min-w-0 max-w-full truncate text-text-dim text-xs hover:text-text hover:underline"
+        >
+          {song.artist}
+        </button>
       </div>
     </div>
   )
