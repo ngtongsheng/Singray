@@ -95,8 +95,7 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
   return (
     <div className="flex h-full flex-col">
       <Titlebar>
-        <h1 className="font-semibold text-base">Singray</h1>
-        <div className="app-no-drag ml-2 w-72">
+        <div className="app-no-drag w-72">
           <Input
             ref={searchRef}
             uiSize="sm"

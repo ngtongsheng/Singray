@@ -88,4 +88,17 @@ export function registerIpc(): void {
     return installPipeline(emit)
   })
   ipcMain.handle('pipeline:cancelInstall', () => cancelInstall())
+
+  ipcMain.handle('window:minimize', (e) => BrowserWindow.fromWebContents(e.sender)?.minimize())
+  ipcMain.handle('window:toggleMaximize', (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (!win) return
+    if (win.isMaximized()) win.unmaximize()
+    else win.maximize()
+  })
+  ipcMain.handle('window:close', (e) => BrowserWindow.fromWebContents(e.sender)?.close())
+  ipcMain.handle(
+    'window:isMaximized',
+    (e) => BrowserWindow.fromWebContents(e.sender)?.isMaximized() ?? false
+  )
 }

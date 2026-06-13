@@ -263,5 +263,13 @@ export interface SingrayApi {
     url(id: string, track: AudioTrack): string
     thumbUrl(id: string): string
   }
+  window: {
+    /** Custom titlebar controls (NAV1): replace the native min/max/close. */
+    minimize(): void
+    toggleMaximize(): void
+    close(): void
+    isMaximized(): Promise<boolean>
+    onMaximizedChange(cb: (maximized: boolean) => void): () => void
+  }
   onLibraryChanged(cb: () => void): () => void
 }

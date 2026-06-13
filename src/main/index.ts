@@ -17,10 +17,11 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#0E0E12',
-    // Frameless (R2.1): renderer draws the titlebar; the native caption overlay
-    // keeps Windows snap layouts + min/max/close behavior intact.
+    // Frameless (R2.1): renderer draws the titlebar. NAV1 drops the native
+    // caption overlay in favor of custom min/max/close (window:* IPC) — the
+    // snap-layouts hover flyout is lost, but drag-to-edge snap + double-click
+    // maximize on the drag region still work.
     titleBarStyle: 'hidden',
-    titleBarOverlay: { color: '#0E0E12', symbolColor: '#A0A0B0', height: 40 },
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -34,6 +35,9 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
+
+  mainWindow.on('maximize', () => mainWindow.webContents.send('window:maximized-changed', true))
+  mainWindow.on('unmaximize', () => mainWindow.webContents.send('window:maximized-changed', false))
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)

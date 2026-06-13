@@ -5,7 +5,7 @@ Round 2 feature source: user feedback 2026-06-14 (`docs/feedback/2026-06-14-roun
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → NAV1**, then top-to-bottom. Phase order = execution order chosen in grilling: safety/quick bugs → shared primitives → nav redesign → feature views → polish. Phase 0 (Round 1 verification) is env-blocked / user-side and doesn't block the coding pointer.
+> **Now → NAV2**, then top-to-bottom. Phase order = execution order chosen in grilling: safety/quick bugs → shared primitives → nav redesign → feature views → polish. Phase 0 (Round 1 verification) is env-blocked / user-side and doesn't block the coding pointer.
 > AIC2/EL1/EL2/EL5/UI6/UI1 marked `[~]`: code complete + `npm run check` green, runtime "Done when" verification batched at session end.
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
@@ -81,7 +81,7 @@ Popover/Menu already close on outside-click; add scrim-click-to-close to `Dialog
 ## Phase 3 — Navigation / app-shell redesign
 > Reverses R2.1's single native titlebar. **SPEC §10** + `src/main/index.ts` updated with NAV1.
 
-### [ ] NAV1 Two-row header + custom window controls
+### [~] NAV1 Two-row header + custom window controls
 Top row: app logo (left) + **custom** minimize / maximize-restore / close (right). **Decision (grilled): go custom** — drop `titleBarOverlay`, add IPC `window:minimize|toggleMaximize|close`, style buttons to the app. **Accepted trade-off: lose the native snap-layouts hover flyout** (edge-drag snap + double-click-maximize still work).
 - **Done when:** every screen shows the top row (logo left, custom min/max/close right); all three buttons work; drag region moves the window; double-click drag region maximizes/restores; edge-snap still works.
 
@@ -182,6 +182,7 @@ Edit-meta dialog: put "Clean up with AI" on the same action row as Cancel/Save.
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-14 · NAV1 · Dropped `titleBarOverlay`; new `window:minimize|toggleMaximize|close|isMaximized` IPC + `onMaximizedChange` event (main/preload/shared types). New `AppHeader` (logo + drag region + `WindowControls`) rendered once in App.tsx as row 1, screens' existing `Titlebar` becomes row 2 (dropped its now-unused WCO padding reservation + Library's redundant "Singray" h1). Playwright smoke: app renders both rows, all 3 buttons present, maximize/restore toggles correctly at both sizes. `[~]`: drag-move/double-click-maximize/edge-snap need a manual check (not simulable via the electron driver).
 - 2026-06-14 · UI3 · Dialog scrim now closes on outside-click via `onClick` on the scrim `motion.div` (`e.target === e.currentTarget` guard so panel clicks don't bubble); skipped when `alert` (ConfirmDialog) so destructive prompts keep explicit buttons. Esc unchanged. `npm run check` green. `[~]`: pending click-through on a few dialogs.
 - 2026-06-14 · UI1 · Select rewritten as popover listbox (keyboard up/down/enter/esc, Menu/Popover pattern); new options-array API (`{value,label}[]`, `onChange(value:string)`). Updated all 7 call sites (Settings×4, ImportDialog, EditMetaDialog, Library sort) with type casts where needed. `npm run check` green. `[~]`: native-chrome absence + keyboard nav not yet eyeballed.
 - 2026-06-14 · UI6 · New `ui/Tabs.tsx`: clickable tab bar (aria tablist/tab, motion underline, arrow-key nav) + exported `useTabCycle` hook for Ctrl+Tab/Ctrl+Shift+Tab. Not yet consumed (EL4/ADD1 pending). `npm run check` green. `[~]`: pending consumer wiring to fully exercise.

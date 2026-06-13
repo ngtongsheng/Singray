@@ -1,6 +1,7 @@
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import type { SongListItem } from '../../shared/types'
+import AppHeader from './components/AppHeader'
 import { usePrefersReducedMotion } from './lib/motionPresets'
 import Library from './screens/Library'
 import LyricCreator from './screens/LyricCreator'
@@ -67,21 +68,24 @@ function App(): React.JSX.Element {
   // before the next one mounts. Reduced motion: instant switch.
   return (
     <MotionConfig reducedMotion="user">
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={key}
-          className="h-full"
-          initial={reduced ? false : { opacity: 0, scale: 0.985 }}
-          animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: 'easeOut' } }}
-          exit={
-            reduced
-              ? undefined
-              : { opacity: 0, scale: 0.985, transition: { duration: 0.14, ease: 'easeIn' } }
-          }
-        >
-          {screen}
-        </motion.div>
-      </AnimatePresence>
+      <div className="flex h-full flex-col">
+        <AppHeader />
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={key}
+            className="min-h-0 flex-1"
+            initial={reduced ? false : { opacity: 0, scale: 0.985 }}
+            animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: 'easeOut' } }}
+            exit={
+              reduced
+                ? undefined
+                : { opacity: 0, scale: 0.985, transition: { duration: 0.14, ease: 'easeIn' } }
+            }
+          >
+            {screen}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </MotionConfig>
   )
 }

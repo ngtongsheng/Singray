@@ -72,6 +72,17 @@ const api: SingrayApi = {
     url: (id: string, track: AudioTrack) => `karaoke://${id}/${track}`,
     thumbUrl: (id: string) => `karaoke://${id}/thumb.jpg`
   },
+  window: {
+    minimize: () => ipcRenderer.invoke('window:minimize') as Promise<void>,
+    toggleMaximize: () => ipcRenderer.invoke('window:toggleMaximize') as Promise<void>,
+    close: () => ipcRenderer.invoke('window:close') as Promise<void>,
+    isMaximized: () => ipcRenderer.invoke('window:isMaximized') as Promise<boolean>,
+    onMaximizedChange: (cb) => {
+      const listener = (_e: unknown, maximized: boolean): void => cb(maximized)
+      ipcRenderer.on('window:maximized-changed', listener)
+      return () => ipcRenderer.removeListener('window:maximized-changed', listener)
+    }
+  },
   onLibraryChanged: (cb) => {
     const listener = (): void => cb()
     ipcRenderer.on('library:changed', listener)
