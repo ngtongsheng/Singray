@@ -1,0 +1,34 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please fill in as much as you can.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you do, and what went wrong?
+      placeholder: Steps to reproduce, what you expected, what you got instead.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS / version
+      placeholder: Windows 11 26200
+    validations:
+      required: true
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU (if relevant)
+      placeholder: RTX 5060 Ti, driver 5xx.xx
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / errors
+      description: Paste any error output (pipeline JSON-lines, dev console, etc.).
+      render: shell
