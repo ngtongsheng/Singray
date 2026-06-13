@@ -242,7 +242,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
   const seek = useCallback((t: number) => engine?.seek(t), [engine])
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative h-full">
       <Titlebar>
         <IconButton
           onClick={onExit}
@@ -292,7 +292,7 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
         )}
       </Titlebar>
 
-      <div className={`relative flex-1 overflow-hidden bg-bg ${barVisible ? '' : 'cursor-none'}`}>
+      <div className={`absolute inset-0 overflow-hidden bg-bg ${barVisible ? '' : 'cursor-none'}`}>
         {/* Blurred artwork under a scrim + bottom fade — lyric contrast independent of art (§10.6). */}
         <img
           src={window.singray.audio.thumbUrl(song.id)}

@@ -14,11 +14,11 @@ interface Props {
 function PipelineSetup({ onReady, onSkip }: Props): React.JSX.Element {
   const { t } = useTranslation()
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative h-full">
       <Titlebar>
         <h1 className="font-semibold text-base">{t('settings.setup.firstRunTitle')}</h1>
       </Titlebar>
-      <div className="flex-1 overflow-y-auto px-6 py-10">
+      <div className="absolute inset-0 overflow-y-auto px-6 pt-19 pb-10">
         <div className="mx-auto flex max-w-lg flex-col gap-5">
           <p className="text-sm text-text-dim">{t('settings.setup.firstRunDesc')}</p>
           <PipelineInstaller onReady={onReady} />

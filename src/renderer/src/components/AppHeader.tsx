@@ -1,17 +1,23 @@
 import { Mic2 } from 'lucide-react'
 import WindowControls from './WindowControls'
 
-/** Row 1 (NAV1): app branding + drag region + custom window controls, on every screen. */
+/**
+ * Row 1 (NAV1/NAV3): app branding + drag region + custom window controls.
+ * Floats over content with the shared header gradient scrim — no solid fill.
+ */
 function AppHeader(): React.JSX.Element {
   return (
-    <header className="app-drag flex h-9 shrink-0 items-center bg-bg">
-      <div className="flex items-center gap-2 pl-4">
-        <Mic2 className="size-4 text-accent" strokeWidth={1.5} />
-        <span className="font-semibold text-sm">Singray</span>
-      </div>
-      <div className="flex-1" />
-      <WindowControls />
-    </header>
+    <>
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-19 bg-gradient-to-b from-bg via-bg/85 to-transparent" />
+      <header className="app-drag absolute inset-x-0 top-0 z-30 flex h-9 items-center">
+        <div className="flex items-center gap-2 pl-4">
+          <Mic2 className="size-4 text-accent" strokeWidth={1.5} />
+          <span className="font-semibold text-sm">Singray</span>
+        </div>
+        <div className="flex-1" />
+        <WindowControls />
+      </header>
+    </>
   )
 }
 

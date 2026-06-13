@@ -93,7 +93,7 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative h-full">
       <Titlebar>
         <div className="app-no-drag w-72">
           <Input
@@ -131,55 +131,59 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
         </IconButton>
       </Titlebar>
 
-      <div className="flex items-center gap-2 px-6 py-3">
-        {languages.map((lang) => (
-          <Chip
-            key={lang}
-            active={language === lang}
-            onClick={() => setLanguage(language === lang ? null : lang)}
-          >
-            {langLabel(lang)}
-          </Chip>
-        ))}
-        <Chip active={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
-          <Heart className="size-3.5" strokeWidth={1.5} /> {t('library.favorites')}
-        </Chip>
-        <Chip active={needsLyricsOnly} onClick={() => setNeedsLyricsOnly(!needsLyricsOnly)}>
-          <Type className="size-3.5" strokeWidth={1.5} /> {t('library.needsLyrics')}
-        </Chip>
-      </div>
-
-      {songs.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4">
-          <Mic2 className="size-12 text-accent" strokeWidth={1.5} />
-          <p className="text-text-dim">{t('library.emptyHint')}</p>
-          <Button variant="primary" size="md" onClick={() => setShowImport(true)}>
-            <Plus className="size-4" strokeWidth={2} /> {t('library.addSong')}
-          </Button>
-        </div>
-      ) : (
-        <div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 overflow-y-auto px-6 pb-6">
-          {filtered.map((song, i) => (
-            // Entrance stagger (SPEC §10.5): 30ms per card, capped, animates once per mount.
-            <motion.div
-              key={song.id}
-              initial={reduced ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, ease: 'easeOut', delay: Math.min(i * 0.03, 0.45) }}
+      <div className="absolute inset-0 overflow-y-auto pt-19">
+        <div className="flex items-center gap-2 px-6 py-3">
+          {languages.map((lang) => (
+            <Chip
+              key={lang}
+              active={language === lang}
+              onClick={() => setLanguage(language === lang ? null : lang)}
             >
-              <SongCard
-                song={song}
-                importing={imports.get(song.id)}
-                onDelete={setPendingDelete}
-                onSing={onSing}
-              />
-            </motion.div>
+              {langLabel(lang)}
+            </Chip>
           ))}
-          {filtered.length === 0 && (
-            <p className="col-span-full py-12 text-center text-text-dim">{t('library.noMatch')}</p>
-          )}
+          <Chip active={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
+            <Heart className="size-3.5" strokeWidth={1.5} /> {t('library.favorites')}
+          </Chip>
+          <Chip active={needsLyricsOnly} onClick={() => setNeedsLyricsOnly(!needsLyricsOnly)}>
+            <Type className="size-3.5" strokeWidth={1.5} /> {t('library.needsLyrics')}
+          </Chip>
         </div>
-      )}
+
+        {songs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-4 py-24">
+            <Mic2 className="size-12 text-accent" strokeWidth={1.5} />
+            <p className="text-text-dim">{t('library.emptyHint')}</p>
+            <Button variant="primary" size="md" onClick={() => setShowImport(true)}>
+              <Plus className="size-4" strokeWidth={2} /> {t('library.addSong')}
+            </Button>
+          </div>
+        ) : (
+          <div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 px-6 pb-12">
+            {filtered.map((song, i) => (
+              // Entrance stagger (SPEC §10.5): 30ms per card, capped, animates once per mount.
+              <motion.div
+                key={song.id}
+                initial={reduced ? false : { opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut', delay: Math.min(i * 0.03, 0.45) }}
+              >
+                <SongCard
+                  song={song}
+                  importing={imports.get(song.id)}
+                  onDelete={setPendingDelete}
+                  onSing={onSing}
+                />
+              </motion.div>
+            ))}
+            {filtered.length === 0 && (
+              <p className="col-span-full py-12 text-center text-text-dim">
+                {t('library.noMatch')}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       {imports.size > 0 &&
         (() => {
@@ -188,7 +192,7 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
           if (!job) return null
           const title = songs.find((s) => s.id === job.songId)?.title ?? job.songId
           return (
-            <div className="relative border-border border-t bg-surface px-6 py-1.5">
+            <div className="absolute inset-x-0 bottom-0 z-20 border-border border-t bg-surface px-6 py-1.5">
               <div className="flex items-center gap-2 text-xs">
                 <span className="text-text-dim">
                   {STRIP_KEY[job.stage] ? t(STRIP_KEY[job.stage] as string) : job.stage} · {title}

@@ -68,12 +68,12 @@ function App(): React.JSX.Element {
   // before the next one mounts. Reduced motion: instant switch.
   return (
     <MotionConfig reducedMotion="user">
-      <div className="flex h-full flex-col">
+      <div className="relative h-full">
         <AppHeader />
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={key}
-            className="min-h-0 flex-1"
+            className="h-full"
             initial={reduced ? false : { opacity: 0, scale: 0.985 }}
             animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: 'easeOut' } }}
             exit={

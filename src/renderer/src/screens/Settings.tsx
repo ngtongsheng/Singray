@@ -153,7 +153,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
   if (!settings) return <div className="p-6 text-text-dim">{t('common.loading')}</div>
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative h-full">
       <Titlebar>
         <IconButton
           onClick={onBack}
@@ -165,7 +165,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
         <h1 className="font-semibold text-base">{t('settings.title')}</h1>
       </Titlebar>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      <div className="absolute inset-0 overflow-y-auto px-6 pt-19 pb-6">
         <div className="mx-auto flex max-w-xl flex-col gap-8">
           <fieldset className="rounded-card border border-border p-4">
             <legend className="px-1 font-medium text-sm">{t('settings.interface')}</legend>

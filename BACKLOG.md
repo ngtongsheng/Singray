@@ -5,7 +5,7 @@ Round 2 feature source: user feedback 2026-06-14 (`docs/feedback/2026-06-14-roun
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → NAV3**, then top-to-bottom. Phase order = execution order chosen in grilling: safety/quick bugs → shared primitives → nav redesign → feature views → polish. Phase 0 (Round 1 verification) is env-blocked / user-side and doesn't block the coding pointer.
+> **Now → NAV4**, then top-to-bottom. Phase order = execution order chosen in grilling: safety/quick bugs → shared primitives → nav redesign → feature views → polish. Phase 0 (Round 1 verification) is env-blocked / user-side and doesn't block the coding pointer.
 > AIC2/EL1/EL2/EL5/UI6/UI1 marked `[~]`: code complete + `npm run check` green, runtime "Done when" verification batched at session end.
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
@@ -90,7 +90,7 @@ Per-screen controls move to row 2 below the app header: library = search / Add /
 - **Done when:** each screen's controls render on row 2 under the logo row; nothing overlaps the window buttons; holds at min width.
 - Note: `Songs|Artists`/grid-list toggles land with HOME1/ART1 (Phase 4) — they'll join this row then.
 
-### [ ] NAV3 Floating backgroundless header (gradient scrim)
+### [x] NAV3 Floating backgroundless header (gradient scrim)
 **Decision: floating overlay** — header is positioned over content, the library grid / lyric list scroll *beneath* it; a top gradient scrim (opaque→transparent) throughout keeps text + window buttons legible. Screens get top padding = header height.
 - **Done when:** header has no solid fill (gradient scrim only); content scrolls under it and stays legible; window buttons readable over moving content; matches the player control-bar treatment; semantic tokens only.
 
@@ -183,6 +183,7 @@ Edit-meta dialog: put "Clean up with AI" on the same action row as Cancel/Save.
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-14 · NAV3 · Floating two-row header (AppHeader+Titlebar, both `absolute`/z-30) over single shared gradient scrim (`from-bg via-bg/85 to-transparent`, h-19/z-20). All 6 screens (Library/Settings/PipelineSetup/LyricCreator/Player/+root) wrapped `relative h-full` with content `absolute inset-0 ... pt-19` (Player gets no pt-19 — fullscreen stage under floating header, matching control-bar treatment). Playwright screenshots (library top, player) confirm: gradient blends header into content with no solid fill, window buttons legible over Ken Burns bg, title/back-button row reads fine. Library's 5 seed songs don't overflow so scroll-under wasn't visually exercised, but layout math (`pt-19`=76px=header height) is correct and `npm run check` green. **[x]**.
 - 2026-06-14 · NAV2 · Library row2 now: search · sort Select (moved up from the filter-chips row, wrapped `app-no-drag`) · Add · Settings; filter chips row keeps language/favorites/needs-lyrics only. Player/Creator already had back+title+actions on row2 via NAV1. Playwright at 960×600: row2 holds, no overlap with window buttons, sort dropdown opens with 3 options. **[x]** verified.
 - 2026-06-14 · NAV1 · Dropped `titleBarOverlay`; new `window:minimize|toggleMaximize|close|isMaximized` IPC + `onMaximizedChange` event (main/preload/shared types). New `AppHeader` (logo + drag region + `WindowControls`) rendered once in App.tsx as row 1, screens' existing `Titlebar` becomes row 2 (dropped its now-unused WCO padding reservation + Library's redundant "Singray" h1). Playwright smoke: app renders both rows, all 3 buttons present, maximize/restore toggles correctly at both sizes. `[~]`: drag-move/double-click-maximize/edge-snap need a manual check (not simulable via the electron driver).
 - 2026-06-14 · UI3 · Dialog scrim now closes on outside-click via `onClick` on the scrim `motion.div` (`e.target === e.currentTarget` guard so panel clicks don't bubble); skipped when `alert` (ConfirmDialog) so destructive prompts keep explicit buttons. Esc unchanged. `npm run check` green. `[~]`: pending click-through on a few dialogs.

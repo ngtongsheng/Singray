@@ -156,7 +156,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative h-full">
       <Titlebar>
         <IconButton
           onClick={onBack}
@@ -246,30 +246,32 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
         )}
       </Titlebar>
 
-      {step === 'text' ? (
-        <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 py-4">
-          <p className="text-text-dim text-xs">
-            {t('creator.hint')}
-            {hasTiming && <span className="text-accent-soft">{t('creator.hintTimed')}</span>}
-          </p>
-          {alignError && (
-            <p className="text-danger text-xs">
-              {t('creator.alignFailed', { message: alignError })}
+      <div className="absolute inset-0 flex flex-col pt-19">
+        {step === 'text' ? (
+          <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 pb-4">
+            <p className="text-text-dim text-xs">
+              {t('creator.hint')}
+              {hasTiming && <span className="text-accent-soft">{t('creator.hintTimed')}</span>}
             </p>
-          )}
-          {lrcError && <p className="text-danger text-xs">{lrcError}</p>}
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            disabled={!loaded}
-            spellCheck={false}
-            placeholder={t('creator.placeholder')}
-            className="min-h-0 flex-1 resize-none rounded-card border border-border bg-surface p-4 font-lyric text-base leading-7 placeholder:text-text-dim/40"
-          />
-        </div>
-      ) : (
-        saved && <TimingStep songId={song.id} lyrics={saved} onChange={setSaved} />
-      )}
+            {alignError && (
+              <p className="text-danger text-xs">
+                {t('creator.alignFailed', { message: alignError })}
+              </p>
+            )}
+            {lrcError && <p className="text-danger text-xs">{lrcError}</p>}
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              disabled={!loaded}
+              spellCheck={false}
+              placeholder={t('creator.placeholder')}
+              className="min-h-0 flex-1 resize-none rounded-card border border-border bg-surface p-4 font-lyric text-base leading-7 placeholder:text-text-dim/40"
+            />
+          </div>
+        ) : (
+          saved && <TimingStep songId={song.id} lyrics={saved} onChange={setSaved} />
+        )}
+      </div>
 
       <AnimatePresence>
         {cleanPreview !== null && (
