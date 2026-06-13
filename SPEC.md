@@ -309,7 +309,7 @@ Timing step shows a waveform of **`vocals.m4a`** (not the full mix) under the tr
 
 ### 6.7 Review mode
 
-Toggle in timing step: plays song with the real player renderer (§7) inline so timing can be eyeballed; `Space` re-enters tap mode at the current line. No separate per-unit nudge editor in v1 — re-tapping a line is the correction tool.
+Toggle in timing step: plays song with the real player renderer (§7) inline so timing can be eyeballed; `Space` and `Enter` both play/pause (Player muscle memory) — stamping is fully disabled in review. Leaving review (via the Tap/Review switch, or Ctrl+Tab once the creator step-tabs land) re-enters tap mode at the line currently playing. No separate per-unit nudge editor in v1 — re-tapping a line is the correction tool.
 
 ---
 

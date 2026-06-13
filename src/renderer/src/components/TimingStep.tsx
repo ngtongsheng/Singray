@@ -241,7 +241,7 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
         case ' ':
           e.preventDefault()
           if (e.repeat) break
-          if (review) exitReview()
+          if (review) togglePlay()
           else stamp()
           break
         case 'Backspace':
@@ -276,7 +276,7 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [stamp, undo, togglePlay, seekTo, cycleRate, review, exitReview, jumpGap])
+  }, [stamp, undo, togglePlay, seekTo, cycleRate, review, jumpGap])
 
   const currentLine = flatUnits[cursor]?.line ?? flatUnits[flatUnits.length - 1]?.line ?? 0
 
@@ -428,7 +428,7 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
       {showKeys && (
         <div className="flex items-center gap-5 border-border border-t bg-surface px-6 py-2 text-text-dim text-xs">
           {review ? (
-            <Hint k="Space" label={t('timing.hintBackToTap')} />
+            <Hint k="Space / Enter" label={t('timing.hintPlay')} />
           ) : (
             <>
               <Hint k="Space" label={t('timing.hintStamp')} />
@@ -436,9 +436,9 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
               {stamps.length > 0 && stamps.length < flatUnits.length && (
                 <Hint k="Tab" label={t('timing.hintGap')} />
               )}
+              <Hint k="Enter" label={t('timing.hintPlay')} />
             </>
           )}
-          <Hint k="Enter" label={t('timing.hintPlay')} />
           <Hint k="← →" label={t('timing.hintSeek')} />
           <Hint k="↑ ↓" label={t('timing.hintSpeed')} />
           <div className="flex-1" />
