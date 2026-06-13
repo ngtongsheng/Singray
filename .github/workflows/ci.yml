@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    name: TypeScript (Biome + tsc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      # --ignore-scripts skips electron-builder install-app-deps + git hooks,
+      # neither of which `npm run check` (Biome + tsc) needs.
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+
+  ruff:
+    name: Python (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      # ruff alone — no torch/audio-separator needed to lint pipeline.py.
+      # Version matches the pin in pipeline/setup.ps1.
+      - run: pip install ruff==0.15.16
+      - run: ruff check pipeline
+      - run: ruff format --check pipeline
