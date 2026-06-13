@@ -59,7 +59,8 @@ export async function listSongs(): Promise<SongListItem[]> {
         id: entry.name, // folder name is the id authority
         hasLyrics: await exists(join(dir, 'lyrics.json')),
         error: await readImportError(dir),
-        ready: await exists(join(dir, 'original.m4a'))
+        ready:
+          (await exists(join(dir, 'original.flac'))) || (await exists(join(dir, 'original.m4a')))
       })
     } catch {
       // no/corrupt meta.json → not a song folder, skip

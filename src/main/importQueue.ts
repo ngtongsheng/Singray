@@ -112,7 +112,7 @@ function run(job: Job): void {
   const source = job.filePath ? ['--file', job.filePath] : ['--url', job.url]
   const proc = spawn(
     getSettings().pythonPath,
-    [pipelineScript(), 'process', ...source, '--out', dir],
+    [pipelineScript(), 'process', ...source, '--out', dir, '--format', getSettings().stemFormat],
     { windowsHide: true }
   )
   activeProc = proc

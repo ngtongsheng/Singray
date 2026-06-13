@@ -12,6 +12,7 @@ function defaults(): Settings {
     audioOutputMode: 'single',
     playerBarPinned: true,
     stageVisual: 'off',
+    stemFormat: 'flac',
     languages: [
       { code: 'zh', label: '中文' },
       { code: 'en', label: 'English' }

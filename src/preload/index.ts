@@ -56,7 +56,8 @@ const api: SingrayApi = {
     cleanLyrics: (input) => ipcRenderer.invoke('llm:cleanLyrics', input) as Promise<string>
   },
   audio: {
-    url: (id: string, track: AudioTrack) => `karaoke://${id}/${track}.m4a`,
+    // Extensionless: the protocol handler resolves to flac or m4a per song (R3.8).
+    url: (id: string, track: AudioTrack) => `karaoke://${id}/${track}`,
     thumbUrl: (id: string) => `karaoke://${id}/thumb.jpg`
   },
   onLibraryChanged: (cb) => {

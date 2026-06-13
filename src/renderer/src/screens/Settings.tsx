@@ -294,6 +294,21 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 </span>
               )}
             </label>
+            <label className="mt-4 block">
+              <span className="mb-1 block text-text-dim text-xs">{t('settings.stemFormat')}</span>
+              <Select
+                value={settings.stemFormat}
+                onChange={(e) =>
+                  patch({ stemFormat: e.target.value as SettingsModel['stemFormat'] })
+                }
+              >
+                <option value="flac">{t('settings.stemFlac')}</option>
+                <option value="m4a">{t('settings.stemM4a')}</option>
+              </Select>
+              <span className="mt-1 block text-text-dim text-xs">
+                {t('settings.stemFormatHelp')}
+              </span>
+            </label>
           </fieldset>
 
           <fieldset className="rounded-card border border-border p-4">

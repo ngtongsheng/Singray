@@ -284,8 +284,16 @@ def _measure_input_lufs(path: Path) -> float:
     return float(json.loads(proc.stderr[start : end + 1])["input_i"])
 
 
-def _encode_m4a(src: Path, dst: Path, gain_db: float) -> None:
-    """AAC 256k with the shared linear gain applied (same gain on all three files)."""
+def _encode_audio(src: Path, dst: Path, gain_db: float, fmt: str) -> None:
+    """Encode with the shared linear gain (same gain on all three files).
+
+    fmt="flac" → lossless (no second lossy encode after separation); "m4a" → AAC 256k.
+    """
+    codec = (
+        ["-c:a", "flac"]
+        if fmt == "flac"
+        else ["-c:a", "aac", "-b:a", "256k", "-movflags", "+faststart"]
+    )
     try:
         subprocess.run(
             [
@@ -293,8 +301,7 @@ def _encode_m4a(src: Path, dst: Path, gain_db: float) -> None:
                 "-i", str(src),
                 "-vn",  # drop any video stream (local-file imports can be mp4)
                 "-af", f"volume={gain_db:.2f}dB",
-                "-c:a", "aac", "-b:a", "256k",
-                "-movflags", "+faststart",
+                *codec,
                 str(dst),
             ],
             stdin=subprocess.DEVNULL,
@@ -321,8 +328,8 @@ def cmd_process(args: argparse.Namespace) -> int:
     try:
         with tempfile.TemporaryDirectory(prefix="singray_") as tmp_str:
             tmp = Path(tmp_str)
-            dl_dir, stems_dir, m4a_dir = tmp / "download", tmp / "stems", tmp / "m4a"
-            for d in (dl_dir, stems_dir, m4a_dir):
+            dl_dir, stems_dir, enc_dir = tmp / "download", tmp / "stems", tmp / "encoded"
+            for d in (dl_dir, stems_dir, enc_dir):
                 d.mkdir()
 
             if args.file:
@@ -342,22 +349,23 @@ def cmd_process(args: argparse.Namespace) -> int:
             gain_db = TARGET_LUFS - _measure_input_lufs(audio)
             gain_db = max(-MAX_GAIN_DB, min(MAX_GAIN_DB, gain_db))
 
+            ext = "flac" if args.format == "flac" else "m4a"
             emit({"stage": "convert", "progress": 0.0})
-            _encode_m4a(audio, m4a_dir / "original.m4a", gain_db)
+            _encode_audio(audio, enc_dir / f"original.{ext}", gain_db, args.format)
             emit({"stage": "convert", "progress": 0.33})
-            _encode_m4a(instrumental_wav, m4a_dir / "instrumental.m4a", gain_db)
+            _encode_audio(instrumental_wav, enc_dir / f"instrumental.{ext}", gain_db, args.format)
             emit({"stage": "convert", "progress": 0.67})
-            _encode_m4a(vocals_wav, m4a_dir / "vocals.m4a", gain_db)
+            _encode_audio(vocals_wav, enc_dir / f"vocals.{ext}", gain_db, args.format)
             emit({"stage": "convert", "progress": 1.0})
 
             files = {
-                "original": "original.m4a",
-                "instrumental": "instrumental.m4a",
-                "vocals": "vocals.m4a",
+                "original": f"original.{ext}",
+                "instrumental": f"instrumental.{ext}",
+                "vocals": f"vocals.{ext}",
             }
             out_dir.mkdir(parents=True, exist_ok=True)
             for name in files.values():
-                shutil.move(str(m4a_dir / name), str(out_dir / name))
+                shutil.move(str(enc_dir / name), str(out_dir / name))
             if thumb is not None:
                 _encode_thumb(thumb, out_dir / "thumb.jpg")
                 files["thumb"] = "thumb.jpg"
@@ -419,9 +427,12 @@ def cmd_align(args: argparse.Namespace) -> int:
     """Forced alignment: lyric text vs vocals.m4a → token timestamps (SPEC §6.6)."""
     try:
         song_dir = Path(args.song)
-        vocals = song_dir / "vocals.m4a"
-        if not vocals.exists():
-            raise RuntimeError(f"vocals stem not found: {vocals}")
+        vocals = next(
+            (p for e in ("flac", "m4a") if (p := song_dir / f"vocals.{e}").exists()),
+            None,
+        )
+        if vocals is None:
+            raise RuntimeError(f"vocals stem not found in {song_dir}")
 
         raw = Path(args.text).read_text(encoding="utf-8")
         text = " ".join(line.strip() for line in raw.splitlines() if line.strip())
@@ -468,6 +479,7 @@ def main() -> int:
     process_src.add_argument("--file", help="local media file to import instead of a URL")
     process.add_argument("--out", required=True)
     process.add_argument("--model", default=DEFAULT_MODEL)
+    process.add_argument("--format", choices=("flac", "m4a"), default="flac")
     process.set_defaults(func=cmd_process)
 
     align = sub.add_parser("align", help="forced-align lyric text against the vocals stem")
