@@ -8,6 +8,7 @@ import {
   type ProbeResult,
   type SearchResult
 } from '../../../shared/types'
+import { detectLanguage } from '../lib/detectLanguage'
 import { Button, Dialog, IconButton, Input, Select, Tabs } from './ui'
 import { cx } from './ui/cx'
 
@@ -74,14 +75,19 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
   }
 
   /** Shared prefill: probe result → form, with LLM enrichment (heuristic fallback in main). */
-  const prefill = useCallback(async (result: ProbeResult, seq: number): Promise<void> => {
-    if (seq !== probeSeq.current) return
-    setProbed(result)
-    const enriched = await window.singray.llm.enrichProbe(result)
-    if (seq !== probeSeq.current) return
-    setTitle(enriched.title)
-    setArtist(enriched.artist)
-  }, [])
+  const prefill = useCallback(
+    async (result: ProbeResult, seq: number): Promise<void> => {
+      if (seq !== probeSeq.current) return
+      setProbed(result)
+      const detected = detectLanguage(result.title, languages)
+      if (detected) setLanguage(detected)
+      const enriched = await window.singray.llm.enrichProbe(result)
+      if (seq !== probeSeq.current) return
+      setTitle(enriched.title)
+      setArtist(enriched.artist)
+    },
+    [languages]
+  )
 
   /** Shared local-file flow (R3.7 picker, ADD2 drop): probe the file → same prefill flow. */
   const loadFile = async (path: string): Promise<void> => {
