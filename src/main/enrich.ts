@@ -100,9 +100,26 @@ const LYRICS_PROMPT = `You clean song lyrics for a karaoke app. Given raw pasted
 Rules:
 - Remove section headers such as [Verse], [Chorus], [Intro], [Bridge], [Hook], (副歌), (主歌).
 - Remove credit / metadata lines: 作詞/作曲/編曲/監製/和聲, "Lyrics by", "Composed by", "Produced by", title or artist headers, album names, contributor and translation credits.
-- Keep every actual sung line in its original language and script. Never translate, never rephrase, never add or reorder lines.
+- CRITICAL: Keep EVERY actual sung line, verbatim, in its original language and script. Never translate, never rephrase, never reorder, never merge or split lines, never drop a repeated line — choruses repeat on purpose, keep each repetition. If you are unsure whether a line is a sung lyric or metadata, KEEP it; when in doubt, keep the line.
 - One lyric line per row. Collapse runs of blank lines to a single blank line (a real instrumental break). Trim trailing spaces.
-- Respond with only the cleaned lyrics as plain text — no commentary, no code fences.`
+- Respond with only the cleaned lyrics as plain text — no commentary, no code fences.
+
+Example input:
+[Verse 1]
+作詞：王力宏 作曲：王力宏
+日出 日落 我看著時間流逝
+你的微笑 還在我心裡
+
+[Chorus]
+我愛你 我愛你
+我愛你 我愛你
+
+Example output:
+日出 日落 我看著時間流逝
+你的微笑 還在我心裡
+
+我愛你 我愛你
+我愛你 我愛你`
 
 /**
  * Lyric cleanup "Clean up with AI" (R3.6): strips section tags / credits, normalizes

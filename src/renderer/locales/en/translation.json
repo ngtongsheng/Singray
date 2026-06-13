@@ -77,6 +77,7 @@
     "after": "After",
     "removed_one": "{{count}} line will be removed.",
     "removed_other": "{{count}} lines will be removed.",
+    "majorRemoval": "Warning: this would remove {{count}} of {{total}} lines (over 40%). Review carefully — the cleanup may have dropped real lyrics.",
     "noChanges": "No credits or section tags found — only spacing normalized.",
     "apply": "Apply"
   },

@@ -19,13 +19,19 @@ function CleanLyricsDialog({ original, cleaned, onApply, onClose }: Props): Reac
       .filter(Boolean)
   )
   const beforeLines = original.split('\n')
+  const nonEmpty = beforeLines.filter((l) => l.trim()).length
   const removed = beforeLines.filter((l) => l.trim() && !keep.has(l.trim())).length
+  const majorRemoval = nonEmpty > 0 && removed / nonEmpty > 0.4
 
   return (
     <Dialog label={t('clean.title')} width="w-[680px]" onClose={onClose}>
       <h2 className="mb-1 font-semibold text-lg">{t('clean.title')}</h2>
-      <p className="mb-4 text-text-dim text-xs">
-        {removed > 0 ? t('clean.removed', { count: removed }) : t('clean.noChanges')}
+      <p className={`mb-4 text-xs ${majorRemoval ? 'font-semibold text-danger' : 'text-text-dim'}`}>
+        {majorRemoval
+          ? t('clean.majorRemoval', { count: removed, total: nonEmpty })
+          : removed > 0
+            ? t('clean.removed', { count: removed })
+            : t('clean.noChanges')}
       </p>
       <div className="grid grid-cols-2 gap-3">
         <div className="min-w-0">
