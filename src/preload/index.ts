@@ -50,7 +50,8 @@ const api: SingrayApi = {
   llm: {
     test: () => ipcRenderer.invoke('llm:test') as Promise<LlmTestResult>,
     enrichProbe: (probe) => ipcRenderer.invoke('llm:enrichProbe', probe) as Promise<EnrichResult>,
-    cleanMeta: (input) => ipcRenderer.invoke('llm:cleanMeta', input) as Promise<EnrichResult>
+    cleanMeta: (input) => ipcRenderer.invoke('llm:cleanMeta', input) as Promise<EnrichResult>,
+    cleanLyrics: (input) => ipcRenderer.invoke('llm:cleanLyrics', input) as Promise<string>
   },
   audio: {
     url: (id: string, track: AudioTrack) => `karaoke://${id}/${track}.m4a`,

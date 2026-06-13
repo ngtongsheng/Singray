@@ -7,7 +7,7 @@ import type {
   Settings,
   SongMeta
 } from '../shared/types'
-import { cleanMeta, enrichProbe } from './enrich'
+import { cleanLyrics, cleanMeta, enrichProbe } from './enrich'
 import { cancelImport, retryImport, startImport } from './importQueue'
 import { deleteSong, getLyrics, listSongs, openSongFolder, saveLyrics, updateMeta } from './library'
 import { testLlm } from './llm'
@@ -40,6 +40,9 @@ export function registerIpc(): void {
   ipcMain.handle(
     'llm:cleanMeta',
     (_e, input: { title: string; artist: string; youtubeTitle: string }) => cleanMeta(input)
+  )
+  ipcMain.handle('llm:cleanLyrics', (_e, input: { text: string; language: string }) =>
+    cleanLyrics(input)
   )
 
   ipcMain.handle('import:probe', (_e, url: string) => probe(url))

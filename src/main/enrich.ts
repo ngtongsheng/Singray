@@ -94,3 +94,31 @@ export async function cleanMeta(input: {
   const cleaned = await cleanWithLlm(payload)
   return { ...cleaned, source: 'llm' }
 }
+
+const LYRICS_PROMPT = `You clean song lyrics for a karaoke app. Given raw pasted lyrics, return only the singable lyric lines.
+
+Rules:
+- Remove section headers such as [Verse], [Chorus], [Intro], [Bridge], [Hook], (副歌), (主歌).
+- Remove credit / metadata lines: 作詞/作曲/編曲/監製/和聲, "Lyrics by", "Composed by", "Produced by", title or artist headers, album names, contributor and translation credits.
+- Keep every actual sung line in its original language and script. Never translate, never rephrase, never add or reorder lines.
+- One lyric line per row. Collapse runs of blank lines to a single blank line (a real instrumental break). Trim trailing spaces.
+- Respond with only the cleaned lyrics as plain text — no commentary, no code fences.`
+
+/**
+ * Lyric cleanup "Clean up with AI" (R3.6): strips section tags / credits, normalizes
+ * blank lines, preserves language. No fallback — rejects with a readable message.
+ */
+export async function cleanLyrics(input: { text: string; language: string }): Promise<string> {
+  const reply = await chat(
+    [
+      { role: 'system', content: LYRICS_PROMPT },
+      { role: 'user', content: input.text }
+    ],
+    { temperature: 0, noReasoning: true, timeoutMs: 60_000 }
+  )
+  // Tolerate a model that wraps the answer in a code fence despite instructions.
+  return reply
+    .replace(/^\s*```[a-z]*\n?/i, '')
+    .replace(/\n?```\s*$/, '')
+    .trim()
+}

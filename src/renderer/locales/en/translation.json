@@ -67,6 +67,18 @@
     "dismiss": "Dismiss",
     "noChanges": "Already clean — no changes suggested."
   },
+  "clean": {
+    "button": "Clean up with AI",
+    "cleaning": "Cleaning…",
+    "tip": "Strip section tags and credits, normalize line breaks (keeps the language)",
+    "title": "Lyric cleanup",
+    "before": "Before",
+    "after": "After",
+    "removed_one": "{{count}} line will be removed.",
+    "removed_other": "{{count}} lines will be removed.",
+    "noChanges": "No credits or section tags found — only spacing normalized.",
+    "apply": "Apply"
+  },
   "finder": {
     "find": "Find lyrics",
     "findTip": "Search LRCLIB for synced or plain lyrics by title and artist",

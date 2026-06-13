@@ -1,9 +1,10 @@
-import { ArrowLeft, ArrowRight, FileDown, Loader2, Search, Wand2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FileDown, Loader2, Search, Sparkles, Wand2 } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { parseLrc } from '../../../shared/lrc'
 import type { LrclibHit, Lyrics, SongListItem } from '../../../shared/types'
+import CleanLyricsDialog from '../components/CleanLyricsDialog'
 import ConfirmDialog from '../components/ConfirmDialog'
 import LrclibFinderDialog from '../components/LrclibFinderDialog'
 import TimingStep from '../components/TimingStep'
@@ -36,6 +37,8 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
   const [pendingLrc, setPendingLrc] = useState<Lyrics | null>(null)
   const [lrcError, setLrcError] = useState<string | null>(null)
   const [finderOpen, setFinderOpen] = useState(false)
+  const [cleaning, setCleaning] = useState(false)
+  const [cleanPreview, setCleanPreview] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -136,6 +139,22 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
     else if (hit.plainLyrics) setText(hit.plainLyrics)
   }
 
+  /** LLM lyric cleanup (R3.6): preview a stripped/normalized version before applying. */
+  const onClean = async (): Promise<void> => {
+    setLrcError(null)
+    setCleaning(true)
+    try {
+      const cleaned = await window.singray.llm.cleanLyrics({ text, language: song.language })
+      setCleanPreview(cleaned)
+    } catch (err) {
+      setLrcError(
+        (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
+      )
+    } finally {
+      setCleaning(false)
+    }
+  }
+
   return (
     <div className="flex h-full flex-col">
       <Titlebar>
@@ -177,6 +196,22 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
               className="app-no-drag font-medium text-text-dim hover:text-text"
             >
               <FileDown className="size-4" strokeWidth={1.5} /> {t('creator.importLrc')}
+            </Button>
+            <Button
+              onClick={() => void onClean()}
+              disabled={!loaded || parsedEmpty(text) || cleaning || aligning}
+              title={t('clean.tip')}
+              className="app-no-drag font-medium text-text-dim hover:text-text"
+            >
+              {cleaning ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" strokeWidth={2} /> {t('clean.cleaning')}
+                </>
+              ) : (
+                <>
+                  <Sparkles className="size-4" strokeWidth={1.5} /> {t('clean.button')}
+                </>
+              )}
             </Button>
             <Button
               onClick={onAlign}
@@ -237,6 +272,17 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
       )}
 
       <AnimatePresence>
+        {cleanPreview !== null && (
+          <CleanLyricsDialog
+            original={text}
+            cleaned={cleanPreview}
+            onApply={() => {
+              setText(cleanPreview)
+              setCleanPreview(null)
+            }}
+            onClose={() => setCleanPreview(null)}
+          />
+        )}
         {finderOpen && (
           <LrclibFinderDialog
             query={{ title: song.title, artist: song.artist, durationSec: song.durationSec }}

@@ -206,6 +206,8 @@ export interface SingrayApi {
     enrichProbe(probe: ProbeResult): Promise<EnrichResult>
     /** "Clean up with AI" on an existing song; rejects with a readable message. */
     cleanMeta(input: { title: string; artist: string; youtubeTitle: string }): Promise<EnrichResult>
+    /** Cleans pasted lyrics (strip section tags/credits, normalize breaks); rejects readably (R3.6). */
+    cleanLyrics(input: { text: string; language: string }): Promise<string>
   }
   audio: {
     url(id: string, track: AudioTrack): string

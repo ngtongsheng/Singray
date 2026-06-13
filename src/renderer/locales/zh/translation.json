@@ -67,6 +67,17 @@
     "dismiss": "忽略",
     "noChanges": "已经很干净，无需修改。"
   },
+  "clean": {
+    "button": "AI 清理",
+    "cleaning": "清理中…",
+    "tip": "去除段落标记与制作信息，规整换行（保留原语言）",
+    "title": "歌词清理",
+    "before": "清理前",
+    "after": "清理后",
+    "removed_other": "将移除 {{count}} 行。",
+    "noChanges": "未发现制作信息或段落标记 — 仅规整了空行。",
+    "apply": "应用"
+  },
   "finder": {
     "find": "查找歌词",
     "findTip": "按标题与歌手在 LRCLIB 搜索逐字或纯文本歌词",
