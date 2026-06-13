@@ -1,7 +1,8 @@
-import { ArrowLeft, ArrowRight, Loader2, Wand2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FileDown, Loader2, Wand2 } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { parseLrc } from '../../../shared/lrc'
 import type { Lyrics, SongListItem } from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
 import TimingStep from '../components/TimingStep'
@@ -31,6 +32,9 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
   const [pending, setPending] = useState<Pending | null>(null)
   const [aligning, setAligning] = useState(false)
   const [alignError, setAlignError] = useState<string | null>(null)
+  const [pendingLrc, setPendingLrc] = useState<Lyrics | null>(null)
+  const [lrcError, setLrcError] = useState<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     window.singray.lyrics.get(song.id).then((lyrics) => {
@@ -90,6 +94,35 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
     else void doAlign(result)
   }
 
+  /** LRC import (R3.4): timestamped file → timed Lyrics, lands in the timing step for fix-up. */
+  const applyLrc = async (lyrics: Lyrics): Promise<void> => {
+    setPendingLrc(null)
+    await window.singray.lyrics.save(song.id, lyrics)
+    setSaved(lyrics)
+    setText(lyricsToText(lyrics))
+    setStep('timing')
+  }
+
+  const onFile = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-picking the same file
+    if (!file) return
+    setLrcError(null)
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const parsed = parseLrc(String(reader.result), song.language)
+        const withEnds = inferEnds(parsed, song.durationSec)
+        if (hasTiming) setPendingLrc(withEnds)
+        else void applyLrc(withEnds)
+      } catch {
+        setLrcError(t('creator.lrcInvalid'))
+      }
+    }
+    reader.onerror = () => setLrcError(t('creator.lrcInvalid'))
+    reader.readAsText(file)
+  }
+
   return (
     <div className="flex h-full flex-col">
       <Titlebar>
@@ -109,6 +142,21 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
         <div className="flex-1" />
         {step === 'text' ? (
           <>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".lrc,.txt,text/plain"
+              onChange={onFile}
+              className="hidden"
+            />
+            <Button
+              onClick={() => fileRef.current?.click()}
+              disabled={!loaded || aligning}
+              title={t('creator.importLrcTip')}
+              className="app-no-drag font-medium text-text-dim hover:text-text"
+            >
+              <FileDown className="size-4" strokeWidth={1.5} /> {t('creator.importLrc')}
+            </Button>
             <Button
               onClick={onAlign}
               disabled={!loaded || parsedEmpty(text) || aligning}
@@ -153,6 +201,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
               {t('creator.alignFailed', { message: alignError })}
             </p>
           )}
+          {lrcError && <p className="text-danger text-xs">{lrcError}</p>}
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -167,6 +216,15 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
       )}
 
       <AnimatePresence>
+        {pendingLrc && (
+          <ConfirmDialog
+            title={t('creator.lrcReplaceTitle')}
+            body={t('creator.lrcReplaceBody')}
+            confirmLabel={t('creator.lrcReplace')}
+            onConfirm={() => void applyLrc(pendingLrc)}
+            onCancel={() => setPendingLrc(null)}
+          />
+        )}
         {pending &&
           (pending.action === 'align' ? (
             <ConfirmDialog

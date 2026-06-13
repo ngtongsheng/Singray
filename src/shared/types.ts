@@ -47,6 +47,8 @@ export interface LyricUnit {
   text: string
   /** Unit start in seconds; null until stamped/aligned. */
   t: number | null
+  /** True when `t` was interpolated from an LRC line/word timestamp, not stamped/aligned (R3.4). */
+  estimated?: boolean
 }
 
 export interface LyricLine {

@@ -254,6 +254,7 @@ Song card → **Edit Lyrics**. Two-step screen: **(a) text**, **(b) timing**.
 - Textarea, one lyric line per row; empty row = instrumental-break marker.
 - On continue: tokenize each line (§4.4), persist draft text into `lyrics.json` (`units` with `t: null`).
 - Re-entering text step after timing exists: warn that edited lines lose their timing (line-level diff keeps timing for untouched lines).
+- **LRC import (R3.4):** "Import LRC" loads a `.lrc` file (`src/shared/lrc.ts`). Plain LRC → line starts; per-unit times linearly interpolated within each line (`LyricUnit.estimated = true`), span capped so words don't stretch across instrumentals, `≥5s` gaps become break markers. Enhanced `<mm:ss.xx>` word timestamps anchor units. `[offset:±ms]` honored. Ends filled by `inferEnds`; existing timing prompts a replace confirm; malformed files rejected without touching the creator.
 
 ### 6.3 Timing step (tap-along)
 
