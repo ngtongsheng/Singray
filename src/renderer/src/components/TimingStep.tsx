@@ -372,25 +372,6 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
 
       <WaveformStrip songId={songId} audioRef={audioRef} stamps={stamps} onSeek={seekTo} />
 
-      <div className="relative border-border border-b bg-surface px-6 py-1.5">
-        <div className="flex items-center gap-2 text-xs">
-          {done ? (
-            <span className="font-medium text-success">{t('timing.done')}</span>
-          ) : (
-            <>
-              <span className="text-text-dim">
-                {stamps.length}/{flatUnits.length}
-              </span>
-              <span className="font-medium text-accent">{progressPct}%</span>
-            </>
-          )}
-        </div>
-        <div
-          className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
-          style={{ width: `${progressPct}%` }}
-        />
-      </div>
-
       {review ? (
         <ReviewPane lyrics={lyrics} audioRef={audioRef} onSeek={seekTo} />
       ) : (
@@ -457,6 +438,25 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
           </div>
         </>
       )}
+
+      <div className="relative border-border border-t bg-surface px-6 py-1.5">
+        <div className="flex items-center gap-2 text-xs">
+          {done ? (
+            <span className="font-medium text-success">{t('timing.done')}</span>
+          ) : (
+            <>
+              <span className="text-text-dim">
+                {stamps.length}/{flatUnits.length}
+              </span>
+              <span className="font-medium text-accent">{progressPct}%</span>
+            </>
+          )}
+        </div>
+        <div
+          className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
+          style={{ width: `${progressPct}%` }}
+        />
+      </div>
 
       {showKeys && (
         <div className="flex items-center gap-5 border-border border-t bg-surface px-6 py-2 text-text-dim text-xs">
