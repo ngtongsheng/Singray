@@ -5,7 +5,8 @@ Round 2 feature source: user feedback 2026-06-14 (`docs/feedback/2026-06-14-roun
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → AIC2** (data-loss bug), then top-to-bottom. Phase order = execution order chosen in grilling: safety/quick bugs → shared primitives → nav redesign → feature views → polish. Phase 0 (Round 1 verification) is env-blocked / user-side and doesn't block the coding pointer.
+> **Now → UI3**, then top-to-bottom. Phase order = execution order chosen in grilling: safety/quick bugs → shared primitives → nav redesign → feature views → polish. Phase 0 (Round 1 verification) is env-blocked / user-side and doesn't block the coding pointer.
+> AIC2/EL1/EL2/EL5/UI6/UI1 marked `[~]`: code complete + `npm run check` green, runtime "Done when" verification batched at session end.
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
 
@@ -47,29 +48,29 @@ Code landed + smoke-checked. **Unverified**: real download→venv→torch→impo
 
 ## Phase 1 — Safety + quick bugs
 
-### [ ] AIC2 Lyric cleanup must not delete real lyrics (bug — data loss) ⚠ Now
+### [~] AIC2 Lyric cleanup must not delete real lyrics (bug — data loss)
 `cleanLyrics` (enrich.ts) takes the model's free-form rewrite wholesale, so a quantized model can silently delete sung lines. **Decision (grilled): prompt-harden, not restructure** — strengthen `LYRICS_PROMPT` (few-shot, emphatic "keep every sung line verbatim") **+ a `>40%` removed guard**: if cleanup drops more than ~40% of non-empty lines, surface a warning instead of presenting it as clean. The AIC1 diff-before-apply is the real safety gate (Apply stays an explicit click).
 - **Done when:** a messy lyric (lyrics + section tags + credits) cleans on the real model with **all original lyric lines intact**, only tags/credits removed; a lyrics-only input returns unchanged; a cleanup that would drop >40% of lines shows the warning instead of a result; the previously-damaged song re-cleans without losing lyrics.
 
-### [ ] EL1 Disable stamping in preview (bug)
+### [~] EL1 Disable stamping in preview (bug)
 In timing's review/preview mode, **Space** currently calls `exitReview()` (jumps back to tap, next Space stamps) — that's the "stamp key fires in preview" leak (note: Space is the stamp key, Tab is gap-nav and already guarded). **Decision: in preview, Space = play/pause** (Player muscle memory), stamping fully disabled; leaving preview happens only via Ctrl+Tab / the tab UI (EL4). Enter=play, arrows=seek/speed unchanged. **SPEC §6.7 change** (Space no longer re-enters tap) — update in same commit.
 - **Done when:** in preview, Space toggles play/pause and never stamps or exits; tap mode still stamps with Space; re-entering tap works via the EL4 switch.
 
-### [ ] EL2 Partial-completed line indicator (bug)
+### [~] EL2 Partial-completed line indicator (bug)
 A line prints its start timestamp the moment its *first* unit is stamped, so a partly-timed line reads as complete. **Decision: tri-color timestamp** in the tap-mode line list — `—` dim (untimed), amber time (partial: ≥1 timed & ≥1 untimed), normal/green time (all units timed). Off `line.units.filter(u => u.t !== null)`.
 - **Done when:** a line with ≥1 untimed unit shows amber; fully-timed shows complete color; untimed shows `—`; stamping the last unit flips amber→complete live.
 
-### [ ] EL5 Back from creator → song page (bug)
+### [~] EL5 Back from creator → song page (bug)
 Creator is reachable only from the Player (`onEditLyrics`), but `LyricCreator onBack` routes to `library` (App.tsx:42). **Decision: `onBack → setView({name:'player', song})`** — no origin tracking needed.
 - **Done when:** open creator from a song, Back returns to that song's player.
 
 ## Phase 2 — Shared UI primitives
 
-### [ ] UI6 Tabs primitive
+### [~] UI6 Tabs primitive
 New `src/renderer/components/ui/Tabs.tsx`: clickable tab bar (semantic tokens, aria, motion) **+ `Ctrl+Tab` / `Ctrl+Shift+Tab`** cycle. Consumed by EL4 (add/tab/preview) and ADD1 (search-URL / file).
 - **Done when:** tab bar renders + switches on click; Ctrl+Tab cycles both directions; keyboard-accessible; `npm run check` green.
 
-### [ ] UI1 Custom Select (drop native look)
+### [~] UI1 Custom Select (drop native look)
 Replace native `<select>` in the `Select` primitive with a styled popover list (keyboard up/down/enter/esc, matches Menu/Popover).
 - **Done when:** no native dropdown chrome anywhere; keyboard nav works; every Select-using screen consistent; check green.
 
@@ -181,6 +182,12 @@ Edit-meta dialog: put "Clean up with AI" on the same action row as Cancel/Save.
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-14 · UI1 · Select rewritten as popover listbox (keyboard up/down/enter/esc, Menu/Popover pattern); new options-array API (`{value,label}[]`, `onChange(value:string)`). Updated all 7 call sites (Settings×4, ImportDialog, EditMetaDialog, Library sort) with type casts where needed. `npm run check` green. `[~]`: native-chrome absence + keyboard nav not yet eyeballed.
+- 2026-06-14 · UI6 · New `ui/Tabs.tsx`: clickable tab bar (aria tablist/tab, motion underline, arrow-key nav) + exported `useTabCycle` hook for Ctrl+Tab/Ctrl+Shift+Tab. Not yet consumed (EL4/ADD1 pending). `npm run check` green. `[~]`: pending consumer wiring to fully exercise.
+- 2026-06-14 · EL5 · `LyricCreator onBack` now routes to `player` for the song instead of `library` (App.tsx). One-line fix, no spec change needed. `npm run check` green. `[~]`: pending click-through.
+- 2026-06-14 · EL2 · Tri-color line timestamps in TimingStep: `—` dim untimed, amber (`--color-warning`, new token) partial, normal complete — derived from `line.units` timed-count. `npm run check` green. `[~]`: pending live stamping eyeball.
+- 2026-06-14 · EL1 · Preview/review Space now toggles play/pause (was `exitReview`+stamp leak); Enter hint moved to tap-only; SPEC §6.7 updated same commit. Removed stale `timing.hintBackToTap` i18n key, trimmed `timing.tapTip`. `npm run check` green. `[~]`: pending review-mode keyboard check.
+- 2026-06-14 · AIC2 · Hardened `LYRICS_PROMPT` (enrich.ts) with few-shot zh example + "keep every sung line verbatim, when unsure KEEP" rule; `CleanLyricsDialog` now warns when cleanup removes >40% of non-empty lines (`clean.majorRemoval` i18n key, danger-styled). `npm run check` green. `[~]`: needs real-model run with messy lyric + the previously-damaged song, batched to end of session.
 - 2026-06-14 · — · Grilled the Round 2 backlog; baked decisions into every story + reordered phases to execution order (safety/bugs → primitives → nav → views → polish). Resolutions: **EL** "preview"=timing review toggle (kept as toggle, not a 4th route); stamp key is **Space** (Tab=gap-nav, already guarded) — EL1 = Space→play/pause in preview, stamping disabled (**SPEC §6.7 change**); EL2 tri-color timestamp; EL3 full-width progress strip under WaveformStrip replacing the centered done banner; EL4 **Ctrl+Tab** cycle + new **UI6 Tabs** primitive (also serves ADD1); EL5 onBack→player (App.tsx:42 bug). **NAV1** go custom min/max/close + new window IPC, drop `titleBarOverlay`, accept loss of native snap-hover flyout (**SPEC §10 + main/index.ts**); NAV3 floating overlay + gradient scrim throughout, content scrolls under; NAV2/NAV4 as triaged. **AIC2** (data loss) = prompt-harden + `>40%`-removed guard + AIC1 diff as apply gate (user chose hardening over classify-and-filter); **AIC1** unified inline diff. **ADD3** heuristic script detection. **HOME1/ART1/ART2** `Songs|Artists` row-2 toggle + grid/list; artist click = filtered Songs view with removable chip (no new screen). Now pointer = AIC2.
 - 2026-06-14 · — · Round 2 feature triage. Saved raw feedback to `docs/feedback/2026-06-14-round2.md`; triaged ~26 items into area-code stories.
 - 2026-06-14 · — · Round 1 closed + archived to `docs/rounds/01-enhancement.md`. Phase 0 = the five `[~]` carry-overs + user-side R0.1/R0.2 (kept Round 1 IDs). Record/effects/EQ → Phase 6.
