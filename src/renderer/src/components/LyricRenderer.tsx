@@ -162,7 +162,10 @@ function LyricRenderer({ lyrics, clock, onSeek }: Props): React.JSX.Element {
   const cjk = lyrics.language === 'zh' || lyrics.language === 'ja' || lyrics.language === 'ko'
 
   return (
-    <div ref={viewRef} className="relative h-full overflow-hidden">
+    <div
+      ref={viewRef}
+      className="relative h-full overflow-hidden [-webkit-mask-image:linear-gradient(to_bottom,black,black_calc(100%-220px),transparent_calc(100%-120px))] [mask-image:linear-gradient(to_bottom,black,black_calc(100%-220px),transparent_calc(100%-120px))]"
+    >
       <div
         ref={colRef}
         className={`absolute inset-x-0 top-0 mx-auto px-8 font-lyric transition-transform duration-300 ease-out will-change-transform ${

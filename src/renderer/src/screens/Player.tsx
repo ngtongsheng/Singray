@@ -340,7 +340,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
           <StageWaveform peaks={peaks} duration={engine.duration} clock={clock} />
         )}
 
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 z-0">
           {error ? (
             <div className="flex h-full flex-col items-center justify-center gap-3">
               <p className="text-danger">{error}</p>
