@@ -3,10 +3,12 @@ import {
   AudioWaveform,
   BarChart3,
   Gauge,
+  Info,
   Loader2,
   Mic,
   MicOff,
   Minus,
+  MoreVertical,
   Pause,
   Pencil,
   Pin,
@@ -22,10 +24,11 @@ import { useTranslation } from 'react-i18next'
 import type { Lyrics, Settings, SongListItem } from '../../../shared/types'
 import EditMetaDialog from '../components/EditMetaDialog'
 import LyricRenderer from '../components/LyricRenderer'
+import SongDetailsDialog from '../components/SongDetailsDialog'
 import Soundwave from '../components/Soundwave'
 import StageWaveform from '../components/StageWaveform'
 import Titlebar from '../components/Titlebar'
-import { Button, IconButton, Popover, Slider, Toggle } from '../components/ui'
+import { Button, IconButton, Menu, MenuItem, Popover, Slider, Toggle } from '../components/ui'
 import { AudioEngine } from '../lib/audioEngine'
 
 interface Props {
@@ -75,6 +78,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
   const [barVisible, setBarVisible] = useState(true)
   const [pinned, setPinned] = useState(true)
   const [editOpen, setEditOpen] = useState(false)
+  const [detailsOpen, setDetailsOpen] = useState(false)
   const [stageVisual, setStageVisual] = useState<StageVisual>('off')
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
   const [peaks, setPeaks] = useState<Float32Array | null>(null)
@@ -222,7 +226,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       poke()
-      if (editOpen) return // dialog owns the keyboard (its own Escape closes it)
+      if (editOpen || detailsOpen) return // dialog owns the keyboard (its own Escape closes it)
       if (e.key === 'Escape') onExit()
       if (e.key === ' ') {
         e.preventDefault()
@@ -236,7 +240,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onExit, togglePlay, toggleVocal, stepKey, poke, editOpen, engine])
+  }, [onExit, togglePlay, toggleVocal, stepKey, poke, editOpen, detailsOpen, engine])
 
   // Lyric clock follows what's audible: engine position minus shifter latency (§7.3).
   const clock = useCallback(() => engine?.displayPosition ?? 0, [engine])
@@ -296,6 +300,25 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
               <Type className="size-4" strokeWidth={1.5} />{' '}
               {lyrics ? t('player.editLyrics') : t('player.addLyrics')}
             </Button>
+            <Menu
+              origin="top right"
+              className="top-full right-0 mt-1 w-44 overflow-hidden py-1"
+              trigger={(open, toggle) => (
+                <IconButton
+                  variant="ghost"
+                  active={open}
+                  onClick={toggle}
+                  title={t('player.moreActions')}
+                  className="app-no-drag text-text-dim hover:text-text"
+                >
+                  <MoreVertical className="size-4" strokeWidth={1.5} />
+                </IconButton>
+              )}
+            >
+              <MenuItem onSelect={() => setDetailsOpen(true)}>
+                <Info className="size-3.5" strokeWidth={1.5} /> {t('player.songDetails')}
+              </MenuItem>
+            </Menu>
           </>
         )}
       </Titlebar>
@@ -342,6 +365,13 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
 
         <AnimatePresence>
           {editOpen && <EditMetaDialog song={song} onClose={() => setEditOpen(false)} />}
+          {detailsOpen && (
+            <SongDetailsDialog
+              song={song}
+              onClose={() => setDetailsOpen(false)}
+              onArtistClick={onArtistClick}
+            />
+          )}
         </AnimatePresence>
 
         {engine && (

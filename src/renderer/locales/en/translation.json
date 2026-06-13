@@ -3,6 +3,7 @@
   "common": {
     "cancel": "Cancel",
     "save": "Save",
+    "close": "Close",
     "delete": "Delete",
     "reset": "Reset",
     "loading": "Loading…",
@@ -105,6 +106,8 @@
     "plain": "plain"
   },
   "player": {
+    "moreActions": "More actions",
+    "songDetails": "Song details",
     "editLyrics": "Edit lyrics",
     "addLyrics": "Add lyrics",
     "loadingStems": "Loading stems…",
@@ -128,6 +131,17 @@
       "waveform": "Stage visual: waveform",
       "bars": "Stage visual: bars"
     }
+  },
+  "details": {
+    "title": "Song details",
+    "duration": "Duration",
+    "added": "Added",
+    "sungCount": "Sung",
+    "sungCount_value_one": "{{count}} time",
+    "sungCount_value_other": "{{count}} times",
+    "source": "Source",
+    "history": "Sing history",
+    "noHistory": "Not sung yet"
   },
   "creator": {
     "subtitle": "{{artist}} · Lyrics",
