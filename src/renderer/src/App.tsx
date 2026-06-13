@@ -10,7 +10,7 @@ import Player from './screens/Player'
 import Settings from './screens/Settings'
 
 type View =
-  | { name: 'library' }
+  | { name: 'library'; artistFilter?: string }
   | { name: 'settings' }
   | { name: 'creator'; song: SongListItem }
   | { name: 'player'; song: SongListItem }
@@ -50,12 +50,14 @@ function App(): React.JSX.Element {
         song={view.song}
         onExit={() => setView({ name: 'library' })}
         onEditLyrics={(song) => setView({ name: 'creator', song })}
+        onArtistClick={(artist) => setView({ name: 'library', artistFilter: artist })}
       />
     )
     key = `player:${view.song.id}`
   } else {
     screen = (
       <Library
+        initialArtistFilter={view.name === 'library' ? view.artistFilter : undefined}
         onOpenSettings={() => setView({ name: 'settings' })}
         onSing={(song) => setView({ name: 'player', song })}
       />

@@ -34,7 +34,16 @@
     "noMatch": "No songs match.",
     "moreQueued": "· {{count}} more queued",
     "deleteTitle": "Delete song?",
-    "deleteBody": "\"{{title}}\" by {{artist}} will be removed from your library, including its audio files and lyrics."
+    "deleteBody": "\"{{title}}\" by {{artist}} will be removed from your library, including its audio files and lyrics.",
+    "songs": "Songs",
+    "artists": "Artists",
+    "viewGrid": "Grid view",
+    "viewList": "List view",
+    "artistFilter": "Artist: {{name}}",
+    "clearArtistFilter": "Clear artist filter",
+    "songCount_one": "{{count}} song",
+    "songCount_other": "{{count}} songs",
+    "viewArtist": "View songs by {{name}}"
   },
   "card": {
     "error": "Error",

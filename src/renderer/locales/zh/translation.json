@@ -34,7 +34,15 @@
     "noMatch": "没有匹配的歌曲。",
     "moreQueued": "· 还有 {{count}} 首排队中",
     "deleteTitle": "删除歌曲？",
-    "deleteBody": "{{artist}}的《{{title}}》将从曲库中移除，包括音频文件和歌词。"
+    "deleteBody": "{{artist}}的《{{title}}》将从曲库中移除，包括音频文件和歌词。",
+    "songs": "歌曲",
+    "artists": "歌手",
+    "viewGrid": "网格视图",
+    "viewList": "列表视图",
+    "artistFilter": "歌手：{{name}}",
+    "clearArtistFilter": "清除歌手筛选",
+    "songCount_other": "{{count}} 首歌",
+    "viewArtist": "查看 {{name}} 的歌曲"
   },
   "card": {
     "error": "出错",

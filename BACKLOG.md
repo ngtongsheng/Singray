@@ -5,7 +5,7 @@ Round 2 feature source: user feedback 2026-06-14 (`docs/feedback/2026-06-14-roun
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → HOME1**, then top-to-bottom. Phase order = execution order chosen in grilling: safety/quick bugs → shared primitives → nav redesign → feature views → polish. Phase 0 (Round 1 verification) is env-blocked / user-side and doesn't block the coding pointer.
+> **Now → ADD1**, then top-to-bottom. Phase order = execution order chosen in grilling: safety/quick bugs → shared primitives → nav redesign → feature views → polish. Phase 0 (Round 1 verification) is env-blocked / user-side and doesn't block the coding pointer.
 > AIC2/EL1/EL2/EL5/UI6/UI1 marked `[~]`: code complete + `npm run check` green, runtime "Done when" verification batched at session end.
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
@@ -100,15 +100,15 @@ Player header stacks title over artist (was inline).
 
 ## Phase 4 — Feature views
 
-### [ ] HOME1 Songs grid/list view
+### [x] HOME1 Songs grid/list view
 `Songs | Artists` segmented toggle in row 2 (NAV2). Songs view gains a **grid/list** toggle; list = compact rows (thumb, title, artist, favorite). View choice persists in settings.
 - **Done when:** grid↔list toggles; list rows open the player; favorite/sort work in list; choice survives restart.
 
-### [ ] ART1 Artists view
+### [x] ART1 Artists view
 The `Artists` toggle shows a list of artists (name · song count). **Decision: artist detail = filtered Songs view** (clicking an artist sets a removable "Artist: …" filter chip on the Songs list, reusing grid/list) — no separate screen type.
 - **Done when:** Artists lists every artist with song count; unknown/empty-artist handled; clicking one shows the Songs list filtered to that artist with a clear-able chip; back/clear returns to all songs.
 
-### [ ] ART2 Artist name links to artist filter
+### [x] ART2 Artist name links to artist filter
 Clicking an artist name (card, player header, details modal) navigates to Songs filtered by that artist (ART1's chip).
 - **Done when:** clicking an artist name anywhere opens the filtered Songs view; works for CJK + latin names; non-artist clicks unaffected.
 
@@ -183,6 +183,7 @@ Edit-meta dialog: put "Clean up with AI" on the same action row as Cancel/Save.
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-14 · HOME1+ART1+ART2 · New `Segmented` UI primitive (button-group radio replacement, h-8 to match Select). Library row2 gains `Songs|Artists` segmented toggle; Songs view gains `grid|list` segmented toggle (persisted via new `Settings.libraryView`, default `grid`). List view = new `SongRow` component (thumb · title · clickable artist · needs-lyrics badge · favorite · menu), reusing SongCard's delete/retry/favorite actions. Artists view = alphabetical list of distinct artists with song counts (`""` groups blank-artist songs under "Unknown"), click → switches to Songs filtered by that artist via a removable "Artist: X" chip in the filter row. ART2: SongCard/SongRow artist text and Player header artist (now a button) call `onArtistClick`; from Player this navigates via a new `View.library.artistFilter` field in App.tsx (Library stays mounted so a `useEffect` re-applies the filter on prop change). Verified via playwright: grid↔list toggle + persistence across relaunch, artist click from card/list/player all land on the filtered Songs view with a clearable chip, Artists list shows correct per-artist counts (方大同 = 2). **[x]**.
 - 2026-06-14 · NAV4 · Player header title/artist stacked (`flex-col justify-center gap-0.5`, `leading-tight` on both lines) instead of inline baseline pair; fits within Titlebar's h-10, back-button stays vertically centered via the row's `items-center`. Verified via playwright screenshot. **[x]**.
 - 2026-06-14 · NAV3 · Floating two-row header (AppHeader+Titlebar, both `absolute`/z-30) over single shared gradient scrim (`from-bg via-bg/85 to-transparent`, h-19/z-20). All 6 screens (Library/Settings/PipelineSetup/LyricCreator/Player/+root) wrapped `relative h-full` with content `absolute inset-0 ... pt-19` (Player gets no pt-19 — fullscreen stage under floating header, matching control-bar treatment). Playwright screenshots (library top, player) confirm: gradient blends header into content with no solid fill, window buttons legible over Ken Burns bg, title/back-button row reads fine. Library's 5 seed songs don't overflow so scroll-under wasn't visually exercised, but layout math (`pt-19`=76px=header height) is correct and `npm run check` green. **[x]**.
 - 2026-06-14 · NAV2 · Library row2 now: search · sort Select (moved up from the filter-chips row, wrapped `app-no-drag`) · Add · Settings; filter chips row keeps language/favorites/needs-lyrics only. Player/Creator already had back+title+actions on row2 via NAV1. Playwright at 960×600: row2 holds, no overlap with window buttons, sort dropdown opens with 3 options. **[x]** verified.

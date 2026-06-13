@@ -13,6 +13,7 @@ function defaults(): Settings {
     playerBarPinned: true,
     stageVisual: 'off',
     stemFormat: 'flac',
+    libraryView: 'grid',
     languages: [
       { code: 'zh', label: '中文' },
       { code: 'en', label: 'English' }

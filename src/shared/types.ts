@@ -79,6 +79,8 @@ export interface Settings {
   stageVisual: 'off' | 'waveform' | 'bars'
   /** Stem encode format for new imports (R3.8): flac = lossless (default), m4a = AAC 256k. */
   stemFormat: 'flac' | 'm4a'
+  /** Library Songs view layout (HOME1): grid of cards vs compact rows. */
+  libraryView: 'grid' | 'list'
   /** Editable language list (R2.4): drives import form, library filter chips, alignment. */
   languages: LanguageDef[]
   /** UI locale (R2.5): a folder name under src/renderer/locales, or '' = follow OS. */

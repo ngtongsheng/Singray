@@ -17,6 +17,7 @@ interface Props {
   importing: ImportProgress | undefined
   onDelete: (song: SongListItem) => void
   onSing: (song: SongListItem) => void
+  onArtistClick: (artist: string) => void
 }
 
 const STAGE_KEY: Record<string, string> = {
@@ -60,7 +61,7 @@ function StatusBadge({
   return null
 }
 
-function SongCard({ song, importing, onDelete, onSing }: Props): React.JSX.Element {
+function SongCard({ song, importing, onDelete, onSing, onArtistClick }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const failed = !importing && (song.error !== null || !song.ready)
   const openable = !importing && !failed
@@ -153,9 +154,17 @@ function SongCard({ song, importing, onDelete, onSing }: Props): React.JSX.Eleme
           {song.title}
         </p>
         <div className="flex items-baseline justify-between gap-2">
-          <p className="truncate text-text-dim text-xs" title={song.artist}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onArtistClick(song.artist)
+            }}
+            title={t('library.viewArtist', { name: song.artist })}
+            className="min-w-0 truncate text-text-dim text-xs hover:text-text hover:underline"
+          >
             {song.artist}
-          </p>
+          </button>
           <span
             className="flex shrink-0 items-center gap-1 text-text-dim text-xs tabular-nums"
             title={t('card.timesSung')}

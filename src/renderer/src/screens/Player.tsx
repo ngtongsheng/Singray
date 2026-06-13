@@ -32,6 +32,7 @@ interface Props {
   song: SongListItem
   onExit: () => void
   onEditLyrics: (song: SongListItem) => void
+  onArtistClick: (artist: string) => void
 }
 
 const HIDE_AFTER_MS = 3000
@@ -58,7 +59,7 @@ function fmt(s: number): string {
  * Karaoke player (SPEC §7): blurred-art stage, lyric renderer on the engine clock,
  * auto-hide control bar (§7.2). Space play/pause, V guide vocal, Esc exits.
  */
-function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
+function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const [engine, setEngine] = useState<AudioEngine | null>(null)
   const [lyrics, setLyrics] = useState<Lyrics | null>(null)
@@ -253,7 +254,14 @@ function Player({ song, onExit, onEditLyrics }: Props): React.JSX.Element {
         </IconButton>
         <div className="flex min-w-0 flex-col justify-center gap-0.5">
           <h1 className="truncate font-semibold text-sm leading-tight">{song.title}</h1>
-          <p className="truncate text-text-dim text-xs leading-tight">{song.artist}</p>
+          <button
+            type="button"
+            onClick={() => onArtistClick(song.artist)}
+            title={t('library.viewArtist', { name: song.artist })}
+            className="app-no-drag truncate text-left text-text-dim text-xs leading-tight hover:text-text hover:underline"
+          >
+            {song.artist}
+          </button>
         </div>
         <div className="flex-1" />
         {!error && (
