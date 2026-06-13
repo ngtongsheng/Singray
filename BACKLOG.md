@@ -5,7 +5,7 @@ Round 2 feature source: user feedback 2026-06-14 (`docs/feedback/2026-06-14-roun
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → UI3**, then top-to-bottom. Phase order = execution order chosen in grilling: safety/quick bugs → shared primitives → nav redesign → feature views → polish. Phase 0 (Round 1 verification) is env-blocked / user-side and doesn't block the coding pointer.
+> **Now → NAV1**, then top-to-bottom. Phase order = execution order chosen in grilling: safety/quick bugs → shared primitives → nav redesign → feature views → polish. Phase 0 (Round 1 verification) is env-blocked / user-side and doesn't block the coding pointer.
 > AIC2/EL1/EL2/EL5/UI6/UI1 marked `[~]`: code complete + `npm run check` green, runtime "Done when" verification batched at session end.
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
@@ -74,7 +74,7 @@ New `src/renderer/components/ui/Tabs.tsx`: clickable tab bar (semantic tokens, a
 Replace native `<select>` in the `Select` primitive with a styled popover list (keyboard up/down/enter/esc, matches Menu/Popover).
 - **Done when:** no native dropdown chrome anywhere; keyboard nav works; every Select-using screen consistent; check green.
 
-### [ ] UI3 Outside-click closes Dialog
+### [~] UI3 Outside-click closes Dialog
 Popover/Menu already close on outside-click; add scrim-click-to-close to `Dialog`. **Guard destructive/confirm dialogs** — those keep explicit buttons so an accidental click can't discard unsaved edits.
 - **Done when:** non-destructive dialogs/popups close on outside click; confirm/discard dialogs still require an explicit choice; Esc still works everywhere.
 
@@ -182,6 +182,7 @@ Edit-meta dialog: put "Clean up with AI" on the same action row as Cancel/Save.
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-14 · UI3 · Dialog scrim now closes on outside-click via `onClick` on the scrim `motion.div` (`e.target === e.currentTarget` guard so panel clicks don't bubble); skipped when `alert` (ConfirmDialog) so destructive prompts keep explicit buttons. Esc unchanged. `npm run check` green. `[~]`: pending click-through on a few dialogs.
 - 2026-06-14 · UI1 · Select rewritten as popover listbox (keyboard up/down/enter/esc, Menu/Popover pattern); new options-array API (`{value,label}[]`, `onChange(value:string)`). Updated all 7 call sites (Settings×4, ImportDialog, EditMetaDialog, Library sort) with type casts where needed. `npm run check` green. `[~]`: native-chrome absence + keyboard nav not yet eyeballed.
 - 2026-06-14 · UI6 · New `ui/Tabs.tsx`: clickable tab bar (aria tablist/tab, motion underline, arrow-key nav) + exported `useTabCycle` hook for Ctrl+Tab/Ctrl+Shift+Tab. Not yet consumed (EL4/ADD1 pending). `npm run check` green. `[~]`: pending consumer wiring to fully exercise.
 - 2026-06-14 · EL5 · `LyricCreator onBack` now routes to `player` for the song instead of `library` (App.tsx). One-line fix, no spec change needed. `npm run check` green. `[~]`: pending click-through.

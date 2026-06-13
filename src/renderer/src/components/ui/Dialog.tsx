@@ -15,7 +15,8 @@ interface DialogProps {
 }
 
 /**
- * Modal scaffold (SPEC §10.6): 50% scrim, raised panel, Esc closes.
+ * Modal scaffold (SPEC §10.6): 50% scrim, raised panel, Esc + scrim-click closes
+ * (scrim-click disabled for `alert` dialogs — those require an explicit choice).
  * Render inside an AnimatePresence so the exit spring runs.
  */
 function Dialog({ label, alert, width, onClose, children }: DialogProps): React.JSX.Element {
@@ -32,6 +33,9 @@ function Dialog({ label, alert, width, onClose, children }: DialogProps): React.
   return (
     <motion.div
       {...dialogScrim}
+      onClick={(e) => {
+        if (!alert && e.target === e.currentTarget) onClose()
+      }}
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/50"
     >
       <motion.div
