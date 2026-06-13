@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next'
+import { diffLines } from '../lib/lineDiff'
 import { Button } from './ui'
+import { cx } from './ui/cx'
 import Dialog from './ui/Dialog'
 
 interface Props {
@@ -9,54 +11,41 @@ interface Props {
   onClose: () => void
 }
 
-/** Lyric cleanup preview (R3.6): before (removed lines struck) vs after, apply to confirm. */
+/** Lyric cleanup preview (R3.6 / AIC1): unified inline diff, removed lines marked red, apply to confirm. */
 function CleanLyricsDialog({ original, cleaned, onApply, onClose }: Props): React.JSX.Element {
   const { t } = useTranslation()
-  const keep = new Set(
-    cleaned
-      .split('\n')
-      .map((l) => l.trim())
-      .filter(Boolean)
-  )
-  const beforeLines = original.split('\n')
-  const nonEmpty = beforeLines.filter((l) => l.trim()).length
-  const removed = beforeLines.filter((l) => l.trim() && !keep.has(l.trim())).length
-  const majorRemoval = nonEmpty > 0 && removed / nonEmpty > 0.4
+  const before = original.split('\n').filter((l) => l.trim() !== '')
+  const after = cleaned.split('\n').filter((l) => l.trim() !== '')
+  const diff = diffLines(before, after)
+  const removed = diff.filter((op) => op.type === 'removed').length
+  const majorRemoval = before.length > 0 && removed / before.length > 0.4
 
   return (
-    <Dialog label={t('clean.title')} width="w-[680px]" onClose={onClose}>
+    <Dialog label={t('clean.title')} width="w-[520px]" onClose={onClose}>
       <h2 className="mb-1 font-semibold text-lg">{t('clean.title')}</h2>
       <p className={`mb-4 text-xs ${majorRemoval ? 'font-semibold text-danger' : 'text-text-dim'}`}>
         {majorRemoval
-          ? t('clean.majorRemoval', { count: removed, total: nonEmpty })
+          ? t('clean.majorRemoval', { count: removed, total: before.length })
           : removed > 0
             ? t('clean.removed', { count: removed })
             : t('clean.noChanges')}
       </p>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="min-w-0">
-          <p className="mb-1 text-text-dim text-xs">{t('clean.before')}</p>
-          <div className="h-[44vh] overflow-y-auto whitespace-pre-wrap rounded-card border border-border bg-surface p-3 font-lyric text-sm leading-6">
-            {beforeLines.map((l, i) => {
-              const isRemoved = l.trim() !== '' && !keep.has(l.trim())
-              return (
-                <div
-                  // biome-ignore lint/suspicious/noArrayIndexKey: static preview snapshot
-                  key={i}
-                  className={isRemoved ? 'text-danger line-through opacity-60' : ''}
-                >
-                  {l || ' '}
-                </div>
-              )
-            })}
+      <div className="h-[55vh] overflow-y-auto whitespace-pre-wrap rounded-card border border-border bg-surface p-3 font-lyric text-sm leading-6">
+        {diff.map((op, i) => (
+          <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: static preview snapshot
+            key={i}
+            className={cx(
+              op.type === 'removed' && 'text-danger line-through',
+              op.type === 'added' && 'text-success'
+            )}
+          >
+            <span className="inline-block w-4 select-none text-text-dim/50">
+              {op.type === 'removed' ? '−' : op.type === 'added' ? '+' : ''}
+            </span>
+            {op.line}
           </div>
-        </div>
-        <div className="min-w-0">
-          <p className="mb-1 text-accent-soft text-xs">{t('clean.after')}</p>
-          <div className="h-[44vh] overflow-y-auto whitespace-pre-wrap rounded-card border border-border bg-surface p-3 font-lyric text-sm leading-6">
-            {cleaned || ' '}
-          </div>
-        </div>
+        ))}
       </div>
       <div className="mt-5 flex justify-end gap-2">
         <Button onClick={onClose}>{t('common.cancel')}</Button>

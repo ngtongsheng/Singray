@@ -87,8 +87,6 @@
     "cleaning": "Cleaning…",
     "tip": "Strip section tags and credits, normalize line breaks (keeps the language)",
     "title": "Lyric cleanup",
-    "before": "Before",
-    "after": "After",
     "removed_one": "{{count}} line will be removed.",
     "removed_other": "{{count}} lines will be removed.",
     "majorRemoval": "Warning: this would remove {{count}} of {{total}} lines (over 40%). Review carefully — the cleanup may have dropped real lyrics.",
