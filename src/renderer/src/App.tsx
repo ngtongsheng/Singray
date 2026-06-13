@@ -39,7 +39,9 @@ function App(): React.JSX.Element {
     screen = <Settings onBack={() => setView({ name: 'library' })} />
     key = 'settings'
   } else if (view.name === 'creator') {
-    screen = <LyricCreator song={view.song} onBack={() => setView({ name: 'library' })} />
+    screen = (
+      <LyricCreator song={view.song} onBack={() => setView({ name: 'player', song: view.song })} />
+    )
     key = `creator:${view.song.id}`
   } else if (view.name === 'player') {
     screen = (
