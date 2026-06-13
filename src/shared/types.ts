@@ -177,6 +177,36 @@ export interface LrclibHit {
 
 export type AudioTrack = 'original' | 'instrumental' | 'vocals'
 
+/** Pipeline environment readiness (R4.3 bootstrapper). */
+export interface PipelineStatus {
+  /** Both python + ffmpeg resolvable → imports can run. */
+  ready: boolean
+  /** Resolved python interpreter exists (managed venv or advanced override). */
+  python: boolean
+  /** ffmpeg available — on PATH or in the app-managed dir. */
+  ffmpeg: boolean
+  /** nvidia-smi present → CUDA wheels will be installed. */
+  gpu: boolean
+  /** Where the interpreter comes from. */
+  pythonSource: 'managed' | 'override' | 'none'
+  /** Where ffmpeg comes from. */
+  ffmpegSource: 'path' | 'managed' | 'none'
+  /** An install is currently running. */
+  installing: boolean
+}
+
+/** One step of the bootstrapper install (R4.3). */
+export type InstallStep = 'uv' | 'venv' | 'torch' | 'deps' | 'ffmpeg' | 'verify'
+
+/** Progress event streamed from the bootstrapper to the install UI (R4.3). */
+export interface InstallEvent {
+  step: InstallStep
+  status: 'start' | 'progress' | 'done' | 'error'
+  /** 0..1 within the step, when known (downloads). */
+  pct?: number
+  message?: string
+}
+
 /** Renderer-facing API exposed by the preload bridge. */
 export interface SingrayApi {
   library: {
@@ -208,6 +238,16 @@ export interface SingrayApi {
   settings: {
     get(): Promise<Settings>
     set(patch: Partial<Settings>): Promise<Settings>
+  }
+  pipeline: {
+    /** Current readiness of the python/ffmpeg environment (R4.3). */
+    status(): Promise<PipelineStatus>
+    /** Run the guided install (download python via uv, deps, ffmpeg); resolves when done, rejects on failure. */
+    install(): Promise<void>
+    /** Abort an in-flight install. */
+    cancelInstall(): Promise<void>
+    /** Subscribe to install progress events; returns an unsubscribe fn. */
+    onInstallProgress(cb: (e: InstallEvent) => void): () => void
   }
   llm: {
     /** Round-trips a tiny prompt through the configured endpoint; rejects with a readable message. */

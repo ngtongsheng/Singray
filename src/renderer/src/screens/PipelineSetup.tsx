@@ -1,0 +1,36 @@
+import { useTranslation } from 'react-i18next'
+import PipelineInstaller from '../components/PipelineInstaller'
+import Titlebar from '../components/Titlebar'
+import { Button } from '../components/ui'
+
+interface Props {
+  /** Pipeline became ready (install finished). */
+  onReady: () => void
+  /** User chose to skip setup for now. */
+  onSkip: () => void
+}
+
+/** First-run gate (R4.3): shown when the python/ffmpeg pipeline isn't installed. */
+function PipelineSetup({ onReady, onSkip }: Props): React.JSX.Element {
+  const { t } = useTranslation()
+  return (
+    <div className="flex h-full flex-col">
+      <Titlebar>
+        <h1 className="font-semibold text-base">{t('settings.setup.firstRunTitle')}</h1>
+      </Titlebar>
+      <div className="flex-1 overflow-y-auto px-6 py-10">
+        <div className="mx-auto flex max-w-lg flex-col gap-5">
+          <p className="text-sm text-text-dim">{t('settings.setup.firstRunDesc')}</p>
+          <PipelineInstaller onReady={onReady} />
+          <div>
+            <Button variant="ghost" size="md" onClick={onSkip}>
+              {t('settings.setup.skip')}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default PipelineSetup

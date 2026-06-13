@@ -6,7 +6,7 @@ import { createInterface } from 'node:readline'
 import { app } from 'electron'
 import type { AlignToken, ProbeResult, SearchResult } from '../shared/types'
 import { songDir } from './library'
-import { getSettings } from './settings'
+import { effectivePythonPath, pipelineSpawnOptions } from './pipelineEnv'
 
 export function pipelineScript(): string {
   return join(app.getAppPath(), 'pipeline', 'pipeline.py')
@@ -24,9 +24,7 @@ export function probeFile(path: string): Promise<ProbeResult> {
 
 function runProbe(args: string[]): Promise<ProbeResult> {
   return new Promise((resolve, reject) => {
-    const proc = spawn(getSettings().pythonPath, [pipelineScript(), ...args], {
-      windowsHide: true
-    })
+    const proc = spawn(effectivePythonPath(), [pipelineScript(), ...args], pipelineSpawnOptions())
     let stdout = ''
     let stderr = ''
     proc.stdout.on('data', (d: Buffer) => {
@@ -52,9 +50,11 @@ function runProbe(args: string[]): Promise<ProbeResult> {
 /** Runs `pipeline.py search --query <q>`, collects the JSON-lines hits. */
 export function searchYoutube(query: string): Promise<SearchResult[]> {
   return new Promise((resolve, reject) => {
-    const proc = spawn(getSettings().pythonPath, [pipelineScript(), 'search', '--query', query], {
-      windowsHide: true
-    })
+    const proc = spawn(
+      effectivePythonPath(),
+      [pipelineScript(), 'search', '--query', query],
+      pipelineSpawnOptions()
+    )
     const results: SearchResult[] = []
     let lastError = ''
     let stderrTail = ''
@@ -99,9 +99,9 @@ export async function alignLyrics(id: string, text: string): Promise<AlignToken[
   try {
     return await new Promise<AlignToken[]>((resolve, reject) => {
       const proc = spawn(
-        getSettings().pythonPath,
+        effectivePythonPath(),
         [pipelineScript(), 'align', '--song', dir, '--text', tmp],
-        { windowsHide: true }
+        pipelineSpawnOptions()
       )
       let tokens: AlignToken[] | null = null
       let lastError = ''

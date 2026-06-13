@@ -1,12 +1,14 @@
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import type {
   ImportRequest,
+  InstallEvent,
   LrclibQuery,
   Lyrics,
   ProbeResult,
   Settings,
   SongMeta
 } from '../shared/types'
+import { cancelInstall, installPipeline, pipelineStatus } from './bootstrap'
 import { cleanLyrics, cleanMeta, enrichProbe } from './enrich'
 import { cancelImport, retryImport, startImport } from './importQueue'
 import { deleteSong, getLyrics, listSongs, openSongFolder, saveLyrics, updateMeta } from './library'
@@ -77,4 +79,13 @@ export function registerIpc(): void {
   ipcMain.handle('import:search', (_e, query: string) => searchYoutube(query))
   ipcMain.handle('import:start', (_e, req: ImportRequest) => startImport(req))
   ipcMain.handle('import:retry', (_e, id: string) => retryImport(id))
+
+  ipcMain.handle('pipeline:status', () => pipelineStatus())
+  ipcMain.handle('pipeline:install', (e) => {
+    const emit = (ev: InstallEvent): void => {
+      if (!e.sender.isDestroyed()) e.sender.send('pipeline:install:progress', ev)
+    }
+    return installPipeline(emit)
+  })
+  ipcMain.handle('pipeline:cancelInstall', () => cancelInstall())
 }

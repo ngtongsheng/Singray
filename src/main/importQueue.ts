@@ -7,6 +7,7 @@ import { BrowserWindow } from 'electron'
 import type { ImportProgress, ImportRequest, ImportStage, SongMeta } from '../shared/types'
 import { notifyLibraryChanged } from './library'
 import { pipelineScript } from './pipeline'
+import { effectivePythonPath, pipelineSpawnOptions } from './pipelineEnv'
 import { getSettings } from './settings'
 
 interface Job {
@@ -111,9 +112,9 @@ function run(job: Job): void {
   const dir = songDir(job.songId)
   const source = job.filePath ? ['--file', job.filePath] : ['--url', job.url]
   const proc = spawn(
-    getSettings().pythonPath,
+    effectivePythonPath(),
     [pipelineScript(), 'process', ...source, '--out', dir, '--format', getSettings().stemFormat],
-    { windowsHide: true }
+    pipelineSpawnOptions()
   )
   activeProc = proc
   let lastError = ''

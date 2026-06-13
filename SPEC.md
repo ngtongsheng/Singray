@@ -236,10 +236,22 @@ python pipeline.py align   --song <songDir> --text <lyrics.txt>     # forced ali
 - Temp work in `%TEMP%`, cleaned on success and on failure.
 - Cookies: reuse the existing yt-dlp cookie setup if age-restricted videos fail; native Windows yt-dlp can use `--cookies-from-browser` directly (no WSL DPAPI workaround needed).
 
+### 5.2.1 App-managed pipeline environment (R4.3)
+
+For end users (no dev checkout), the app installs and owns the pipeline env under `userData/pipeline-env/` so a fresh machine needs zero manual Python setup:
+
+- **uv** standalone (downloaded from the GitHub release matching the platform/arch) is the package manager. It installs a managed CPython 3.13 (into `pipeline-env/python`) and creates the venv (`pipeline-env/venv`).
+- **GPU detect**: `nvidia-smi -L` succeeds → CUDA wheels (`torch 2.8.0` + torchvision/torchaudio from the `cu128` index, `audio-separator[gpu]`); else CPU wheels (`cpu` index, `audio-separator[cpu]`). Versions match `setup.ps1`.
+- **ffmpeg**: if not already on PATH, a static build is fetched (Windows: gyan.dev essentials zip; Linux: johnvansickle static; macOS: expected via `brew`, R5.1) into `pipeline-env/ffmpeg` and prepended to the child process PATH when spawning the pipeline.
+- **Resume / clean retry**: each install step is recorded in `pipeline-env/.install-state.json` and skipped on re-run; downloads write to a `<file>.part` and rename on completion, so an interrupted transfer is re-fetched cleanly. `verify` always re-runs (imports torch, checks CUDA on GPU boxes).
+- **Path resolution** (`pipelineEnv.ts`): `effectivePythonPath()` = an existing `settings.pythonPath` (advanced override) wins, else the managed venv interpreter. So `pythonPath` becomes an optional override only; the dev `setup.ps1` venv default still works in a checkout. All pipeline spawns use `effectivePythonPath()` + `pipelineSpawnOptions()` (ffmpeg PATH injection).
+- **UI**: IPC `pipeline:status` / `pipeline:install` (streams `pipeline:install:progress` events) / `pipeline:cancelInstall`. A first-run gate screen (shown when `status.ready` is false, dismissible via "Skip for now") and a Pipeline-fieldset installer in Settings both render `PipelineInstaller` (status chips + per-step progress + install/cancel).
+- `setup.ps1` stays for dev.
+
 ### 5.3 Main-process import queue
 
 - FIFO queue persisted in memory only (crash = re-add manually; acceptable for personal use).
-- Spawns `settings.pythonPath pipeline.py process ...`, parses stdout lines, forwards progress to renderer via IPC event `import:progress`.
+- Spawns the pipeline via `effectivePythonPath() pipeline.py process ...` (R4.3; was `settings.pythonPath`), parses stdout lines, forwards progress to renderer via IPC event `import:progress`.
 - On `done`: writes `meta.json`, notifies renderer `library:changed`.
 - On non-zero exit: song folder marked with `error.json` (message + timestamp); card shows retry/delete.
 

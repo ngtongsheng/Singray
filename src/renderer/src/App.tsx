@@ -1,9 +1,10 @@
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { SongListItem } from '../../shared/types'
 import { usePrefersReducedMotion } from './lib/motionPresets'
 import Library from './screens/Library'
 import LyricCreator from './screens/LyricCreator'
+import PipelineSetup from './screens/PipelineSetup'
 import Player from './screens/Player'
 import Settings from './screens/Settings'
 
@@ -16,10 +17,25 @@ type View =
 function App(): React.JSX.Element {
   const [view, setView] = useState<View>({ name: 'library' })
   const reduced = usePrefersReducedMotion()
+  // First-run gate (R4.3): show pipeline setup until installed or skipped this session.
+  // null = still checking; true/false = whether the gate should show.
+  const [needsSetup, setNeedsSetup] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    window.singray.pipeline.status().then((s) => setNeedsSetup(!s.ready))
+  }, [])
 
   let screen: React.JSX.Element
   let key: string
-  if (view.name === 'settings') {
+  if (needsSetup === null) {
+    screen = <div className="h-full" />
+    key = 'boot'
+  } else if (needsSetup) {
+    screen = (
+      <PipelineSetup onReady={() => setNeedsSetup(false)} onSkip={() => setNeedsSetup(false)} />
+    )
+    key = 'pipeline-setup'
+  } else if (view.name === 'settings') {
     screen = <Settings onBack={() => setView({ name: 'library' })} />
     key = 'settings'
   } else if (view.name === 'creator') {

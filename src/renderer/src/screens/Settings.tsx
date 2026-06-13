@@ -2,6 +2,7 @@ import { ArrowLeft, CheckCircle2, Loader2, Plus, Volume2, X, XCircle } from 'luc
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Settings as SettingsModel } from '../../../shared/types'
+import PipelineInstaller from '../components/PipelineInstaller'
 import Titlebar from '../components/Titlebar'
 import { Button, IconButton, Input, Select } from '../components/ui'
 import { availableLocales, i18n, localeName, resolveLocale } from '../lib/i18n'
@@ -262,6 +263,10 @@ function Settings({ onBack }: Props): React.JSX.Element {
 
           <fieldset className="rounded-card border border-border p-4">
             <legend className="px-1 font-medium text-sm">{t('settings.pipeline')}</legend>
+            <div className="mb-4">
+              <span className="mb-2 block text-text-dim text-xs">{t('settings.setup.desc')}</span>
+              <PipelineInstaller />
+            </div>
             <label className="block">
               <span className="mb-1 block text-text-dim text-xs">{t('settings.pythonExe')}</span>
               <div className="flex gap-2">

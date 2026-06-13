@@ -5,10 +5,12 @@ import type {
   EnrichResult,
   ImportProgress,
   ImportRequest,
+  InstallEvent,
   LlmTestResult,
   LrclibHit,
   LrclibQuery,
   Lyrics,
+  PipelineStatus,
   ProbeResult,
   SearchResult,
   Settings,
@@ -48,6 +50,16 @@ const api: SingrayApi = {
   settings: {
     get: () => ipcRenderer.invoke('settings:get') as Promise<Settings>,
     set: (patch) => ipcRenderer.invoke('settings:set', patch) as Promise<Settings>
+  },
+  pipeline: {
+    status: () => ipcRenderer.invoke('pipeline:status') as Promise<PipelineStatus>,
+    install: () => ipcRenderer.invoke('pipeline:install') as Promise<void>,
+    cancelInstall: () => ipcRenderer.invoke('pipeline:cancelInstall') as Promise<void>,
+    onInstallProgress: (cb) => {
+      const listener = (_e: unknown, ev: InstallEvent): void => cb(ev)
+      ipcRenderer.on('pipeline:install:progress', listener)
+      return () => ipcRenderer.removeListener('pipeline:install:progress', listener)
+    }
   },
   llm: {
     test: () => ipcRenderer.invoke('llm:test') as Promise<LlmTestResult>,
