@@ -67,6 +67,16 @@
     "dismiss": "Dismiss",
     "noChanges": "Already clean — no changes suggested."
   },
+  "finder": {
+    "find": "Find lyrics",
+    "findTip": "Search LRCLIB for synced or plain lyrics by title and artist",
+    "title": "Find lyrics on LRCLIB",
+    "subtitle": "Searching for \"{{title}}\" by {{artist}}",
+    "searching": "Searching LRCLIB…",
+    "empty": "No lyrics found for this song. Try editing the title or artist.",
+    "synced": "synced",
+    "plain": "plain"
+  },
   "player": {
     "editLyrics": "Edit lyrics",
     "addLyrics": "Add lyrics",

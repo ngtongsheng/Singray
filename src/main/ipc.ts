@@ -1,9 +1,17 @@
 import { ipcMain } from 'electron'
-import type { ImportRequest, Lyrics, ProbeResult, Settings, SongMeta } from '../shared/types'
+import type {
+  ImportRequest,
+  LrclibQuery,
+  Lyrics,
+  ProbeResult,
+  Settings,
+  SongMeta
+} from '../shared/types'
 import { cleanMeta, enrichProbe } from './enrich'
 import { cancelImport, retryImport, startImport } from './importQueue'
 import { deleteSong, getLyrics, listSongs, openSongFolder, saveLyrics, updateMeta } from './library'
 import { testLlm } from './llm'
+import { findLyrics } from './lyricsFinder'
 import { alignLyrics, probe, searchYoutube } from './pipeline'
 import { getSettings, setSettings } from './settings'
 
@@ -25,6 +33,7 @@ export function registerIpc(): void {
   ipcMain.handle('lyrics:get', (_e, id: string) => getLyrics(id))
   ipcMain.handle('lyrics:save', (_e, id: string, lyrics: Lyrics) => saveLyrics(id, lyrics))
   ipcMain.handle('lyrics:align', (_e, id: string, text: string) => alignLyrics(id, text))
+  ipcMain.handle('lyrics:findLyrics', (_e, query: LrclibQuery) => findLyrics(query))
 
   ipcMain.handle('llm:test', () => testLlm())
   ipcMain.handle('llm:enrichProbe', (_e, probe: ProbeResult) => enrichProbe(probe))

@@ -6,6 +6,8 @@ import type {
   ImportProgress,
   ImportRequest,
   LlmTestResult,
+  LrclibHit,
+  LrclibQuery,
   Lyrics,
   ProbeResult,
   SearchResult,
@@ -26,7 +28,9 @@ const api: SingrayApi = {
   lyrics: {
     get: (id) => ipcRenderer.invoke('lyrics:get', id) as Promise<Lyrics | null>,
     save: (id, lyrics) => ipcRenderer.invoke('lyrics:save', id, lyrics) as Promise<void>,
-    align: (id, text) => ipcRenderer.invoke('lyrics:align', id, text) as Promise<AlignToken[]>
+    align: (id, text) => ipcRenderer.invoke('lyrics:align', id, text) as Promise<AlignToken[]>,
+    findLyrics: (query: LrclibQuery) =>
+      ipcRenderer.invoke('lyrics:findLyrics', query) as Promise<LrclibHit[]>
   },
   import: {
     probe: (url) => ipcRenderer.invoke('import:probe', url) as Promise<ProbeResult>,

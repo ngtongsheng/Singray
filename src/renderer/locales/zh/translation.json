@@ -67,6 +67,16 @@
     "dismiss": "忽略",
     "noChanges": "已经很干净，无需修改。"
   },
+  "finder": {
+    "find": "查找歌词",
+    "findTip": "按标题与歌手在 LRCLIB 搜索逐字或纯文本歌词",
+    "title": "在 LRCLIB 查找歌词",
+    "subtitle": "正在搜索「{{title}}」— {{artist}}",
+    "searching": "正在搜索 LRCLIB…",
+    "empty": "未找到该歌曲的歌词。可尝试修改标题或歌手。",
+    "synced": "逐字",
+    "plain": "纯文本"
+  },
   "player": {
     "editLyrics": "编辑歌词",
     "addLyrics": "添加歌词",

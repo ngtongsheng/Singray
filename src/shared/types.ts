@@ -150,6 +150,25 @@ export interface AlignToken {
   score: number | null
 }
 
+/** What to search LRCLIB with (R3.5) — pulled from the song's meta. */
+export interface LrclibQuery {
+  title: string
+  artist: string
+  durationSec: number
+}
+
+/** One LRCLIB candidate (R3.5). `syncedLyrics` is an LRC string when present. */
+export interface LrclibHit {
+  id: number
+  trackName: string
+  artistName: string
+  albumName: string
+  duration: number
+  instrumental: boolean
+  plainLyrics: string | null
+  syncedLyrics: string | null
+}
+
 export type AudioTrack = 'original' | 'instrumental' | 'vocals'
 
 /** Renderer-facing API exposed by the preload bridge. */
@@ -165,6 +184,8 @@ export interface SingrayApi {
     save(id: string, lyrics: Lyrics): Promise<void>
     /** Forced alignment of lyric text against the vocals stem (SPEC §6.6). Slow; rejects on failure. */
     align(id: string, text: string): Promise<AlignToken[]>
+    /** Search LRCLIB for synced/plain lyrics (R3.5); rejects with a readable message on no network. */
+    findLyrics(query: LrclibQuery): Promise<LrclibHit[]>
   }
   import: {
     probe(url: string): Promise<ProbeResult>

@@ -1,10 +1,11 @@
-import { ArrowLeft, ArrowRight, FileDown, Loader2, Wand2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FileDown, Loader2, Search, Wand2 } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { parseLrc } from '../../../shared/lrc'
-import type { Lyrics, SongListItem } from '../../../shared/types'
+import type { LrclibHit, Lyrics, SongListItem } from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
+import LrclibFinderDialog from '../components/LrclibFinderDialog'
 import TimingStep from '../components/TimingStep'
 import Titlebar from '../components/Titlebar'
 import { Button, IconButton } from '../components/ui'
@@ -34,6 +35,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
   const [alignError, setAlignError] = useState<string | null>(null)
   const [pendingLrc, setPendingLrc] = useState<Lyrics | null>(null)
   const [lrcError, setLrcError] = useState<string | null>(null)
+  const [finderOpen, setFinderOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -103,24 +105,35 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
     setStep('timing')
   }
 
+  /** Shared LRC ingest (file picker + LRCLIB synced hit): parse → ends → confirm-if-timing. */
+  const ingestLrc = (content: string): void => {
+    try {
+      const parsed = parseLrc(content, song.language)
+      const withEnds = inferEnds(parsed, song.durationSec)
+      if (hasTiming) setPendingLrc(withEnds)
+      else void applyLrc(withEnds)
+    } catch {
+      setLrcError(t('creator.lrcInvalid'))
+    }
+  }
+
   const onFile = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0]
     e.target.value = '' // allow re-picking the same file
     if (!file) return
     setLrcError(null)
     const reader = new FileReader()
-    reader.onload = () => {
-      try {
-        const parsed = parseLrc(String(reader.result), song.language)
-        const withEnds = inferEnds(parsed, song.durationSec)
-        if (hasTiming) setPendingLrc(withEnds)
-        else void applyLrc(withEnds)
-      } catch {
-        setLrcError(t('creator.lrcInvalid'))
-      }
-    }
+    reader.onload = () => ingestLrc(String(reader.result))
     reader.onerror = () => setLrcError(t('creator.lrcInvalid'))
     reader.readAsText(file)
+  }
+
+  /** LRCLIB pick (R3.5): synced → timed import path, plain-only → fill the textarea. */
+  const onPickHit = (hit: LrclibHit): void => {
+    setFinderOpen(false)
+    setLrcError(null)
+    if (hit.syncedLyrics) ingestLrc(hit.syncedLyrics)
+    else if (hit.plainLyrics) setText(hit.plainLyrics)
   }
 
   return (
@@ -149,6 +162,14 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
               onChange={onFile}
               className="hidden"
             />
+            <Button
+              onClick={() => setFinderOpen(true)}
+              disabled={!loaded || aligning}
+              title={t('finder.findTip')}
+              className="app-no-drag font-medium text-text-dim hover:text-text"
+            >
+              <Search className="size-4" strokeWidth={1.5} /> {t('finder.find')}
+            </Button>
             <Button
               onClick={() => fileRef.current?.click()}
               disabled={!loaded || aligning}
@@ -216,6 +237,13 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
       )}
 
       <AnimatePresence>
+        {finderOpen && (
+          <LrclibFinderDialog
+            query={{ title: song.title, artist: song.artist, durationSec: song.durationSec }}
+            onPick={onPickHit}
+            onClose={() => setFinderOpen(false)}
+          />
+        )}
         {pendingLrc && (
           <ConfirmDialog
             title={t('creator.lrcReplaceTitle')}
