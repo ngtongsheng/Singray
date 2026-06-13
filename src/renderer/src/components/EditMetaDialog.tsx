@@ -99,13 +99,11 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
         </label>
         <label className="block">
           <span className="mb-1 block text-text-dim text-xs">{t('common.language')}</span>
-          <Select value={language} onChange={(e) => setLanguage(e.target.value)}>
-            {options.map((l) => (
-              <option key={l.code} value={l.code}>
-                {l.label}
-              </option>
-            ))}
-          </Select>
+          <Select
+            value={language}
+            onChange={(v) => setLanguage(v as Language)}
+            options={options.map((l) => ({ value: l.code, label: l.label }))}
+          />
         </label>
       </div>
 

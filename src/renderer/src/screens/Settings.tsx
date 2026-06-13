@@ -171,14 +171,14 @@ function Settings({ onBack }: Props): React.JSX.Element {
             <legend className="px-1 font-medium text-sm">{t('settings.interface')}</legend>
             <label className="block">
               <span className="mb-1 block text-text-dim text-xs">{t('settings.uiLanguage')}</span>
-              <Select value={settings.uiLanguage} onChange={(e) => setUiLanguage(e.target.value)}>
-                <option value="">{t('settings.followSystem')}</option>
-                {availableLocales.map((code) => (
-                  <option key={code} value={code}>
-                    {localeName(code)}
-                  </option>
-                ))}
-              </Select>
+              <Select
+                value={settings.uiLanguage}
+                onChange={setUiLanguage}
+                options={[
+                  { value: '', label: t('settings.followSystem') },
+                  ...availableLocales.map((code) => ({ value: code, label: localeName(code) }))
+                ]}
+              />
               <span className="mt-1 block text-text-dim text-xs">
                 {t('settings.uiLanguageHelp')}
               </span>
@@ -303,13 +303,12 @@ function Settings({ onBack }: Props): React.JSX.Element {
               <span className="mb-1 block text-text-dim text-xs">{t('settings.stemFormat')}</span>
               <Select
                 value={settings.stemFormat}
-                onChange={(e) =>
-                  patch({ stemFormat: e.target.value as SettingsModel['stemFormat'] })
-                }
-              >
-                <option value="flac">{t('settings.stemFlac')}</option>
-                <option value="m4a">{t('settings.stemM4a')}</option>
-              </Select>
+                onChange={(v) => patch({ stemFormat: v as SettingsModel['stemFormat'] })}
+                options={[
+                  { value: 'flac', label: t('settings.stemFlac') },
+                  { value: 'm4a', label: t('settings.stemM4a') }
+                ]}
+              />
               <span className="mt-1 block text-text-dim text-xs">
                 {t('settings.stemFormatHelp')}
               </span>
@@ -385,13 +384,14 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 <span className="mb-1 block text-text-dim text-xs">{t('settings.outputMode')}</span>
                 <Select
                   value={settings.audioOutputMode}
-                  onChange={(e) =>
-                    patch({ audioOutputMode: e.target.value as SettingsModel['audioOutputMode'] })
+                  onChange={(v) =>
+                    patch({ audioOutputMode: v as SettingsModel['audioOutputMode'] })
                   }
-                >
-                  <option value="single">{t('settings.modeSingle')}</option>
-                  <option value="dual">{t('settings.modeDual')}</option>
-                </Select>
+                  options={[
+                    { value: 'single', label: t('settings.modeSingle') },
+                    { value: 'dual', label: t('settings.modeDual') }
+                  ]}
+                />
                 <span className="mt-1 block text-text-dim text-xs">{t('settings.modeHelp')}</span>
               </label>
 
@@ -410,21 +410,20 @@ function Settings({ onBack }: Props): React.JSX.Element {
                       <Select
                         value={known ? value : ''}
                         disabled={settings.audioOutputMode === 'single'}
-                        onChange={(e) =>
+                        onChange={(v) =>
                           patch(
-                            which === 'monitor'
-                              ? { monitorDeviceId: e.target.value }
-                              : { streamDeviceId: e.target.value }
+                            which === 'monitor' ? { monitorDeviceId: v } : { streamDeviceId: v }
                           )
                         }
-                      >
-                        <option value="">{t('settings.systemDefault')}</option>
-                        {outputs.map((d) => (
-                          <option key={d.deviceId} value={d.deviceId}>
-                            {d.label || t('settings.outputN', { id: d.deviceId.slice(0, 8) })}
-                          </option>
-                        ))}
-                      </Select>
+                        options={[
+                          { value: '', label: t('settings.systemDefault') },
+                          ...outputs.map((d) => ({
+                            value: d.deviceId,
+                            label: d.label || t('settings.outputN', { id: d.deviceId.slice(0, 8) })
+                          }))
+                        ]}
+                        className="flex-1"
+                      />
                       <Button
                         size="md"
                         onClick={() => testTone(which)}

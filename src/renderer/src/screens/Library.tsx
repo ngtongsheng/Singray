@@ -139,13 +139,14 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
         <Select
           uiSize="sm"
           value={sort}
-          onChange={(e) => setSort(e.target.value as SortMode)}
+          onChange={(v) => setSort(v as SortMode)}
           title={t('library.sort')}
-        >
-          <option value="added">{t('library.sortAdded')}</option>
-          <option value="mostSung">{t('library.sortMostSung')}</option>
-          <option value="recentSung">{t('library.sortRecentSung')}</option>
-        </Select>
+          options={[
+            { value: 'added', label: t('library.sortAdded') },
+            { value: 'mostSung', label: t('library.sortMostSung') },
+            { value: 'recentSung', label: t('library.sortRecentSung') }
+          ]}
+        />
       </div>
 
       {songs.length === 0 ? (

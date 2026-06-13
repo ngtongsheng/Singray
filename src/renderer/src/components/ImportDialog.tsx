@@ -243,16 +243,16 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
             </label>
             <label className="block">
               <span className="mb-1 block text-text-dim text-xs">{t('common.language')}</span>
-              <Select value={language} onChange={(e) => setLanguage(e.target.value)}>
-                {languages.map((l) => (
-                  <option key={l.code} value={l.code}>
-                    {l.label}
-                  </option>
-                ))}
-                {!languages.some((l) => l.code === 'unknown') && (
-                  <option value="unknown">{t('common.unknown')}</option>
-                )}
-              </Select>
+              <Select
+                value={language}
+                onChange={(v) => setLanguage(v as Language)}
+                options={[
+                  ...languages.map((l) => ({ value: l.code, label: l.label })),
+                  ...(languages.some((l) => l.code === 'unknown')
+                    ? []
+                    : [{ value: 'unknown', label: t('common.unknown') }])
+                ]}
+              />
             </label>
           </div>
         </div>
