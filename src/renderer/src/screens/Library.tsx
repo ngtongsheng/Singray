@@ -106,6 +106,19 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
           />
         </div>
         <div className="flex-1" />
+        <div className="app-no-drag">
+          <Select
+            uiSize="sm"
+            value={sort}
+            onChange={(v) => setSort(v as SortMode)}
+            title={t('library.sort')}
+            options={[
+              { value: 'added', label: t('library.sortAdded') },
+              { value: 'mostSung', label: t('library.sortMostSung') },
+              { value: 'recentSung', label: t('library.sortRecentSung') }
+            ]}
+          />
+        </div>
         <Button variant="primary" onClick={() => setShowImport(true)} className="app-no-drag">
           <Plus className="size-4" strokeWidth={2} /> {t('library.addSong')}
         </Button>
@@ -134,18 +147,6 @@ function Library({ onOpenSettings, onSing }: Props): React.JSX.Element {
         <Chip active={needsLyricsOnly} onClick={() => setNeedsLyricsOnly(!needsLyricsOnly)}>
           <Type className="size-3.5" strokeWidth={1.5} /> {t('library.needsLyrics')}
         </Chip>
-        <div className="flex-1" />
-        <Select
-          uiSize="sm"
-          value={sort}
-          onChange={(v) => setSort(v as SortMode)}
-          title={t('library.sort')}
-          options={[
-            { value: 'added', label: t('library.sortAdded') },
-            { value: 'mostSung', label: t('library.sortMostSung') },
-            { value: 'recentSung', label: t('library.sortRecentSung') }
-          ]}
-        />
       </div>
 
       {songs.length === 0 ? (
