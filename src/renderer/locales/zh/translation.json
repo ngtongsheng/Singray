@@ -66,6 +66,8 @@
     "searching": "搜索中…",
     "noResults": "没有结果",
     "fromFile": "从文件…",
+    "dropHint": "或将音频/视频文件拖到此处",
+    "unsupportedFile": "不支持的文件类型",
     "add": "添加"
   },
   "editMeta": {

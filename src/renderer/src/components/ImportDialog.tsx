@@ -1,8 +1,15 @@
 import { FolderOpen, Loader2, Search } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Language, LanguageDef, ProbeResult, SearchResult } from '../../../shared/types'
+import {
+  type Language,
+  type LanguageDef,
+  MEDIA_EXTENSIONS,
+  type ProbeResult,
+  type SearchResult
+} from '../../../shared/types'
 import { Button, Dialog, IconButton, Input, Select, Tabs } from './ui'
+import { cx } from './ui/cx'
 
 interface Props {
   onClose: () => void
@@ -34,6 +41,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
   const [searchError, setSearchError] = useState<string | null>(null)
   const [results, setResults] = useState<SearchResult[] | null>(null)
   const [mode, setMode] = useState<SourceMode>('youtube')
+  const [dragOver, setDragOver] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
   const probeSeq = useRef(0)
 
@@ -75,10 +83,8 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
     setArtist(enriched.artist)
   }, [])
 
-  /** "From file" (R3.7): native picker → probe the local file → same prefill flow. */
-  const pickFile = async (): Promise<void> => {
-    const path = await window.singray.import.pickFile()
-    if (!path) return
+  /** Shared local-file flow (R3.7 picker, ADD2 drop): probe the file → same prefill flow. */
+  const loadFile = async (path: string): Promise<void> => {
     setUrl('')
     setResults(null)
     setSearchError(null)
@@ -97,6 +103,28 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
     } finally {
       if (seq === probeSeq.current) setProbing(false)
     }
+  }
+
+  const pickFile = async (): Promise<void> => {
+    const path = await window.singray.import.pickFile()
+    if (!path) return
+    await loadFile(path)
+  }
+
+  const onDrop = (e: React.DragEvent): void => {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (!file) return
+    const path = window.singray.import.getPathForFile(file)
+    const ext = path.split('.').pop()?.toLowerCase() ?? ''
+    if (!(MEDIA_EXTENSIONS as readonly string[]).includes(ext)) {
+      setFilePath(null)
+      setProbed(null)
+      setProbeError(t('import.unsupportedFile'))
+      return
+    }
+    void loadFile(path)
   }
 
   useEffect(() => {
@@ -229,10 +257,23 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
           </label>
         </>
       ) : (
-        <div className="mt-4 flex items-center gap-2">
+        // biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop zone; the picker Button inside is the keyboard/AT path
+        <div
+          className={cx(
+            'mt-4 flex flex-col items-center gap-2 rounded-card border-2 border-dashed p-6 text-center transition-colors',
+            dragOver ? 'border-accent bg-accent/5' : 'border-border'
+          )}
+          onDragOver={(e) => {
+            e.preventDefault()
+            setDragOver(true)
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={onDrop}
+        >
           <Button onClick={pickFile}>
             <FolderOpen className="size-4" strokeWidth={1.5} /> {t('import.fromFile')}
           </Button>
+          <p className="text-text-dim text-xs">{t('import.dropHint')}</p>
           {filePath && (
             <span className="min-w-0 truncate text-text-dim text-xs">
               {filePath.split(/[\\/]/).pop()}

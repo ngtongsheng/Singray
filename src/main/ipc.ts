@@ -1,12 +1,13 @@
 import { BrowserWindow, dialog, ipcMain } from 'electron'
-import type {
-  ImportRequest,
-  InstallEvent,
-  LrclibQuery,
-  Lyrics,
-  ProbeResult,
-  Settings,
-  SongMeta
+import {
+  type ImportRequest,
+  type InstallEvent,
+  type LrclibQuery,
+  type Lyrics,
+  MEDIA_EXTENSIONS,
+  type ProbeResult,
+  type Settings,
+  type SongMeta
 } from '../shared/types'
 import { cancelInstall, installPipeline, pipelineStatus } from './bootstrap'
 import { cleanLyrics, cleanMeta, enrichProbe } from './enrich'
@@ -55,22 +56,7 @@ export function registerIpc(): void {
       title: 'Import audio or video file',
       properties: ['openFile'],
       filters: [
-        {
-          name: 'Media',
-          extensions: [
-            'mp4',
-            'm4a',
-            'mp3',
-            'flac',
-            'wav',
-            'ogg',
-            'opus',
-            'webm',
-            'aac',
-            'mkv',
-            'mov'
-          ]
-        },
+        { name: 'Media', extensions: [...MEDIA_EXTENSIONS] },
         { name: 'All files', extensions: ['*'] }
       ]
     })

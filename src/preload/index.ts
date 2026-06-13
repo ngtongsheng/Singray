@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type {
   AlignToken,
   AudioTrack,
@@ -38,6 +38,7 @@ const api: SingrayApi = {
     probe: (url) => ipcRenderer.invoke('import:probe', url) as Promise<ProbeResult>,
     probeFile: (path) => ipcRenderer.invoke('import:probeFile', path) as Promise<ProbeResult>,
     pickFile: () => ipcRenderer.invoke('import:pickFile') as Promise<string | null>,
+    getPathForFile: (file) => webUtils.getPathForFile(file),
     search: (query) => ipcRenderer.invoke('import:search', query) as Promise<SearchResult[]>,
     start: (req: ImportRequest) => ipcRenderer.invoke('import:start', req) as Promise<string>,
     retry: (id) => ipcRenderer.invoke('import:retry', id) as Promise<void>,

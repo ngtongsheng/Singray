@@ -5,7 +5,7 @@ Round 2 feature source: user feedback 2026-06-14 (`docs/feedback/2026-06-14-roun
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → ADD2**, then top-to-bottom. Phase order = execution order chosen in grilling: safety/quick bugs → shared primitives → nav redesign → feature views → polish. Phase 0 (Round 1 verification) is env-blocked / user-side and doesn't block the coding pointer.
+> **Now → ADD3**, then top-to-bottom. Phase order = execution order chosen in grilling: safety/quick bugs → shared primitives → nav redesign → feature views → polish. Phase 0 (Round 1 verification) is env-blocked / user-side and doesn't block the coding pointer.
 > AIC2/EL1/EL2/EL5/UI6/UI1 marked `[~]`: code complete + `npm run check` green, runtime "Done when" verification batched at session end.
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
@@ -116,7 +116,7 @@ Clicking an artist name (card, player header, details modal) navigates to Songs 
 Use the UI6 Tabs primitive to switch between "YouTube (search + URL)" and "Upload from file".
 - **Done when:** tabs switch the two modes; each mode's state survives switching away and back in-session; keyboard-accessible.
 
-### [ ] ADD2 Drag-and-drop file load
+### [x] ADD2 Drag-and-drop file load
 The "from file" pane accepts a dragged file (drop zone + hover state) alongside the picker.
 - **Done when:** dropping a supported file starts the same probe/prefill flow; unsupported file rejected with a message; drag-over shows a visible drop affordance.
 
@@ -183,6 +183,7 @@ Edit-meta dialog: put "Clean up with AI" on the same action row as Cancel/Save.
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-14 · ADD2 · File-tab "From file" pane is now a dashed drop zone (`onDragOver`/`onDragLeave`/`onDrop`, `border-accent bg-accent/5` on hover) wrapping the existing picker button + hint text. New shared `MEDIA_EXTENSIONS` const (`shared/types.ts`) backs both the native dialog filter (`main/ipc.ts`) and the drop-handler's extension check; preload exposes `import.getPathForFile` via Electron's `webUtils.getPathForFile`. Picker and drop now share a `loadFile(path)` helper (probe/prefill). Dropped files with an unrecognized extension show `import.unsupportedFile` without probing. Verified via playwright: drag-over toggles `border-accent`/reverts on drag-leave, dropping a `.txt` shows "不支持的文件类型". Couldn't fully exercise the supported-extension probe path — synthetic `File` objects in the test have no OS path so `getPathForFile` returns `''`, which itself fails the extension check; the picker path (pickFile→loadFile, used by every existing import) already proves `loadFile` works. `npm run check` green. **[x]**.
 - 2026-06-14 · ADD1 · ImportDialog now uses UI6 `<Tabs>` (`YouTube` / `import.tabFile`) to split source modes: YouTube tab holds the search box + results list + URL input; file tab holds the "From file…" picker (+ probe spinner/error). Probed-metadata form and Cancel/Add footer stay unconditional below the tabs, so `title`/`artist`/`language`/`probed` state survives switching tabs. Verified via playwright: 2 tabs render with sliding underline, click switches panes, typed URL persists across a tab round-trip (click to file tab, `ArrowLeft` back to YouTube), keyboard arrow-nav moves focus+selection. `npm run check` green. **[x]**.
 - 2026-06-14 · HOME1+ART1+ART2 · New `Segmented` UI primitive (button-group radio replacement, h-8 to match Select). Library row2 gains `Songs|Artists` segmented toggle; Songs view gains `grid|list` segmented toggle (persisted via new `Settings.libraryView`, default `grid`). List view = new `SongRow` component (thumb · title · clickable artist · needs-lyrics badge · favorite · menu), reusing SongCard's delete/retry/favorite actions. Artists view = alphabetical list of distinct artists with song counts (`""` groups blank-artist songs under "Unknown"), click → switches to Songs filtered by that artist via a removable "Artist: X" chip in the filter row. ART2: SongCard/SongRow artist text and Player header artist (now a button) call `onArtistClick`; from Player this navigates via a new `View.library.artistFilter` field in App.tsx (Library stays mounted so a `useEffect` re-applies the filter on prop change). Verified via playwright: grid↔list toggle + persistence across relaunch, artist click from card/list/player all land on the filtered Songs view with a clearable chip, Artists list shows correct per-artist counts (方大同 = 2). **[x]**.
 - 2026-06-14 · NAV4 · Player header title/artist stacked (`flex-col justify-center gap-0.5`, `leading-tight` on both lines) instead of inline baseline pair; fits within Titlebar's h-10, back-button stays vertically centered via the row's `items-center`. Verified via playwright screenshot. **[x]**.

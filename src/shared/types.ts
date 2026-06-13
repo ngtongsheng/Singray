@@ -1,5 +1,20 @@
 // Single source of truth for types shared by main / preload / renderer (SPEC §8).
 
+/** File extensions accepted by "From file" import (R3.7 picker filter + ADD2 drop zone). */
+export const MEDIA_EXTENSIONS = [
+  'mp4',
+  'm4a',
+  'mp3',
+  'flac',
+  'wav',
+  'ogg',
+  'opus',
+  'webm',
+  'aac',
+  'mkv',
+  'mov'
+] as const
+
 /**
  * Language code from the user-editable list in Settings (R2.4), or 'unknown'.
  * Free-form so removing a language from Settings never invalidates song metas.
@@ -231,6 +246,8 @@ export interface SingrayApi {
     probeFile(path: string): Promise<ProbeResult>
     /** Native open dialog for a local audio/video file; resolves the path or null if cancelled (R3.7). */
     pickFile(): Promise<string | null>
+    /** Resolves a dropped File's absolute filesystem path (ADD2 drag-and-drop). */
+    getPathForFile(file: File): string
     /** ytsearch10 for the query; rejects with a readable message on bad query / no network. */
     search(query: string): Promise<SearchResult[]>
     start(req: ImportRequest): Promise<string>

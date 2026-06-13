@@ -67,6 +67,8 @@
     "searching": "Searching…",
     "noResults": "No results",
     "fromFile": "From file…",
+    "dropHint": "or drop an audio/video file here",
+    "unsupportedFile": "Unsupported file type",
     "add": "Add"
   },
   "editMeta": {
