@@ -9,7 +9,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import LrclibFinderDialog from '../components/LrclibFinderDialog'
 import TimingStep from '../components/TimingStep'
 import Titlebar from '../components/Titlebar'
-import { Button, IconButton, Tabs, useTabCycle } from '../components/ui'
+import { Button, IconButton, Segmented, useTabCycle } from '../components/ui'
 import { inferEnds } from '../lib/inferEnds'
 import { type BuildResult, buildLyrics, lyricsToText } from '../lib/lyricsText'
 import { mergeAlignment } from '../lib/mergeAlignment'
@@ -274,15 +274,15 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
       </Titlebar>
 
       <div className="absolute inset-0 flex flex-col pt-19">
-        <Tabs
-          className="px-6"
-          tabs={[
-            { id: 'text', label: t('creator.stepText') },
-            { id: 'tap', label: t('creator.stepTap') },
-            { id: 'review', label: t('creator.stepReview') }
-          ]}
-          active={creatorStep}
+        <Segmented
+          className="mx-6 mb-3 self-start"
+          value={creatorStep}
           onChange={setCreatorStep}
+          options={[
+            { value: 'text', label: t('creator.stepText') },
+            { value: 'tap', label: t('creator.stepTap') },
+            { value: 'review', label: t('creator.stepReview') }
+          ]}
         />
         {step === 'text' ? (
           <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 pb-4">
@@ -302,7 +302,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
               disabled={!loaded}
               spellCheck={false}
               placeholder={t('creator.placeholder')}
-              className="min-h-0 flex-1 resize-none rounded-card border border-border bg-surface p-4 font-lyric text-base leading-7 placeholder:text-text-dim/40"
+              className="min-h-0 flex-1 resize-none overflow-y-auto rounded-card border border-border bg-surface p-4 font-lyric text-base leading-7 placeholder:text-text-dim/40"
             />
           </div>
         ) : (

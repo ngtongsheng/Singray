@@ -105,8 +105,8 @@
 .overflow-y-auto::-webkit-scrollbar,
 .overflow-x-auto::-webkit-scrollbar,
 .overflow-auto::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-track,
@@ -119,7 +119,9 @@
 .overflow-x-auto::-webkit-scrollbar-thumb,
 .overflow-auto::-webkit-scrollbar-thumb {
   background-color: var(--color-border);
-  border-radius: 4px;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  background-clip: padding-box;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover,
@@ -134,4 +136,56 @@
   .overflow-auto::-webkit-scrollbar-thumb {
     transition: background-color 150ms ease;
   }
+}
+
+/* UI4: de-native range input — flat track with an accent fill up to the current value
+   (via --slider-pct, set by ui/Slider.tsx) and a small circular thumb. */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 16px;
+  background: transparent;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--color-accent) var(--slider-pct),
+    var(--color-border) var(--slider-pct)
+  );
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -4.5px;
+  border-radius: 50%;
+  background: var(--color-text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+}
+
+.slider::-moz-range-track {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-border);
+}
+
+.slider::-moz-range-progress {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-accent);
+}
+
+.slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
 }
