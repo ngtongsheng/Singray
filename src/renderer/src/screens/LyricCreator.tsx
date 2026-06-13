@@ -9,7 +9,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import LrclibFinderDialog from '../components/LrclibFinderDialog'
 import TimingStep from '../components/TimingStep'
 import Titlebar from '../components/Titlebar'
-import { Button, IconButton } from '../components/ui'
+import { Button, IconButton, Tabs, useTabCycle } from '../components/ui'
 import { inferEnds } from '../lib/inferEnds'
 import { type BuildResult, buildLyrics, lyricsToText } from '../lib/lyricsText'
 import { mergeAlignment } from '../lib/mergeAlignment'
@@ -24,10 +24,15 @@ interface Pending {
   action: 'continue' | 'align'
 }
 
+/** EL4: the three creator steps Ctrl+Tab / the tab bar cycle through. `review` is a toggle within `timing`, not its own route. */
+type CreatorStep = 'text' | 'tap' | 'review'
+const CREATOR_STEPS = ['text', 'tap', 'review'] as const
+
 /** Lyric creator (SPEC §6): step (a) text + Align, step (b) timing. */
 function LyricCreator({ song, onBack }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const [step, setStep] = useState<'text' | 'timing'>('text')
+  const [review, setReview] = useState(false)
   const [text, setText] = useState('')
   const [saved, setSaved] = useState<Lyrics | null>(null)
   const [loaded, setLoaded] = useState(false)
@@ -155,6 +160,28 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
     }
   }
 
+  const goToText = (): void => {
+    setReview(false)
+    setStep('text')
+  }
+
+  /** EL4: derive the current step from `step` + `review` and translate cycle moves back into them. */
+  const creatorStep: CreatorStep = step === 'text' ? 'text' : review ? 'review' : 'tap'
+
+  const setCreatorStep = (next: CreatorStep): void => {
+    if (next === 'text') {
+      goToText()
+      return
+    }
+    if (step === 'text') {
+      if (!loaded || parsedEmpty(text) || aligning) return
+      onContinue()
+    }
+    setReview(next === 'review')
+  }
+
+  useTabCycle(CREATOR_STEPS, creatorStep, setCreatorStep)
+
   return (
     <div className="relative h-full">
       <Titlebar>
@@ -240,13 +267,23 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
             </Button>
           </>
         ) : (
-          <Button onClick={() => setStep('text')} className="app-no-drag">
+          <Button onClick={goToText} className="app-no-drag">
             {t('creator.editText')}
           </Button>
         )}
       </Titlebar>
 
       <div className="absolute inset-0 flex flex-col pt-19">
+        <Tabs
+          className="px-6"
+          tabs={[
+            { id: 'text', label: t('creator.stepText') },
+            { id: 'tap', label: t('creator.stepTap') },
+            { id: 'review', label: t('creator.stepReview') }
+          ]}
+          active={creatorStep}
+          onChange={setCreatorStep}
+        />
         {step === 'text' ? (
           <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 pb-4">
             <p className="text-text-dim text-xs">
@@ -269,7 +306,15 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
             />
           </div>
         ) : (
-          saved && <TimingStep songId={song.id} lyrics={saved} onChange={setSaved} />
+          saved && (
+            <TimingStep
+              songId={song.id}
+              lyrics={saved}
+              onChange={setSaved}
+              review={review}
+              onReviewChange={setReview}
+            />
+          )
         )}
       </div>
 

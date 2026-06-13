@@ -166,7 +166,10 @@
     "discardTitle": "Discard timing on edited lines?",
     "discardBody_one": "{{count}} timed line changed and will need re-tapping, starting with \"{{first}}\".",
     "discardBody_other": "{{count}} timed lines changed and will need re-tapping, starting with \"{{first}}\".",
-    "discard": "Discard timing"
+    "discard": "Discard timing",
+    "stepText": "Text",
+    "stepTap": "Tap",
+    "stepReview": "Review"
   },
   "timing": {
     "playTip": "Play (Enter)",

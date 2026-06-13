@@ -12,6 +12,9 @@ interface Props {
   lyrics: Lyrics
   /** Sync every stamp up to the creator's state; persistence happens here (debounced). */
   onChange: (next: Lyrics) => void
+  /** Review toggle is lifted to the creator (EL4) so Ctrl+Tab can cycle it as a step. */
+  review: boolean
+  onReviewChange: (next: boolean) => void
 }
 
 /** Flat cursor position: line index + unit index. Break lines have no units, so the cursor skips them. */
@@ -46,7 +49,13 @@ function lineTimestampClass(line: LyricLine): string {
 }
 
 /** Tap-along timing step (SPEC §6.3): Space stamps, original.m4a as reference. */
-function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
+function TimingStep({
+  songId,
+  lyrics,
+  onChange,
+  review,
+  onReviewChange
+}: Props): React.JSX.Element {
   const { t } = useTranslation()
   const audioRef = useRef<HTMLAudioElement>(null)
   const lineRefs = useRef(new Map<number, HTMLButtonElement>())
@@ -55,7 +64,6 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
   const [duration, setDuration] = useState(0)
   const [rateIdx, setRateIdx] = useState(3)
   const [showKeys, setShowKeys] = useState(true)
-  const [review, setReview] = useState(false)
 
   const flatUnits = useMemo<UnitPos[]>(
     () => lyrics.lines.flatMap((l, line) => l.units.map((_, unit) => ({ line, unit }))),
@@ -246,8 +254,8 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
     if (lineIdx === -1) lineIdx = lyrics.lines.findIndex((l) => l.units.length > 0)
     const idx = flatUnits.findIndex((p) => p.line === lineIdx)
     if (idx !== -1) setCursor(idx)
-    setReview(false)
-  }, [flatUnits, lyrics])
+    onReviewChange(false)
+  }, [flatUnits, lyrics, onReviewChange])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -283,6 +291,8 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
           cycleRate(-1)
           break
         case 'Tab':
+          // Ctrl+Tab is the EL4 step cycle (handled in LyricCreator); plain Tab is gap-nav.
+          if (e.ctrlKey) break
           e.preventDefault()
           if (!review) jumpGap(e.shiftKey ? -1 : 1)
           break
@@ -353,7 +363,7 @@ function TimingStep({ songId, lyrics, onChange }: Props): React.JSX.Element {
           pressed={review}
           onClick={(e) => {
             if (review) exitReview()
-            else setReview(true)
+            else onReviewChange(true)
             e.currentTarget.blur()
           }}
           title={review ? t('timing.tapTip') : t('timing.reviewTip')}

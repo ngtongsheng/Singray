@@ -162,7 +162,10 @@
     "alignAnyway": "仍然对齐",
     "discardTitle": "丢弃已修改行的时间轴？",
     "discardBody_other": "{{count}} 个已打轴的行被修改，需要重新打轴，从「{{first}}」开始。",
-    "discard": "丢弃时间轴"
+    "discard": "丢弃时间轴",
+    "stepText": "文本",
+    "stepTap": "打轴",
+    "stepReview": "预览"
   },
   "timing": {
     "playTip": "播放（回车）",
