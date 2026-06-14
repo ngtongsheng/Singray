@@ -1,2 +1,5 @@
-# Shell scripts must keep LF endings or they break on macOS/Linux runners.
-*.sh text eol=lf
+# Force LF everywhere regardless of platform/runner autocrlf settings.
+# Windows runners default to core.autocrlf=true, which converts checked-out
+# files to CRLF and breaks biome's format check (lineEnding: lf) on every
+# tracked text file.
+* text=auto eol=lf
