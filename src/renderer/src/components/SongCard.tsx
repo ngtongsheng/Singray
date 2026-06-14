@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ImportProgress, SongListItem } from '../../../shared/types'
-import { Button, IconButton, Menu, MenuItem } from './ui'
+import { Button, IconButton, Menu, MenuItem, Text } from './ui'
 
 interface Props {
   song: SongListItem
@@ -149,9 +149,9 @@ function SongCard({ song, importing, onDelete, onSing, onArtistClick }: Props): 
         )}
       </div>
       <div className="p-3">
-        <p className="truncate font-medium text-sm" title={song.title}>
+        <Text variant="item" title={song.title}>
           {song.title}
-        </p>
+        </Text>
         <button
           type="button"
           onClick={(e) => {

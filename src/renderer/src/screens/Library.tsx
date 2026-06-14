@@ -27,7 +27,8 @@ import {
   Input,
   Segmented,
   Select,
-  Stack
+  Stack,
+  Text
 } from '../components/ui'
 import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
@@ -276,10 +277,12 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
                 onClick={() => onArtistClick(name)}
                 className="flex items-center justify-between rounded-card border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-text-dim/40"
               >
-                <span className="truncate font-medium text-sm">{name || t('common.unknown')}</span>
-                <span className="shrink-0 text-text-dim text-xs">
+                <Text as="span" variant="item">
+                  {name || t('common.unknown')}
+                </Text>
+                <Text as="span" variant="hint" className="shrink-0">
                   {t('library.songCount', { count })}
-                </span>
+                </Text>
               </button>
             ))}
           </Stack>

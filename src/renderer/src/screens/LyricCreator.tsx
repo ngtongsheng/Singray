@@ -9,7 +9,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import LrclibFinderDialog from '../components/LrclibFinderDialog'
 import TimingStep from '../components/TimingStep'
 import Titlebar from '../components/Titlebar'
-import { Button, IconButton, Segmented, Stack, useTabCycle } from '../components/ui'
+import { Button, IconButton, Segmented, Stack, Text, useTabCycle } from '../components/ui'
 import { inferEnds } from '../lib/inferEnds'
 import { type BuildResult, buildLyrics, lyricsToText } from '../lib/lyricsText'
 import { mergeAlignment } from '../lib/mergeAlignment'
@@ -195,10 +195,12 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
               <ArrowLeft className="size-4" strokeWidth={1.5} />
             </IconButton>
             <Stack gap={2} align="baseline" className="min-w-0">
-              <h1 className="truncate font-semibold text-sm">{song.title}</h1>
-              <p className="truncate text-text-dim text-xs">
+              <Text as="h1" variant="subtitle">
+                {song.title}
+              </Text>
+              <Text variant="hint" className="truncate">
                 {t('creator.subtitle', { artist: song.artist })}
-              </p>
+              </Text>
             </Stack>
           </Stack>
           {step === 'text' ? (
@@ -290,16 +292,14 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
         />
         {step === 'text' ? (
           <Stack direction="column" gap={3} className="min-h-0 flex-1 px-6 pb-4">
-            <p className="text-text-dim text-xs">
+            <Text variant="hint">
               {t('creator.hint')}
               {hasTiming && <span className="text-accent-soft">{t('creator.hintTimed')}</span>}
-            </p>
+            </Text>
             {alignError && (
-              <p className="text-danger text-xs">
-                {t('creator.alignFailed', { message: alignError })}
-              </p>
+              <Text variant="error">{t('creator.alignFailed', { message: alignError })}</Text>
             )}
-            {lrcError && <p className="text-danger text-xs">{lrcError}</p>}
+            {lrcError && <Text variant="error">{lrcError}</Text>}
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}

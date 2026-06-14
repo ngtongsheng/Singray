@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ImportProgress, SongListItem } from '../../../shared/types'
-import { IconButton, Menu, MenuItem, Stack } from './ui'
+import { IconButton, Menu, MenuItem, Stack, Text } from './ui'
 
 interface Props {
   song: SongListItem
@@ -63,9 +63,9 @@ function SongRow({ song, importing, onDelete, onSing, onArtistClick }: Props): R
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-sm" title={song.title}>
+        <Text variant="item" title={song.title}>
           {song.title}
-        </p>
+        </Text>
         <button
           type="button"
           onClick={(e) => {

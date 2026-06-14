@@ -9,7 +9,7 @@ import {
   type SearchResult
 } from '../../../shared/types'
 import { detectLanguage } from '../lib/detectLanguage'
-import { Button, Dialog, IconButton, Input, Select, Stack, Tabs } from './ui'
+import { Button, Dialog, Field, IconButton, Input, Select, Stack, Tabs, Text } from './ui'
 import { cx } from './ui/cx'
 
 interface Props {
@@ -184,7 +184,9 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
     <Dialog label={t('import.title')} width="w-[640px]" onClose={onClose}>
       <Stack direction="column" gap={6}>
         <Stack direction="column" gap={4}>
-          <h2 className="font-semibold text-base">{t('import.title')}</h2>
+          <Text as="h2" variant="title">
+            {t('import.title')}
+          </Text>
 
           <Tabs
             tabs={[
@@ -197,8 +199,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
 
           {mode === 'youtube' ? (
             <>
-              <label className="block">
-                <span className="mb-1 block text-text-dim text-xs">{t('import.searchLabel')}</span>
+              <Field label={t('import.searchLabel')}>
                 <Stack gap={2}>
                   <Input
                     ref={searchRef}
@@ -218,14 +219,18 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                     <Search className="size-4" />
                   </IconButton>
                 </Stack>
-                {searchError && <p className="mt-1 text-danger text-xs">{searchError}</p>}
-              </label>
+                {searchError && (
+                  <Text variant="error" className="mt-1">
+                    {searchError}
+                  </Text>
+                )}
+              </Field>
 
               {results && (
                 <ul className="max-h-64 divide-y divide-border overflow-y-auto rounded-card border border-border">
                   {results.length === 0 && (
-                    <li className="px-3 py-4 text-center text-text-dim text-xs">
-                      {t('import.noResults')}
+                    <li className="px-3 py-4 text-center">
+                      <Text variant="hint">{t('import.noResults')}</Text>
                     </li>
                   )}
                   {results.map((r) => (
@@ -247,10 +252,10 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm">{r.title}</p>
-                          <p className="truncate text-text-dim text-xs">
+                          <Text variant="hint" className="truncate">
                             {r.channel}
                             {r.duration > 0 && ` · ${formatDuration(r.duration)}`}
-                          </p>
+                          </Text>
                         </div>
                       </Button>
                     </li>
@@ -258,16 +263,19 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                 </ul>
               )}
 
-              <label className="block">
-                <span className="mb-1 block text-text-dim text-xs">{t('import.urlLabel')}</span>
+              <Field label={t('import.urlLabel')}>
                 <Input
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://www.youtube.com/watch?v=…"
                   trailing={probing && <Loader2 className="size-4 animate-spin text-text-dim" />}
                 />
-                {probeError && <p className="mt-1 text-danger text-xs">{probeError}</p>}
-              </label>
+                {probeError && (
+                  <Text variant="error" className="mt-1">
+                    {probeError}
+                  </Text>
+                )}
+              </Field>
             </>
           ) : (
             <Stack
@@ -288,13 +296,13 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
               <Button onClick={pickFile}>
                 <FolderOpen className="size-4" strokeWidth={1.5} /> {t('import.fromFile')}
               </Button>
-              <p className="text-text-dim text-xs">{t('import.dropHint')}</p>
+              <Text variant="hint">{t('import.dropHint')}</Text>
               {filePath && (
-                <span className="min-w-0 truncate text-text-dim text-xs">
+                <Text as="span" variant="hint" className="min-w-0 truncate">
                   {filePath.split(/[\\/]/).pop()}
-                </span>
+                </Text>
               )}
-              {probeError && <p className="text-danger text-xs">{probeError}</p>}
+              {probeError && <Text variant="error">{probeError}</Text>}
               {probing && <Loader2 className="size-4 animate-spin text-text-dim" />}
             </Stack>
           )}
@@ -307,19 +315,18 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                     <img src={probed.thumbnailUrl} alt="" className="h-full w-full object-cover" />
                   )}
                 </div>
-                <p className="mt-2 line-clamp-2 text-text-dim text-xs">{probed.title}</p>
+                <Text variant="hint" className="mt-2 line-clamp-2">
+                  {probed.title}
+                </Text>
               </div>
               <Stack direction="column" gap={3} className="flex-1">
-                <label className="block">
-                  <span className="mb-1 block text-text-dim text-xs">{t('common.title')}</span>
+                <Field label={t('common.title')}>
                   <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-text-dim text-xs">{t('common.artist')}</span>
+                </Field>
+                <Field label={t('common.artist')}>
                   <Input value={artist} onChange={(e) => setArtist(e.target.value)} />
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-text-dim text-xs">{t('common.language')}</span>
+                </Field>
+                <Field label={t('common.language')}>
                   <Select
                     value={language}
                     onChange={(v) => setLanguage(v as Language)}
@@ -330,7 +337,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                         : [{ value: 'unknown', label: t('common.unknown') }])
                     ]}
                   />
-                </label>
+                </Field>
               </Stack>
             </Stack>
           )}

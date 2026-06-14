@@ -37,6 +37,7 @@ import {
   Popover,
   Slider,
   Stack,
+  Text,
   Toggle
 } from '../components/ui'
 import { AudioEngine } from '../lib/audioEngine'
@@ -269,7 +270,9 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
               <ArrowLeft className="size-4" strokeWidth={1.5} />
             </IconButton>
             <Stack direction="column" gap={0.5} justify="center" className="min-w-0">
-              <h1 className="truncate font-semibold text-sm leading-tight">{song.title}</h1>
+              <Text as="h1" variant="subtitle" className="leading-tight">
+                {song.title}
+              </Text>
               <button
                 type="button"
                 onClick={() => onArtistClick(song.artist)}
@@ -512,7 +515,9 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                   className="right-0 bottom-full mb-2 w-max p-3"
                 >
                   <Stack justify="between" className="pb-2">
-                    <span className="text-text-dim text-xs">{t('player.tempo')}</span>
+                    <Text as="span" variant="hint">
+                      {t('player.tempo')}
+                    </Text>
                     <Button
                       size="bare"
                       onClick={() => changeTempo(1)}

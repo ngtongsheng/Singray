@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { diffLines } from '../lib/lineDiff'
-import { Button, Stack } from './ui'
+import { Button, Stack, Text } from './ui'
 import { cx } from './ui/cx'
 import Dialog from './ui/Dialog'
 
@@ -24,7 +24,9 @@ function CleanLyricsDialog({ original, cleaned, onApply, onClose }: Props): Reac
     <Dialog label={t('clean.title')} width="w-[520px]" onClose={onClose}>
       <Stack direction="column" gap={5}>
         <div>
-          <h2 className="mb-1 font-semibold text-lg">{t('clean.title')}</h2>
+          <Text as="h2" variant="title" className="mb-1">
+            {t('clean.title')}
+          </Text>
           <p
             className={`mb-4 text-xs ${majorRemoval ? 'font-semibold text-danger' : 'text-text-dim'}`}
           >

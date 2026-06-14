@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next'
 import type { Settings as SettingsModel } from '../../../shared/types'
 import PipelineInstaller from '../components/PipelineInstaller'
 import Titlebar from '../components/Titlebar'
-import { Button, Container, IconButton, Input, Select, Stack } from '../components/ui'
+import { Button, Container, Field, IconButton, Input, Select, Stack, Text } from '../components/ui'
 import { availableLocales, i18n, localeName, resolveLocale } from '../lib/i18n'
 
 /** Play a short sine tone on a specific output device ('' = system default). */
@@ -232,15 +232,16 @@ function Settings({ onBack }: Props): React.JSX.Element {
         >
           <ArrowLeft className="size-4" strokeWidth={1.5} />
         </IconButton>
-        <h1 className="font-semibold text-base">{t('settings.title')}</h1>
+        <Text as="h1" variant="title">
+          {t('settings.title')}
+        </Text>
       </Titlebar>
 
       <Container pb={6} maxWidth="xl">
         <Stack direction="column" gap={6}>
           <fieldset className="rounded-card border border-border p-4">
             <legend className="px-1 font-medium text-sm">{t('settings.interface')}</legend>
-            <label className="block">
-              <span className="mb-1 block text-text-dim text-xs">{t('settings.uiLanguage')}</span>
+            <Field label={t('settings.uiLanguage')} hint={t('settings.uiLanguageHelp')}>
               <Select
                 value={settings.uiLanguage}
                 onChange={setUiLanguage}
@@ -249,18 +250,12 @@ function Settings({ onBack }: Props): React.JSX.Element {
                   ...availableLocales.map((code) => ({ value: code, label: localeName(code) }))
                 ]}
               />
-              <span className="mt-1 block text-text-dim text-xs">
-                {t('settings.uiLanguageHelp')}
-              </span>
-            </label>
+            </Field>
           </fieldset>
 
           <fieldset className="rounded-card border border-border p-4">
             <legend className="px-1 font-medium text-sm">{t('settings.library')}</legend>
-            <label className="block">
-              <span className="mb-1 block text-text-dim text-xs">
-                {t('settings.libraryFolder')}
-              </span>
+            <Field label={t('settings.libraryFolder')} hint={t('settings.libraryFolderHelp')}>
               <Input
                 defaultValue={settings.libraryDir}
                 onBlur={(e) => {
@@ -268,10 +263,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
                     patch({ libraryDir: e.target.value.trim() })
                 }}
               />
-              <span className="mt-1 block text-text-dim text-xs">
-                {t('settings.libraryFolderHelp')}
-              </span>
-            </label>
+            </Field>
           </fieldset>
 
           <fieldset className="rounded-card border border-border p-4">
@@ -328,7 +320,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
                   <Plus className="size-4" strokeWidth={1.5} /> {t('settings.add')}
                 </Button>
               </Stack>
-              <span className="text-text-dim text-xs">{t('settings.languagesHelp')}</span>
+              <Text variant="hint">{t('settings.languagesHelp')}</Text>
             </Stack>
           </fieldset>
 
@@ -336,11 +328,12 @@ function Settings({ onBack }: Props): React.JSX.Element {
             <legend className="px-1 font-medium text-sm">{t('settings.pipeline')}</legend>
             <Stack direction="column" gap={4}>
               <div>
-                <span className="mb-2 block text-text-dim text-xs">{t('settings.setup.desc')}</span>
+                <Text variant="hint" className="mb-2 block">
+                  {t('settings.setup.desc')}
+                </Text>
                 <PipelineInstaller />
               </div>
-              <label className="block">
-                <span className="mb-1 block text-text-dim text-xs">{t('settings.pythonExe')}</span>
+              <Field label={t('settings.pythonExe')} hint={t('settings.pythonHelp')}>
                 <Stack gap={2}>
                   <Input
                     defaultValue={settings.pythonPath}
@@ -359,32 +352,24 @@ function Settings({ onBack }: Props): React.JSX.Element {
                     {t('settings.testPipeline')}
                   </Button>
                 </Stack>
-                <span className="mt-1 block text-text-dim text-xs">{t('settings.pythonHelp')}</span>
-                {test.kind === 'ok' && (
-                  <span className="mt-2 flex items-center gap-1.5 text-success text-xs">
-                    <CheckCircle2 className="size-3.5" /> {test.detail}
-                  </span>
-                )}
-                {test.kind === 'fail' && (
-                  <span className="mt-2 flex items-center gap-1.5 text-danger text-xs">
-                    <XCircle className="size-3.5" /> {test.detail}
-                  </span>
-                )}
-              </label>
-              <div className="block">
-                <span className="mb-1 block text-text-dim text-xs">
-                  {t('settings.separationModel')}
+              </Field>
+              {test.kind === 'ok' && (
+                <span className="-mt-2 flex items-center gap-1.5 text-success text-xs">
+                  <CheckCircle2 className="size-3.5" /> {test.detail}
                 </span>
+              )}
+              {test.kind === 'fail' && (
+                <Text variant="error" className="-mt-2 flex items-center gap-1.5">
+                  <XCircle className="size-3.5" /> {test.detail}
+                </Text>
+              )}
+              <Field label={t('settings.separationModel')} hint={t('settings.separationModelHelp')}>
                 <SeparationModelSelect
                   value={settings.separationModel || '6_HP-Karaoke-UVR.pth'}
                   onChange={(v) => patch({ separationModel: v })}
                 />
-                <span className="mt-1 block text-text-dim text-xs">
-                  {t('settings.separationModelHelp')}
-                </span>
-              </div>
-              <label className="block">
-                <span className="mb-1 block text-text-dim text-xs">{t('settings.stemFormat')}</span>
+              </Field>
+              <Field label={t('settings.stemFormat')} hint={t('settings.stemFormatHelp')}>
                 <Select
                   value={settings.stemFormat}
                   onChange={(v) => patch({ stemFormat: v as SettingsModel['stemFormat'] })}
@@ -393,18 +378,14 @@ function Settings({ onBack }: Props): React.JSX.Element {
                     { value: 'm4a', label: t('settings.stemM4a') }
                   ]}
                 />
-                <span className="mt-1 block text-text-dim text-xs">
-                  {t('settings.stemFormatHelp')}
-                </span>
-              </label>
+              </Field>
             </Stack>
           </fieldset>
 
           <fieldset className="rounded-card border border-border p-4">
             <legend className="px-1 font-medium text-sm">{t('settings.llm')}</legend>
             <Stack direction="column" gap={4}>
-              <label className="block">
-                <span className="mb-1 block text-text-dim text-xs">{t('settings.llmBaseUrl')}</span>
+              <Field label={t('settings.llmBaseUrl')}>
                 <Input
                   defaultValue={settings.llmBaseUrl}
                   placeholder="http://localhost:11434/v1"
@@ -413,9 +394,8 @@ function Settings({ onBack }: Props): React.JSX.Element {
                       patch({ llmBaseUrl: e.target.value.trim() })
                   }}
                 />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-text-dim text-xs">{t('settings.llmModel')}</span>
+              </Field>
+              <Field label={t('settings.llmModel')}>
                 <Stack gap={2}>
                   <Input
                     defaultValue={settings.llmModel}
@@ -436,9 +416,8 @@ function Settings({ onBack }: Props): React.JSX.Element {
                     {t('settings.test')}
                   </Button>
                 </Stack>
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-text-dim text-xs">{t('settings.llmApiKey')}</span>
+              </Field>
+              <Field label={t('settings.llmApiKey')}>
                 <Input
                   type="password"
                   defaultValue={settings.llmApiKey}
@@ -447,17 +426,17 @@ function Settings({ onBack }: Props): React.JSX.Element {
                       patch({ llmApiKey: e.target.value.trim() })
                   }}
                 />
-              </label>
-              <span className="text-text-dim text-xs">{t('settings.llmHelp')}</span>
+              </Field>
+              <Text variant="hint">{t('settings.llmHelp')}</Text>
               {llmTest.kind === 'ok' && (
                 <span className="flex items-center gap-1.5 text-success text-xs">
                   <CheckCircle2 className="size-3.5" /> {llmTest.detail}
                 </span>
               )}
               {llmTest.kind === 'fail' && (
-                <span className="flex items-center gap-1.5 text-danger text-xs">
+                <Text variant="error" className="flex items-center gap-1.5">
                   <XCircle className="size-3.5" /> {llmTest.detail}
-                </span>
+                </Text>
               )}
             </Stack>
           </fieldset>
@@ -465,8 +444,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
           <fieldset className="rounded-card border border-border p-4">
             <legend className="px-1 font-medium text-sm">{t('settings.audio')}</legend>
             <Stack direction="column" gap={4}>
-              <label className="block">
-                <span className="mb-1 block text-text-dim text-xs">{t('settings.outputMode')}</span>
+              <Field label={t('settings.outputMode')} hint={t('settings.modeHelp')}>
                 <Select
                   value={settings.audioOutputMode}
                   onChange={(v) =>
@@ -477,20 +455,19 @@ function Settings({ onBack }: Props): React.JSX.Element {
                     { value: 'dual', label: t('settings.modeDual') }
                   ]}
                 />
-                <span className="mt-1 block text-text-dim text-xs">{t('settings.modeHelp')}</span>
-              </label>
+              </Field>
 
               {(['monitor', 'stream'] as const).map((which) => {
                 const value =
                   which === 'monitor' ? settings.monitorDeviceId : settings.streamDeviceId
                 const known = value === '' || outputs.some((d) => d.deviceId === value)
                 return (
-                  <label key={which} className="block">
-                    <span className="mb-1 block text-text-dim text-xs">
-                      {which === 'monitor'
-                        ? t('settings.monitorDevice')
-                        : t('settings.streamDevice')}
-                    </span>
+                  <Field
+                    key={which}
+                    label={
+                      which === 'monitor' ? t('settings.monitorDevice') : t('settings.streamDevice')
+                    }
+                  >
                     <Stack gap={2}>
                       <Select
                         value={known ? value : ''}
@@ -529,17 +506,17 @@ function Settings({ onBack }: Props): React.JSX.Element {
                       </Button>
                     </Stack>
                     {!known && (
-                      <span className="mt-1 block text-danger text-xs">
+                      <Text variant="error" className="mt-1 block">
                         {t('settings.deviceMissing')}
-                      </span>
+                      </Text>
                     )}
-                  </label>
+                  </Field>
                 )
               })}
               {toneError && (
-                <span className="flex items-center gap-1.5 text-danger text-xs">
+                <Text variant="error" className="flex items-center gap-1.5">
                   <XCircle className="size-3.5" /> {toneError}
-                </span>
+                </Text>
               )}
             </Stack>
           </fieldset>

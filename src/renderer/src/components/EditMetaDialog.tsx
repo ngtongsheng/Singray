@@ -2,7 +2,7 @@ import { Loader2, Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Language, LanguageDef, SongListItem } from '../../../shared/types'
-import { Button, Dialog, Input, Select, Stack } from './ui'
+import { Button, Dialog, Field, Input, Select, Stack, Text } from './ui'
 
 interface Props {
   song: SongListItem
@@ -88,36 +88,35 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
     <Dialog label={t('editMeta.aria')} width="w-[420px]" onClose={onClose}>
       <Stack direction="column" gap={6}>
         <div>
-          <h2 className="font-semibold text-base">{t('editMeta.title')}</h2>
+          <Text as="h2" variant="title">
+            {t('editMeta.title')}
+          </Text>
 
           <Stack direction="column" gap={3} className="mt-4">
-            <label className="block">
-              <span className="mb-1 block text-text-dim text-xs">{t('common.title')}</span>
+            <Field label={t('common.title')}>
               <Input ref={titleRef} value={title} onChange={(e) => setTitle(e.target.value)} />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-text-dim text-xs">{t('common.artist')}</span>
+            </Field>
+            <Field label={t('common.artist')}>
               <Input value={artist} onChange={(e) => setArtist(e.target.value)} />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-text-dim text-xs">{t('common.language')}</span>
+            </Field>
+            <Field label={t('common.language')}>
               <Select
                 value={language}
                 onChange={(v) => setLanguage(v as Language)}
                 options={options.map((l) => ({ value: l.code, label: l.label }))}
               />
-            </label>
+            </Field>
           </Stack>
 
           {(cleanError || preview) && (
             <div className="mt-3">
-              {cleanError && <p className="text-danger text-xs">{cleanError}</p>}
+              {cleanError && <Text variant="error">{cleanError}</Text>}
               {preview &&
                 (previewIsNoop ? (
-                  <p className="text-text-dim text-xs">{t('editMeta.noChanges')}</p>
+                  <Text variant="hint">{t('editMeta.noChanges')}</Text>
                 ) : (
                   <div className="rounded-card border border-border bg-surface p-3">
-                    <p className="text-text-dim text-xs">{t('editMeta.preview')}</p>
+                    <Text variant="hint">{t('editMeta.preview')}</Text>
                     <p className="mt-1 text-sm">
                       {preview.title}
                       {preview.artist && <span className="text-text-dim"> · {preview.artist}</span>}

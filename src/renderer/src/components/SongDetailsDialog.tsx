@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LanguageDef, SongListItem } from '../../../shared/types'
-import { Button, Dialog, Stack } from './ui'
+import { Button, Dialog, Stack, Text } from './ui'
 
 interface Props {
   song: SongListItem
@@ -35,7 +35,9 @@ function SongDetailsDialog({ song, onClose, onArtistClick }: Props): React.JSX.E
 
   const Row = ({ label, value }: { label: string; value: React.ReactNode }): React.JSX.Element => (
     <Stack justify="between" align="baseline" gap={4}>
-      <span className="shrink-0 whitespace-nowrap text-text-dim text-xs">{label}</span>
+      <Text as="span" variant="hint" className="shrink-0 whitespace-nowrap">
+        {label}
+      </Text>
       <span className="min-w-0 truncate text-right text-sm">{value}</span>
     </Stack>
   )
@@ -45,7 +47,9 @@ function SongDetailsDialog({ song, onClose, onArtistClick }: Props): React.JSX.E
       <Stack direction="column" gap={6}>
         <Stack direction="column" gap={4}>
           <div>
-            <h2 className="truncate font-semibold text-base">{song.title}</h2>
+            <Text as="h2" variant="title" className="truncate">
+              {song.title}
+            </Text>
             <button
               type="button"
               onClick={() => {
@@ -74,7 +78,9 @@ function SongDetailsDialog({ song, onClose, onArtistClick }: Props): React.JSX.E
           </Stack>
 
           <div>
-            <p className="mb-1 text-text-dim text-xs">{t('details.history')}</p>
+            <Text variant="hint" className="mb-1">
+              {t('details.history')}
+            </Text>
             {song.sings.length === 0 ? (
               <p className="text-sm text-text-dim">{t('details.noHistory')}</p>
             ) : (

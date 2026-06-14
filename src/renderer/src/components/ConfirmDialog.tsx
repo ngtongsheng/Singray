@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Button, Dialog, Stack } from './ui'
+import { Button, Dialog, Stack, Text } from './ui'
 
 interface Props {
   title: string
@@ -27,7 +27,9 @@ function ConfirmDialog({
     <Dialog alert label={title} width="w-[400px]" onClose={onCancel}>
       <Stack direction="column" gap={6}>
         <div>
-          <h2 className="font-semibold text-base">{title}</h2>
+          <Text as="h2" variant="title">
+            {title}
+          </Text>
           <p className="mt-2 text-sm text-text-dim">{body}</p>
         </div>
         <Stack justify="end" gap={3}>

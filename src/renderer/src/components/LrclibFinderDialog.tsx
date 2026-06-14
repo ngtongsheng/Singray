@@ -2,7 +2,7 @@ import { Loader2, Music } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LrclibHit, LrclibQuery } from '../../../shared/types'
-import { Button, Stack } from './ui'
+import { Button, Stack, Text } from './ui'
 import Dialog from './ui/Dialog'
 
 interface Props {
@@ -42,10 +42,12 @@ function LrclibFinderDialog({ query, onPick, onClose }: Props): React.JSX.Elemen
     <Dialog label={t('finder.title')} width="w-[460px]" onClose={onClose}>
       <Stack direction="column" gap={5}>
         <div>
-          <h2 className="mb-1 font-semibold text-lg">{t('finder.title')}</h2>
-          <p className="mb-4 text-text-dim text-xs">
+          <Text as="h2" variant="title" className="mb-1">
+            {t('finder.title')}
+          </Text>
+          <Text variant="hint" className="mb-4">
             {t('finder.subtitle', { title: query.title, artist: query.artist })}
-          </p>
+          </Text>
 
           {hits === null && !error && (
             <Stack justify="center" gap={2} className="py-10 text-text-dim text-sm">
@@ -68,11 +70,13 @@ function LrclibFinderDialog({ query, onPick, onClose }: Props): React.JSX.Elemen
                   >
                     <Music className="size-4 shrink-0 text-text-dim" strokeWidth={1.5} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium text-sm">{h.trackName}</span>
-                      <span className="block truncate text-text-dim text-xs">
+                      <Text as="span" variant="item" className="block">
+                        {h.trackName}
+                      </Text>
+                      <Text as="span" variant="hint" className="block truncate">
                         {h.artistName}
                         {h.albumName ? ` · ${h.albumName}` : ''} · {fmtDur(h.duration)}
-                      </span>
+                      </Text>
                     </span>
                     <span
                       className={`shrink-0 rounded-control px-1.5 py-0.5 text-[10px] ${

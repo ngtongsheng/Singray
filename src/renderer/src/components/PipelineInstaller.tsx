@@ -2,7 +2,7 @@ import { CheckCircle2, Circle, Download, Loader2, XCircle } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { InstallEvent, InstallStep, PipelineStatus } from '../../../shared/types'
-import { Button, Stack } from './ui'
+import { Button, Stack, Text } from './ui'
 
 const STEPS: InstallStep[] = ['uv', 'venv', 'torch', 'deps', 'ffmpeg', 'verify']
 const STEP_KEY: Record<InstallStep, string> = {
@@ -79,7 +79,7 @@ export default function PipelineInstaller({ onReady }: Props): React.JSX.Element
     </span>
   )
 
-  if (!status) return <span className="text-text-dim text-xs">{t('common.loading')}</span>
+  if (!status) return <Text variant="hint">{t('common.loading')}</Text>
 
   return (
     <Stack direction="column" gap={3}>
@@ -98,15 +98,15 @@ export default function PipelineInstaller({ onReady }: Props): React.JSX.Element
               ? t('settings.setup.managed')
               : t('settings.setup.missing')
         )}
-        <span className="flex items-center gap-1.5 text-text-dim text-xs">
+        <Text as="span" variant="hint" className="flex items-center gap-1.5">
           {t('settings.setup.gpu')}:{' '}
           {status.gpu ? t('settings.setup.detected') : t('settings.setup.missing')}
-        </span>
+        </Text>
       </div>
 
-      <span className="text-text-dim text-xs">
+      <Text variant="hint" as="span">
         {status.gpu ? t('settings.setup.gpuCuda') : t('settings.setup.cpuOnly')}
-      </span>
+      </Text>
 
       {(installing || events.size > 0) && (
         <ul className="flex flex-col gap-1.5 rounded-control border border-border p-3">
@@ -137,10 +137,10 @@ export default function PipelineInstaller({ onReady }: Props): React.JSX.Element
       )}
 
       {error && (
-        <span className="flex items-center gap-1.5 text-danger text-xs">
+        <Text variant="error" className="flex items-center gap-1.5">
           <XCircle className="size-3.5 shrink-0" />{' '}
           {t('settings.setup.failedMsg', { message: error })}
-        </span>
+        </Text>
       )}
 
       <Stack gap={2}>
@@ -155,9 +155,9 @@ export default function PipelineInstaller({ onReady }: Props): React.JSX.Element
           </Button>
         )}
         {installing && (
-          <span className="flex items-center gap-1.5 text-text-dim text-xs">
+          <Text as="span" variant="hint" className="flex items-center gap-1.5">
             <Loader2 className="size-3.5 animate-spin" /> {t('settings.setup.installing')}
-          </span>
+          </Text>
         )}
       </Stack>
     </Stack>

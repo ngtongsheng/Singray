@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import PipelineInstaller from '../components/PipelineInstaller'
 import Titlebar from '../components/Titlebar'
-import { Button, Container, Stack } from '../components/ui'
+import { Button, Container, Stack, Text } from '../components/ui'
 
 interface Props {
   /** Pipeline became ready (install finished). */
@@ -16,7 +16,9 @@ function PipelineSetup({ onReady, onSkip }: Props): React.JSX.Element {
   return (
     <div className="relative h-full">
       <Titlebar>
-        <h1 className="font-semibold text-base">{t('settings.setup.firstRunTitle')}</h1>
+        <Text as="h1" variant="title">
+          {t('settings.setup.firstRunTitle')}
+        </Text>
       </Titlebar>
       <Container pb={10} maxWidth="lg">
         <Stack direction="column" gap={6}>
