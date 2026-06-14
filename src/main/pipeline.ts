@@ -1,12 +1,12 @@
 import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
 import { app } from 'electron'
 import type { AlignToken, ProbeResult, SearchResult } from '../shared/types'
 import { songDir } from './library'
-import { effectivePythonPath, pipelineSpawnOptions } from './pipelineEnv'
+import { effectivePythonPath, pipelineEnvDir, pipelineSpawnOptions } from './pipelineEnv'
 
 export function pipelineScript(): string {
   return join(app.getAppPath(), 'pipeline', 'pipeline.py')
@@ -84,6 +84,64 @@ export function searchYoutube(query: string): Promise<SearchResult[]> {
         )
     })
   })
+}
+
+/** Cache path for the model list (populated on first query, refreshed on demand). */
+function modelCachePath(): string {
+  return join(pipelineEnvDir(), '.model-cache.json')
+}
+
+/**
+ * List available separation models from audio-separator's registry.
+ * Caches to a JSON file so the UI can show the list quickly.
+ * Pass `force=true` to re-query the pipeline (ignoring cache).
+ */
+export async function listPipelineModels(force = false): Promise<string[]> {
+  if (!force) {
+    try {
+      const raw = await readFile(modelCachePath(), 'utf-8')
+      const cached = JSON.parse(raw) as { models: string[] }
+      if (cached.models?.length) return cached.models
+    } catch {
+      // cache missing or corrupt — re-query
+    }
+  }
+
+  try {
+    const result = await new Promise<string[]>((resolve, reject) => {
+      const proc = spawn(
+        effectivePythonPath(),
+        [pipelineScript(), 'list-models'],
+        pipelineSpawnOptions()
+      )
+      let models: string[] | null = null
+      let stderrTail = ''
+      const rl = createInterface({ input: proc.stdout })
+      rl.on('line', (line) => {
+        try {
+          const msg = JSON.parse(line) as { stage: string; models?: string[]; message?: string }
+          if (msg.stage === 'done' && msg.models) models = msg.models
+        } catch {
+          // non-JSON noise, ignore
+        }
+      })
+      proc.stderr?.on('data', (d: Buffer) => {
+        stderrTail = (stderrTail + d.toString()).slice(-2000)
+      })
+      proc.on('error', reject)
+      proc.on('close', (code) => {
+        if (code === 0 && models) resolve(models)
+        else reject(new Error(stderrTail.trim().split('\n').pop() || 'list-models failed'))
+      })
+    })
+    // Cache the result
+    await mkdir(pipelineEnvDir(), { recursive: true })
+    await writeFile(modelCachePath(), JSON.stringify({ models: result }, null, 2), 'utf-8')
+    return result
+  } catch {
+    // Fallback: return just the default model
+    return ['6_HP-Karaoke-UVR.pth']
+  }
 }
 
 /**

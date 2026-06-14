@@ -21,7 +21,8 @@ function defaults(): Settings {
     uiLanguage: '',
     llmBaseUrl: 'http://localhost:11434/v1',
     llmModel: '',
-    llmApiKey: ''
+    llmApiKey: '',
+    separationModel: '6_HP-Karaoke-UVR.pth'
   }
 }
 

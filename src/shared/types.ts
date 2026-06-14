@@ -106,6 +106,8 @@ export interface Settings {
   llmModel: string
   /** Bearer token for hosted endpoints; '' = none (local Ollama needs no key). */
   llmApiKey: string
+  /** UVR separation model filename for new imports (e.g. "6_HP-Karaoke-UVR.pth"). */
+  separationModel: string
 }
 
 /** Cleaned title/artist from metadata enrichment (R3.2). */
@@ -267,6 +269,8 @@ export interface SingrayApi {
     cancelInstall(): Promise<void>
     /** Subscribe to install progress events; returns an unsubscribe fn. */
     onInstallProgress(cb: (e: InstallEvent) => void): () => void
+    /** List available separation models from audio-separator's registry. */
+    listModels(force?: boolean): Promise<string[]>
   }
   llm: {
     /** Round-trips a tiny prompt through the configured endpoint; rejects with a readable message. */
