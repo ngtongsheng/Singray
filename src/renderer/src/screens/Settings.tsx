@@ -8,14 +8,16 @@ import {
   X,
   XCircle
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Settings as SettingsModel } from '../../../shared/types'
 import PipelineInstaller from '../components/PipelineInstaller'
 import Titlebar from '../components/Titlebar'
 import { Button, Container, Field, IconButton, Input, Select, Stack, Text } from '../components/ui'
+import { useAsync } from '../hooks/useAsync'
 import { useSettings } from '../hooks/useSettings'
 import { availableLocales, i18n, localeName, resolveLocale } from '../lib/i18n'
+import { stripIpcError } from '../lib/stripIpcError'
 
 /** Play a short sine tone on a specific output device ('' = system default). */
 async function playTestTone(deviceId: string, freq: number): Promise<void> {
@@ -49,12 +51,6 @@ interface Props {
 
 const TEST_URL = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
 
-type TestState =
-  | { kind: 'idle' }
-  | { kind: 'running' }
-  | { kind: 'ok'; detail: string }
-  | { kind: 'fail'; detail: string }
-
 /** Dropdown listing available UVR separation models, with a refresh button. */
 function SeparationModelSelect({
   value,
@@ -64,24 +60,15 @@ function SeparationModelSelect({
   onChange: (v: string) => void
 }): React.JSX.Element {
   const { t } = useTranslation()
-  const [models, setModels] = useState<string[] | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  const load = useCallback(async (force = false): Promise<void> => {
-    setLoading(true)
-    try {
-      const list = await window.singray.pipeline.listModels(force)
-      setModels(list)
-    } catch {
-      setModels((prev) => prev ?? ['6_HP-Karaoke-UVR.pth'])
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const req = useAsync((force: boolean) => window.singray.pipeline.listModels(force))
+  const { run } = req
+  const loading = req.loading
+  // Preserve last good list across a failed refresh; fall back only if we never loaded.
+  const models = req.data ?? (req.error ? ['6_HP-Karaoke-UVR.pth'] : null)
 
   useEffect(() => {
-    load()
-  }, [load])
+    void run(false)
+  }, [run])
 
   const valid = models?.includes(value) ?? false
 
@@ -105,7 +92,7 @@ function SeparationModelSelect({
       <IconButton
         variant="ghost"
         size="sm"
-        onClick={() => load(true)}
+        onClick={() => run(true)}
         disabled={loading}
         title={t('settings.modelRefresh')}
         className="shrink-0 text-text-dim hover:text-text"
@@ -119,8 +106,16 @@ function SeparationModelSelect({
 function Settings({ onBack }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const { settings, patch } = useSettings()
-  const [test, setTest] = useState<TestState>({ kind: 'idle' })
-  const [llmTest, setLlmTest] = useState<TestState>({ kind: 'idle' })
+  const pipelineTest = useAsync(async () => {
+    const started = Date.now()
+    const result = await window.singray.import.probe(TEST_URL)
+    const secs = ((Date.now() - started) / 1000).toFixed(1)
+    return t('settings.probedIn', { title: result.title, secs })
+  })
+  const llmTest = useAsync(async () => {
+    const r = await window.singray.llm.test()
+    return t('settings.llmOk', { reply: r.reply, secs: (r.ms / 1000).toFixed(1) })
+  })
   const [outputs, setOutputs] = useState<MediaDeviceInfo[]>([])
   const [toneBusy, setToneBusy] = useState<'monitor' | 'stream' | null>(null)
   const [toneError, setToneError] = useState<string | null>(null)
@@ -178,37 +173,6 @@ function Settings({ onBack }: Props): React.JSX.Element {
   const removeLanguage = (code: string): void => {
     if (!settings) return
     void patch({ languages: settings.languages.filter((l) => l.code !== code) })
-  }
-
-  const testPipeline = async (): Promise<void> => {
-    setTest({ kind: 'running' })
-    const started = Date.now()
-    try {
-      const result = await window.singray.import.probe(TEST_URL)
-      const secs = ((Date.now() - started) / 1000).toFixed(1)
-      setTest({ kind: 'ok', detail: t('settings.probedIn', { title: result.title, secs }) })
-    } catch (err) {
-      setTest({
-        kind: 'fail',
-        detail: (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
-      })
-    }
-  }
-
-  const testLlm = async (): Promise<void> => {
-    setLlmTest({ kind: 'running' })
-    try {
-      const r = await window.singray.llm.test()
-      setLlmTest({
-        kind: 'ok',
-        detail: t('settings.llmOk', { reply: r.reply, secs: (r.ms / 1000).toFixed(1) })
-      })
-    } catch (err) {
-      setLlmTest({
-        kind: 'fail',
-        detail: (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
-      })
-    }
   }
 
   const setUiLanguage = (v: string): void => {
@@ -340,23 +304,23 @@ function Settings({ onBack }: Props): React.JSX.Element {
                   />
                   <Button
                     size="md"
-                    onClick={testPipeline}
-                    disabled={test.kind === 'running'}
+                    onClick={() => pipelineTest.run()}
+                    disabled={pipelineTest.loading}
                     className="shrink-0"
                   >
-                    {test.kind === 'running' && <Loader2 className="size-4 animate-spin" />}
+                    {pipelineTest.loading && <Loader2 className="size-4 animate-spin" />}
                     {t('settings.testPipeline')}
                   </Button>
                 </Stack>
               </Field>
-              {test.kind === 'ok' && (
+              {!pipelineTest.loading && !pipelineTest.error && pipelineTest.data && (
                 <span className="-mt-2 flex items-center gap-1.5 text-success text-xs">
-                  <CheckCircle2 className="size-3.5" /> {test.detail}
+                  <CheckCircle2 className="size-3.5" /> {pipelineTest.data}
                 </span>
               )}
-              {test.kind === 'fail' && (
+              {!pipelineTest.loading && pipelineTest.error && (
                 <Text variant="error" className="-mt-2 flex items-center gap-1.5">
-                  <XCircle className="size-3.5" /> {test.detail}
+                  <XCircle className="size-3.5" /> {stripIpcError(pipelineTest.error)}
                 </Text>
               )}
               <Field label={t('settings.separationModel')} hint={t('settings.separationModelHelp')}>
@@ -403,12 +367,12 @@ function Settings({ onBack }: Props): React.JSX.Element {
                   />
                   <Button
                     size="md"
-                    onClick={testLlm}
-                    disabled={llmTest.kind === 'running'}
+                    onClick={() => llmTest.run()}
+                    disabled={llmTest.loading}
                     title={t('settings.llmTestTip')}
                     className="shrink-0"
                   >
-                    {llmTest.kind === 'running' && <Loader2 className="size-4 animate-spin" />}
+                    {llmTest.loading && <Loader2 className="size-4 animate-spin" />}
                     {t('settings.test')}
                   </Button>
                 </Stack>
@@ -424,14 +388,14 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 />
               </Field>
               <Text variant="hint">{t('settings.llmHelp')}</Text>
-              {llmTest.kind === 'ok' && (
+              {!llmTest.loading && !llmTest.error && llmTest.data && (
                 <span className="flex items-center gap-1.5 text-success text-xs">
-                  <CheckCircle2 className="size-3.5" /> {llmTest.detail}
+                  <CheckCircle2 className="size-3.5" /> {llmTest.data}
                 </span>
               )}
-              {llmTest.kind === 'fail' && (
+              {!llmTest.loading && llmTest.error && (
                 <Text variant="error" className="flex items-center gap-1.5">
-                  <XCircle className="size-3.5" /> {llmTest.detail}
+                  <XCircle className="size-3.5" /> {stripIpcError(llmTest.error)}
                 </Text>
               )}
             </Stack>

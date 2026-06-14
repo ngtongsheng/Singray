@@ -8,7 +8,9 @@ import {
   type ProbeResult,
   type SearchResult
 } from '../../../shared/types'
+import { useAsync } from '../hooks/useAsync'
 import { detectLanguage } from '../lib/detectLanguage'
+import { stripIpcError } from '../lib/stripIpcError'
 import { Button, Dialog, Field, IconButton, Input, Select, Stack, Tabs, Text } from './ui'
 import { cx } from './ui/cx'
 
@@ -38,9 +40,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
   const [languages, setLanguages] = useState<LanguageDef[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [query, setQuery] = useState('')
-  const [searching, setSearching] = useState(false)
-  const [searchError, setSearchError] = useState<string | null>(null)
-  const [results, setResults] = useState<SearchResult[] | null>(null)
+  const search = useAsync((q: string) => window.singray.import.search(q), { resetOnRun: true })
   const [mode, setMode] = useState<SourceMode>('youtube')
   const [dragOver, setDragOver] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -51,26 +51,14 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
     window.singray.settings.get().then((s) => setLanguages(s.languages))
   }, [])
 
-  const runSearch = async (): Promise<void> => {
+  const runSearch = (): void => {
     const q = query.trim()
-    if (!q || searching) return
-    setSearching(true)
-    setSearchError(null)
-    setResults(null)
-    try {
-      setResults(await window.singray.import.search(q))
-    } catch (err) {
-      setSearchError(
-        (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
-      )
-    } finally {
-      setSearching(false)
-    }
+    if (!q || search.loading) return
+    void search.run(q)
   }
 
   const pickResult = (r: SearchResult): void => {
-    setResults(null)
-    setSearchError(null)
+    search.reset()
     setUrl(r.url)
   }
 
@@ -92,8 +80,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
   /** Shared local-file flow (R3.7 picker, ADD2 drop): probe the file → same prefill flow. */
   const loadFile = async (path: string): Promise<void> => {
     setUrl('')
-    setResults(null)
-    setSearchError(null)
+    search.reset()
     setProbeError(null)
     setFilePath(path)
     const seq = ++probeSeq.current
@@ -208,32 +195,32 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                     onKeyDown={(e) => e.key === 'Enter' && runSearch()}
                     placeholder={t('import.searchPlaceholder')}
                     trailing={
-                      searching && <Loader2 className="size-4 animate-spin text-text-dim" />
+                      search.loading && <Loader2 className="size-4 animate-spin text-text-dim" />
                     }
                   />
                   <IconButton
                     aria-label={t('import.searchLabel')}
                     onClick={runSearch}
-                    disabled={!query.trim() || searching}
+                    disabled={!query.trim() || search.loading}
                   >
                     <Search className="size-4" />
                   </IconButton>
                 </Stack>
-                {searchError && (
+                {search.error && (
                   <Text variant="error" className="mt-1">
-                    {searchError}
+                    {stripIpcError(search.error)}
                   </Text>
                 )}
               </Field>
 
-              {results && (
+              {search.data && (
                 <ul className="max-h-64 divide-y divide-border overflow-y-auto rounded-card border border-border">
-                  {results.length === 0 && (
+                  {search.data.length === 0 && (
                     <li className="px-3 py-4 text-center">
                       <Text variant="hint">{t('import.noResults')}</Text>
                     </li>
                   )}
-                  {results.map((r) => (
+                  {search.data.map((r) => (
                     <li key={r.url}>
                       <Button
                         variant="bare"
