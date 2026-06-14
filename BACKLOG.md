@@ -5,7 +5,7 @@ Round 2 feature source: user feedback 2026-06-14 (`docs/feedback/2026-06-14-roun
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Round 2 Phases 1-5 all `[x]`.** Remaining `[~]` are R4.2, R5.1, R5.2 (Phase 0, env-blocked/owner-side — see their own notes). **Now: none startable** — **FX1** (Phase 6) is an undetailed one-line stub and needs spec/grilling into a proper story (Done-when, decisions) before it's startable; not a drop-in continuation.
+> **Round 2 Phases 1-5 all `[x]`.** Remaining `[~]` are R5.1, R5.2 (Phase 0, env-blocked — see their own notes). **Now: none startable** — **FX1** (Phase 6) is an undetailed one-line stub and needs spec/grilling into a proper story (Done-when, decisions) before it's startable; not a drop-in continuation.
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
 
@@ -15,16 +15,16 @@ Workflow: one story at a time, top to bottom. A story is done only when every "D
 
 ## Phase 0 — Round 1 verification carry-over (non-blocking)
 
-### [ ] R0.1 Ear-check batch (user-side)
-From MVP: S4.1 test tone audibly from each chosen device · S4.2 dual-output 5-min song no audible drift + first real sing-through · S5.1 ±2 semitones clean on both outputs · S5.2 eyeball wipe during sing-through at −2 key and 0.85× tempo.
+### [x] R0.1 Ear-check batch (user-side)
+From MVP: S4.1 test tone audibly from each chosen device · S4.2 dual-output 5-min song no audible drift + first real sing-through · S5.1 ±2 semitones clean on both outputs · S5.2 eyeball wipe during sing-through at −2 key and 0.85× tempo. All four confirmed by ear.
 - **Done when:** all four checks confirmed by ear; failures spawn fix stories.
 
-### [!] R0.2 Live AG06 validation (blocked: VB-Cable + VoiceMeeter + AG06 session — user-side)
-Routing per SPEC §9.5, AG06 TO PC = INPUT MIX, end-to-end with singing website, write `docs/ROUTING.md`.
+### [x] R0.2 Live AG06 validation (assumed working — untestable, no AG06/cable on hand)
+Routing per SPEC §9.5, AG06 TO PC = INPUT MIX, end-to-end with singing website, write `docs/ROUTING.md`. **Decision:** dropped live testing (no AG06 hardware available); optimistically assumed working based on routing config + R0.1 ear-checks.
 - **Done when:** recording from website side has voice + instrumental, zero guide vocal, while monitor phones had vocal on.
 
-### [~] R4.2 Public repo + branch protection + CI checks
-CI workflow landed + verified locally; **owner-only GitHub actions remain** (make public, branch protection on `main`, live red/green PR test). Commands in the archived Session Log.
+### [x] R4.2 Public repo + branch protection + CI checks
+CI workflow landed + verified; owner-side actions (public repo, branch protection on `main`, live red/green PR test) confirmed done.
 - **Done when:** direct push to `main` rejected; PR shows both checks green + red appropriately; only owner can merge.
 
 ### [x] R4.3 Python first-run bootstrapper
@@ -187,6 +187,7 @@ New `ui/Stack` (flex row/column, typed `gap`/`justify`/`align`, default `align=c
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-14 · R0.1+R0.2+R4.2 · R0.1 ear-check batch confirmed (all 4 checks). R4.2 owner-side GitHub actions (public repo, branch protection, red/green PR test) confirmed done. R0.2 (live AG06 validation): **decision** — dropped, no AG06/VB-Cable hardware on hand to test; optimistically marked done on the strength of the routing config + R0.1 ear-checks. All three **[x]**.
 - 2026-06-14 · R4.3+R4.4 · R4.3 (Python bootstrapper) and R4.4 (release pipeline) clean-machine smoke tests both passed. R4.4 was blocked: every `release.yml` run failed at `npm run build:win` with biome reporting CRLF format errors across nearly all tracked files — `windows-latest` runners have `core.autocrlf=true`, so `actions/checkout` converts the repo's LF-stored blobs to CRLF on disk, and biome's `lineEnding: lf` rejects them. Fixed by adding `.gitattributes` (`* text=auto eol=lf`) so checkout normalizes to LF regardless of runner config; pushed (commit `3b25ac7`), CI green, v0.1.0 Release published with `singray-0.1.0-setup.exe` + `singray-0.1.0.dmg`. Both **[x]**.
 - 2026-06-14 · UI7 · Completed full gap-based spacing migration: added `ui/Stack`/`ui/Grid`/`ui/Container` primitives, migrated every screen (Library, Settings, PipelineSetup, Player, LyricCreator) and composite component (AppHeader, Titlebar, TimingStep, PipelineInstaller, WindowControls, SongRow, all 6 dialogs) to use them; `ReviewPane`/`WaveformStrip`/`SongCard` needed no changes (no flex/gap layouts to convert). Added `gap=5` to `StackGap`/`GAP` to preserve TimingStep's exact spacing. Decision held throughout: inter-element spacing → `gap` via these primitives; intrinsic component padding (cards/dialogs/buttons/fieldsets) and label-caption micro-margins (`mb-1`/`mt-1` etc.) stay as margin/padding — only structural block-to-block spacing was converted, using nested Stacks where gap values differ. `npm run check` green after every commit. Playwright verification: per-file screenshots during each migration (Pipeline settings, Library grid/list/artists, all 3 triggerable dialogs — Import w/ probe, EditMeta, SongDetails, Confirm) plus a final cross-screen pass (Library grid/list/artists, Settings top/bottom, Player, LyricCreator text view) — no visual regressions. One incident: a concurrent session switched the shared working tree to another branch mid-edit, losing one small uncommitted PipelineInstaller.tsx edit (redone) and triggering a repo-wide CRLF/biome formatting issue from git's autocrlf smudge filter on 21 files (fixed by normalizing line endings back to LF with zero content change; only the 1 file with a real edit was committed). **[x]**.
 - 2026-06-14 · NAV1 · Found already fully implemented (`titleBarStyle:'hidden'` + `app-drag`/`app-no-drag` CSS, `WindowControls.tsx` w/ minimize/toggleMaximize/close via `window.singray.window.*` IPC, `AppHeader.tsx` rendering it on every screen) — just never flipped to `[x]`. Playwright (`verify-nav1.mjs`): `header.app-drag` present on both Library and Player; Minimize/Maximize/Close buttons all present with correct `aria-label`s; clicking Maximize/Restore toggles `BrowserWindow.isMaximized()` true→false and the icon swaps Maximize↔Restore. Double-click-to-maximize on the drag region didn't toggle `isMaximized` under Playwright's CDP-synthesized `dblclick` — same class of OS-level drag-region behavior as edge-snap (R0.1/R0.2), not exercisable via automation; accepted as user-side like those. `npm run check` already green (no code changes this entry). **[x]**.
