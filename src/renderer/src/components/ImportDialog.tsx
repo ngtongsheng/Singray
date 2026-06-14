@@ -199,6 +199,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                     }
                   />
                   <IconButton
+                    size="md"
                     aria-label={t('import.searchLabel')}
                     onClick={runSearch}
                     disabled={!query.trim() || search.loading}
