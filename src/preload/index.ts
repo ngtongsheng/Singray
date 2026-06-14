@@ -79,6 +79,7 @@ const api: SingrayApi = {
     toggleMaximize: () => ipcRenderer.invoke('window:toggleMaximize') as Promise<void>,
     close: () => ipcRenderer.invoke('window:close') as Promise<void>,
     isMaximized: () => ipcRenderer.invoke('window:isMaximized') as Promise<boolean>,
+    openExternal: (url) => ipcRenderer.invoke('window:openExternal', url) as Promise<void>,
     onMaximizedChange: (cb) => {
       const listener = (_e: unknown, maximized: boolean): void => cb(maximized)
       ipcRenderer.on('window:maximized-changed', listener)

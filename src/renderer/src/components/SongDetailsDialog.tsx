@@ -1,3 +1,4 @@
+import { ExternalLink } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LanguageDef, SongListItem } from '../../../shared/types'
@@ -73,26 +74,23 @@ function SongDetailsDialog({ song, onClose, onArtistClick }: Props): React.JSX.E
             />
             <Row
               label={t('details.source')}
-              value={song.youtubeUrl || song.sourceFile || t('common.unknown')}
+              value={
+                song.youtubeUrl ? (
+                  <button
+                    type="button"
+                    title={song.youtubeUrl}
+                    onClick={() => window.singray.window.openExternal(song.youtubeUrl)}
+                    className="inline-flex items-center gap-1 text-accent hover:underline"
+                  >
+                    YouTube
+                    <ExternalLink className="size-3" />
+                  </button>
+                ) : (
+                  song.sourceFile || t('common.unknown')
+                )
+              }
             />
           </Stack>
-
-          <div>
-            <Text variant="hint" className="mb-1">
-              {t('details.history')}
-            </Text>
-            {song.sings.length === 0 ? (
-              <p className="text-sm text-text-dim">{t('details.noHistory')}</p>
-            ) : (
-              <ul className="max-h-32 overflow-y-auto text-sm">
-                {[...song.sings].reverse().map((iso) => (
-                  <li key={iso} className="py-0.5 text-text-dim">
-                    {fmtDate(iso)}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
         </Stack>
 
         <Stack justify="end">

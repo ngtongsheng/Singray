@@ -293,6 +293,8 @@ export interface SingrayApi {
     close(): void
     isMaximized(): Promise<boolean>
     onMaximizedChange(cb: (maximized: boolean) => void): () => void
+    /** Open a URL in the system default browser (R3.SNG4). */
+    openExternal(url: string): void
   }
   onLibraryChanged(cb: () => void): () => void
 }

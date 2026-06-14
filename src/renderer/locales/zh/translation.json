@@ -133,9 +133,7 @@
     "added": "添加于",
     "sungCount": "演唱次数",
     "sungCount_value_other": "{{count}} 次",
-    "source": "来源",
-    "history": "演唱记录",
-    "noHistory": "尚未演唱"
+    "source": "来源"
   },
   "creator": {
     "subtitle": "{{artist}} · 歌词",

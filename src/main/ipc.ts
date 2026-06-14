@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, ipcMain } from 'electron'
+import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import {
   type ImportRequest,
   type InstallEvent,
@@ -89,4 +89,5 @@ export function registerIpc(): void {
     'window:isMaximized',
     (e) => BrowserWindow.fromWebContents(e.sender)?.isMaximized() ?? false
   )
+  ipcMain.handle('window:openExternal', (_e, url: string) => shell.openExternal(url))
 }
