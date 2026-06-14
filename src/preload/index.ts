@@ -60,7 +60,8 @@ const api: SingrayApi = {
       const listener = (_e: unknown, ev: InstallEvent): void => cb(ev)
       ipcRenderer.on('pipeline:install:progress', listener)
       return () => ipcRenderer.removeListener('pipeline:install:progress', listener)
-    }
+    },
+    listModels: (force) => ipcRenderer.invoke('pipeline:listModels', force) as Promise<string[]>
   },
   llm: {
     test: () => ipcRenderer.invoke('llm:test') as Promise<LlmTestResult>,

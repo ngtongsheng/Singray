@@ -66,7 +66,7 @@ export async function startImport(req: ImportRequest): Promise<string> {
     lastPlayedAt: null,
     sings: [],
     sourceFile: req.filePath || null,
-    separationModel: '6_HP-Karaoke-UVR',
+    separationModel: getSettings().separationModel || '6_HP-Karaoke-UVR.pth',
     enrichment: null
   }
   await mkdir(songDir(songId), { recursive: true })
@@ -111,9 +111,21 @@ function pump(): void {
 function run(job: Job): void {
   const dir = songDir(job.songId)
   const source = job.filePath ? ['--file', job.filePath] : ['--url', job.url]
+  const settings = getSettings()
+  const model = settings.separationModel || '6_HP-Karaoke-UVR.pth'
   const proc = spawn(
     effectivePythonPath(),
-    [pipelineScript(), 'process', ...source, '--out', dir, '--format', getSettings().stemFormat],
+    [
+      pipelineScript(),
+      'process',
+      ...source,
+      '--out',
+      dir,
+      '--model',
+      model,
+      '--format',
+      settings.stemFormat
+    ],
     pipelineSpawnOptions()
   )
   activeProc = proc
