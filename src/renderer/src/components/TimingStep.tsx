@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { Lyrics } from '../../../shared/types'
 import { inferEnds } from '../lib/inferEnds'
 import ReviewPane from './ReviewPane'
-import { IconButton, Slider, Stack } from './ui'
+import { Button, IconButton, Slider, Stack } from './ui'
 import WaveformStrip from './WaveformStrip'
 
 interface Props {
@@ -343,7 +343,7 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
         <ReviewPane lyrics={lyrics} audioRef={audioRef} onSeek={seekTo} />
       ) : (
         <>
-          <Stack justify="center" className="min-h-28 px-6 py-6">
+          <Stack justify="center" className="min-h-28 px-6 py-6 border-border border-b">
             <p className="max-w-full text-center font-lyric text-4xl leading-snug">
               {lyrics.lines[currentLine]?.units.map((u, ui) => {
                 const idx = (lineStartIdx[currentLine] ?? 0) + ui
@@ -378,10 +378,10 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
                   · · ·
                 </div>
               ) : (
-                <button
+                <Button
                   // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable while timing
                   key={li}
-                  type="button"
+                  variant="bare"
                   ref={(el) => {
                     if (el) lineRefs.current.set(li, el)
                     else lineRefs.current.delete(li)
@@ -403,12 +403,31 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
                   <span className={li === currentLine && !done ? 'text-lyric-active' : ''}>
                     {line.text}
                   </span>
-                </button>
+                </Button>
               )
             )}
           </Stack>
         </>
       )}
+      {/* Progress strip (below shortcuts; height-matched, text bottom-aligned) */}{' '}
+      <div className="relative h-8 border-border border-t bg-surface px-6">
+        <div
+          className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
+          style={{ width: `${progressPct}%` }}
+        />
+        <Stack gap={2} align="center" className="h-full text-xs">
+          {done ? (
+            <span className="font-medium text-success">{t('timing.done')}</span>
+          ) : (
+            <>
+              <span className="text-text-dim">
+                {stamps.length}/{flatUnits.length}
+              </span>
+              <span className="font-medium text-accent">{progressPct}%</span>
+            </>
+          )}
+        </Stack>
+      </div>
       {/* Keyboard shortcuts (permanent — no dismiss button) */}
       <Stack className="border-border border-t bg-surface px-6 py-2 text-text-dim text-xs">
         <Stack gap={5}>
@@ -428,25 +447,6 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
           <Hint k="↑ ↓" label={t('timing.hintSpeed')} />
         </Stack>
       </Stack>
-      {/* Progress strip (below shortcuts; height-matched, text bottom-aligned) */}{' '}
-      <div className="relative h-8 border-border border-t bg-surface px-6">
-        <div
-          className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
-          style={{ width: `${progressPct}%` }}
-        />
-        <Stack gap={2} align="end" className="h-full text-xs">
-          {done ? (
-            <span className="font-medium text-success">{t('timing.done')}</span>
-          ) : (
-            <>
-              <span className="text-text-dim">
-                {stamps.length}/{flatUnits.length}
-              </span>
-              <span className="font-medium text-accent">{progressPct}%</span>
-            </>
-          )}
-        </Stack>
-      </div>
     </Stack>
   )
 }

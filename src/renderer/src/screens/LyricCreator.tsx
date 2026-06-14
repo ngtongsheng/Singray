@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  ArrowRight,
   Eye,
   FileDown,
   FileText,
@@ -19,6 +18,7 @@ import CleanLyricsDialog from '../components/CleanLyricsDialog'
 import ConfirmDialog from '../components/ConfirmDialog'
 import LrclibFinderDialog from '../components/LrclibFinderDialog'
 import TimingStep from '../components/TimingStep'
+import Titlebar from '../components/Titlebar'
 import { Button, IconButton, Segmented, Stack, Text, useTabCycle } from '../components/ui'
 import { inferEnds } from '../lib/inferEnds'
 import { type BuildResult, buildLyrics, lyricsToText } from '../lib/lyricsText'
@@ -190,15 +190,14 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
 
   return (
     <div className="relative h-full">
-      {/* Content starts below the floating AppHeader (pt-19) */}
-      <Stack direction="column" gap={0} className="absolute inset-0 pt-19">
-        {/* Row 1: Header — left: back + title, right: Segmented + Continue */}
-        <Stack as="header" justify="between" className="app-no-drag border-border border-b px-6">
+      {/* Row 1: Floating page header (Titlebar) — back + title (left), Segmented (right) */}
+      <Titlebar>
+        <Stack justify="between" className="w-full">
           <Stack gap={2} align="center" className="min-w-0">
             <IconButton
               onClick={onBack}
               title={t('common.back')}
-              className="shrink-0 text-text-dim hover:text-text"
+              className="app-no-drag shrink-0 text-text-dim hover:text-text"
             >
               <ArrowLeft className="size-4" strokeWidth={1.5} />
             </IconButton>
@@ -211,7 +210,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
               </Text>
             </Stack>
           </Stack>
-          <Stack gap={3} align="center" className="shrink-0">
+          <Stack gap={0} align="center" className="app-no-drag shrink-0">
             <Segmented
               value={creatorStep}
               onChange={setCreatorStep}
@@ -242,18 +241,12 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
                 }
               ]}
             />
-            {step === 'text' && (
-              <Button
-                variant="primary"
-                onClick={onContinue}
-                disabled={!loaded || parsedEmpty(text) || aligning}
-              >
-                {t('creator.continue')} <ArrowRight className="size-4" strokeWidth={2} />
-              </Button>
-            )}
           </Stack>
         </Stack>
+      </Titlebar>
 
+      {/* Content area (pt-19 clears the floating AppHeader + Titlebar) */}
+      <Stack direction="column" gap={0} className="absolute inset-0 pt-19">
         {/* Row 2: Action buttons (text step only) */}
         {step === 'text' && (
           <div className="border-border border-b px-6 py-2">
@@ -328,31 +321,31 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
         )}
 
         {/* Row 3 + 4: Content area (textarea + hint, or TimingStep) */}
-        <div className="flex min-h-0 flex-1 flex-col">
-          {step === 'text' ? (
-            <>
+        {step === 'text' ? (
+          <>
+            <Stack direction="column" gap={0} className="flex-1">
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 disabled={!loaded}
                 spellCheck={false}
                 placeholder={t('creator.placeholder')}
-                className="min-h-0 flex-1 resize-none overflow-y-auto bg-surface p-6 font-lyric text-base leading-7 placeholder:text-text-dim/40"
+                className="outline-none min-h-0 flex-1 resize-none overflow-y-auto bg-surface p-6 font-lyric text-base leading-7 placeholder:text-text-dim/40"
               />
-              {/* Row 4: Helper text under textarea */}
-              <div className="border-border border-t px-6 py-2">
-                <Text variant="hint">
-                  {t('creator.hint')}
-                  {hasTiming && <span className="text-accent-soft">{t('creator.hintTimed')}</span>}
-                </Text>
-              </div>
-            </>
-          ) : (
-            saved && (
-              <TimingStep songId={song.id} lyrics={saved} onChange={setSaved} review={review} />
-            )
-          )}
-        </div>
+            </Stack>
+            {/* Row 4: Helper text under textarea */}
+            <div className="border-border border-t px-6 py-2">
+              <Text variant="hint">
+                {t('creator.hint')}
+                {hasTiming && <span className="text-accent-soft">{t('creator.hintTimed')}</span>}
+              </Text>
+            </div>
+          </>
+        ) : (
+          saved && (
+            <TimingStep songId={song.id} lyrics={saved} onChange={setSaved} review={review} />
+          )
+        )}
       </Stack>
 
       <AnimatePresence>
