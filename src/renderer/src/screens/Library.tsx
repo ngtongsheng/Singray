@@ -181,40 +181,6 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
             />
           </Stack>
           <Stack gap={3}>
-            {section === 'songs' && (
-              <>
-                <Segmented
-                  className="app-no-drag"
-                  value={view}
-                  onChange={setViewMode}
-                  options={[
-                    {
-                      value: 'grid',
-                      label: <LayoutGrid className="size-4" strokeWidth={1.5} />,
-                      title: t('library.viewGrid')
-                    },
-                    {
-                      value: 'list',
-                      label: <List className="size-4" strokeWidth={1.5} />,
-                      title: t('library.viewList')
-                    }
-                  ]}
-                />
-                <div className="app-no-drag">
-                  <Select
-                    uiSize="sm"
-                    value={sort}
-                    onChange={(v) => setSort(v as SortMode)}
-                    title={t('library.sort')}
-                    options={[
-                      { value: 'added', label: t('library.sortAdded') },
-                      { value: 'mostSung', label: t('library.sortMostSung') },
-                      { value: 'recentSung', label: t('library.sortRecentSung') }
-                    ]}
-                  />
-                </div>
-              </>
-            )}
             <Button variant="primary" onClick={() => setShowImport(true)} className="app-no-drag">
               <Plus className="size-4" strokeWidth={2} /> {t('library.addSong')}
             </Button>
@@ -257,6 +223,36 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
             <Chip active={needsLyricsOnly} onClick={() => setNeedsLyricsOnly(!needsLyricsOnly)}>
               <Type className="size-3.5" strokeWidth={1.5} /> {t('library.needsLyrics')}
             </Chip>
+            <Segmented
+              className="ml-auto app-no-drag"
+              value={view}
+              onChange={setViewMode}
+              options={[
+                {
+                  value: 'grid',
+                  label: <LayoutGrid className="size-4" strokeWidth={1.5} />,
+                  title: t('library.viewGrid')
+                },
+                {
+                  value: 'list',
+                  label: <List className="size-4" strokeWidth={1.5} />,
+                  title: t('library.viewList')
+                }
+              ]}
+            />
+            <div className="app-no-drag">
+              <Select
+                uiSize="sm"
+                value={sort}
+                onChange={(v) => setSort(v as SortMode)}
+                title={t('library.sort')}
+                options={[
+                  { value: 'added', label: t('library.sortAdded') },
+                  { value: 'mostSung', label: t('library.sortMostSung') },
+                  { value: 'recentSung', label: t('library.sortRecentSung') }
+                ]}
+              />
+            </div>
           </Stack>
         )}
 
