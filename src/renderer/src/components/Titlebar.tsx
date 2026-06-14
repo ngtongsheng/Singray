@@ -7,7 +7,7 @@ import type { ReactNode } from 'react'
  */
 function Titlebar({ children }: { children?: ReactNode }): React.JSX.Element {
   return (
-    <header className="app-drag absolute inset-x-0 top-9 z-30 flex h-10 items-center gap-3 px-4">
+    <header className="app-drag absolute inset-x-0 top-9 z-30 flex h-10 items-center gap-3 px-6">
       {children}
     </header>
   )

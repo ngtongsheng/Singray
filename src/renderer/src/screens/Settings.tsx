@@ -166,7 +166,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
       </Titlebar>
 
       <div className="absolute inset-0 overflow-y-auto px-6 pt-19 pb-6">
-        <div className="mx-auto flex max-w-xl flex-col gap-8">
+        <div className="mx-auto flex max-w-xl flex-col gap-6">
           <fieldset className="rounded-card border border-border p-4">
             <legend className="px-1 font-medium text-sm">{t('settings.interface')}</legend>
             <label className="block">

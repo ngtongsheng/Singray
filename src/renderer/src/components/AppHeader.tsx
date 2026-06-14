@@ -10,7 +10,7 @@ function AppHeader(): React.JSX.Element {
     <>
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-19 bg-gradient-to-b from-bg via-bg/85 to-transparent" />
       <header className="app-drag absolute inset-x-0 top-0 z-30 flex h-9 items-center">
-        <div className="flex items-center gap-2 pl-4">
+        <div className="flex items-center gap-2 pl-6">
           <Mic2 className="size-4 text-accent" strokeWidth={1.5} />
           <span className="font-semibold text-sm">Singray</span>
         </div>

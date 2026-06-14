@@ -275,7 +275,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
 
       <div className="absolute inset-0 flex flex-col pt-19">
         <Segmented
-          className="mx-6 mb-3 self-start"
+          className="mx-6 mb-6 self-start"
           value={creatorStep}
           onChange={setCreatorStep}
           options={[
