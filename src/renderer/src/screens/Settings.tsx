@@ -1,5 +1,14 @@
-import { ArrowLeft, CheckCircle2, Loader2, Plus, Volume2, X, XCircle } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Volume2,
+  X,
+  XCircle
+} from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Settings as SettingsModel } from '../../../shared/types'
 import PipelineInstaller from '../components/PipelineInstaller'
@@ -44,6 +53,67 @@ type TestState =
   | { kind: 'running' }
   | { kind: 'ok'; detail: string }
   | { kind: 'fail'; detail: string }
+
+/** Dropdown listing available UVR separation models, with a refresh button. */
+function SeparationModelSelect({
+  value,
+  onChange
+}: {
+  value: string
+  onChange: (v: string) => void
+}): React.JSX.Element {
+  const { t } = useTranslation()
+  const [models, setModels] = useState<string[] | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(async (force = false): Promise<void> => {
+    setLoading(true)
+    try {
+      const list = await window.singray.pipeline.listModels(force)
+      setModels(list)
+    } catch {
+      setModels((prev) => prev ?? ['6_HP-Karaoke-UVR.pth'])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const valid = models?.includes(value) ?? false
+
+  return (
+    <Stack gap={2}>
+      <Select
+        value={valid ? value : ''}
+        onChange={onChange}
+        options={
+          loading
+            ? [{ value: '', label: t('common.loading') }]
+            : [
+                ...(models ?? []).map((m) => ({ value: m, label: m })),
+                ...(!valid && value
+                  ? [{ value, label: `${value} ${t('settings.modelCustom')}` }]
+                  : [])
+              ]
+        }
+        className="flex-1"
+      />
+      <IconButton
+        variant="ghost"
+        size="sm"
+        onClick={() => load(true)}
+        disabled={loading}
+        title={t('settings.modelRefresh')}
+        className="shrink-0 text-text-dim hover:text-text"
+      >
+        <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={1.5} />
+      </IconButton>
+    </Stack>
+  )
+}
 
 function Settings({ onBack }: Props): React.JSX.Element {
   const { t } = useTranslation()
@@ -301,6 +371,18 @@ function Settings({ onBack }: Props): React.JSX.Element {
                   </span>
                 )}
               </label>
+              <div className="block">
+                <span className="mb-1 block text-text-dim text-xs">
+                  {t('settings.separationModel')}
+                </span>
+                <SeparationModelSelect
+                  value={settings.separationModel || '6_HP-Karaoke-UVR.pth'}
+                  onChange={(v) => patch({ separationModel: v })}
+                />
+                <span className="mt-1 block text-text-dim text-xs">
+                  {t('settings.separationModelHelp')}
+                </span>
+              </div>
               <label className="block">
                 <span className="mb-1 block text-text-dim text-xs">{t('settings.stemFormat')}</span>
                 <Select

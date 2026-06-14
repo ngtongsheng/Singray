@@ -15,7 +15,7 @@ import { cancelImport, retryImport, startImport } from './importQueue'
 import { deleteSong, getLyrics, listSongs, openSongFolder, saveLyrics, updateMeta } from './library'
 import { testLlm } from './llm'
 import { findLyrics } from './lyricsFinder'
-import { alignLyrics, probe, probeFile, searchYoutube } from './pipeline'
+import { alignLyrics, listPipelineModels, probe, probeFile, searchYoutube } from './pipeline'
 import { getSettings, setSettings } from './settings'
 
 /** Registers all IPC handlers (SPEC §8). */
@@ -65,6 +65,8 @@ export function registerIpc(): void {
   ipcMain.handle('import:search', (_e, query: string) => searchYoutube(query))
   ipcMain.handle('import:start', (_e, req: ImportRequest) => startImport(req))
   ipcMain.handle('import:retry', (_e, id: string) => retryImport(id))
+
+  ipcMain.handle('pipeline:listModels', (_e, force?: boolean) => listPipelineModels(force ?? false))
 
   ipcMain.handle('pipeline:status', () => pipelineStatus())
   ipcMain.handle('pipeline:install', (e) => {

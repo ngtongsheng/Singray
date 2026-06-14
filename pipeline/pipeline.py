@@ -469,6 +469,50 @@ def cmd_align(args: argparse.Namespace) -> int:
         return 1
 
 
+def cmd_list_models(args: argparse.Namespace) -> int:
+    """List available separation models from audio-separator's registry.
+
+    Emits {"stage": "done", "models": ["name1.pth", "name2.onnx", ...]}.
+    Falls back to DEFAULT_MODEL when the CLI tool is unreachable.
+    """
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-m", "audio_separator", "--list_models"]
+            + (["--list_filter", args.filter] if args.filter else [])
+            + ["--list_limit", str(args.limit)],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except Exception:
+        emit({"stage": "done", "models": [DEFAULT_MODEL]})
+        return 0
+
+    models: list[str] = []
+    for line in (proc.stdout or "").split("\n"):
+        line = line.strip()
+        for ext in (".pth", ".onnx", ".ckpt"):
+            if ext in line:
+                parts = line.split()
+                if parts and parts[0] not in models:
+                    models.append(parts[0])
+                break
+    models = models or [DEFAULT_MODEL]
+    emit({"stage": "done", "models": models})
+    return 0
+
+
+def cmd_clear_models(args: argparse.Namespace) -> int:
+    """Remove all downloaded models from the models directory."""
+    import shutil
+
+    if MODELS_DIR.exists():
+        shutil.rmtree(MODELS_DIR)
+        MODELS_DIR.mkdir(exist_ok=True)
+    emit({"stage": "done", "message": "models cleared"})
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="pipeline",
@@ -499,6 +543,14 @@ def main() -> int:
     align.add_argument("--song", required=True, help="song directory (vocals.m4a + meta.json)")
     align.add_argument("--text", required=True, help="path to a UTF-8 lyric text file")
     align.set_defaults(func=cmd_align)
+
+    list_m = sub.add_parser("list-models", help="list available separation model filenames")
+    list_m.add_argument("--filter", default="", help="optional model filter (vocals, inst, etc.)")
+    list_m.add_argument("--limit", type=int, default=50, help="max models to list")
+    list_m.set_defaults(func=cmd_list_models)
+
+    clear_m = sub.add_parser("clear-models", help="delete all downloaded models")
+    clear_m.set_defaults(func=cmd_clear_models)
 
     args = parser.parse_args()
     return int(args.func(args))
