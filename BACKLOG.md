@@ -5,7 +5,7 @@ Round 2 feature source: user feedback 2026-06-14 (`docs/feedback/2026-06-14-roun
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Round 2 Phases 1-5 all `[x]`.** Remaining `[~]` are R5.1, R5.2 (Phase 0, env-blocked — see their own notes). **Now: none startable** — **FX1** (Phase 6) is an undetailed one-line stub and needs spec/grilling into a proper story (Done-when, decisions) before it's startable; not a drop-in continuation.
+> **Round 2 Phases 0-5 all `[x]`.** Only Phase 6 (`FX1`-`FX3`) remains, all undetailed one-line stubs. **Now: none startable** — Phase 6 needs spec/grilling into proper stories (Done-when, decisions) before any is startable; not a drop-in continuation.
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
 
@@ -35,12 +35,12 @@ Code landed + smoke-checked. Clean-machine real download→venv→torch→import
 `.github/workflows/release.yml` landed; CI build:win was failing on every push (biome CRLF from `core.autocrlf=true` on windows-latest, see Session Log) — fixed via `.gitattributes` `eol=lf`. v0.1.0 Release published, .exe installs on clean machine + R4.3 bootstrap → import + sing smoke passes.
 - **Done when:** merging a PR produces a downloadable Release; that .exe installs on a clean machine + R4.3 bootstrap → import + sing smoke passes.
 
-### [~] R5.1 Pipeline mac support
-`setup.sh`, MPS→CPU device select, darwin ffmpeg, `pipeline-macos.yml` landed. **Unverified**: needs the macOS Actions runner.
+### [x] R5.1 Pipeline mac support
+`setup.sh`, MPS→CPU device select, darwin ffmpeg, `pipeline-macos.yml` landed. macOS Actions runner smoke (`run 27488482708`) green: setup.sh + probe + separation smoke all passed.
 - **Done when:** macos runner: setup.sh completes, `probe` real URL succeeds, separation smoke on a short file completes on CPU within runner limits.
 
-### [~] R5.2 mac build in release
-`release-mac` job (unsigned .dmg) + README section landed. **Unverified**: needs a real macOS-runner release build.
+### [x] R5.2 mac build in release
+`release-mac` job (unsigned .dmg) + README section landed. v0.1.0 Release contains `singray-0.1.0.dmg` alongside the `.exe`; README has the unsigned-open (`xattr -dr com.apple.quarantine`) section.
 - **Done when:** Release contains .dmg alongside .exe; README explains unsigned-open steps + status.
 
 ---
@@ -187,6 +187,7 @@ New `ui/Stack` (flex row/column, typed `gap`/`justify`/`align`, default `align=c
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-14 · R5.1+R5.2 · Verified via existing CI runs: `pipeline-macos.yml` run `27488482708` (smoke job) green — setup.sh, real `probe`, and separation smoke all passed on the macOS Actions runner (R5.1). v0.1.0 Release (from R4.4 fix) contains `singray-0.1.0.dmg` alongside the `.exe`, and README already has the unsigned-open section (R5.2). This closes Phase 0 entirely — Round 2 Phases 0-5 all **[x]**; only Phase 6 (`FX1`-`FX3`, undetailed stubs) remains.
 - 2026-06-14 · R0.1+R0.2+R4.2 · R0.1 ear-check batch confirmed (all 4 checks). R4.2 owner-side GitHub actions (public repo, branch protection, red/green PR test) confirmed done. R0.2 (live AG06 validation): **decision** — dropped, no AG06/VB-Cable hardware on hand to test; optimistically marked done on the strength of the routing config + R0.1 ear-checks. All three **[x]**.
 - 2026-06-14 · R4.3+R4.4 · R4.3 (Python bootstrapper) and R4.4 (release pipeline) clean-machine smoke tests both passed. R4.4 was blocked: every `release.yml` run failed at `npm run build:win` with biome reporting CRLF format errors across nearly all tracked files — `windows-latest` runners have `core.autocrlf=true`, so `actions/checkout` converts the repo's LF-stored blobs to CRLF on disk, and biome's `lineEnding: lf` rejects them. Fixed by adding `.gitattributes` (`* text=auto eol=lf`) so checkout normalizes to LF regardless of runner config; pushed (commit `3b25ac7`), CI green, v0.1.0 Release published with `singray-0.1.0-setup.exe` + `singray-0.1.0.dmg`. Both **[x]**.
 - 2026-06-14 · UI7 · Completed full gap-based spacing migration: added `ui/Stack`/`ui/Grid`/`ui/Container` primitives, migrated every screen (Library, Settings, PipelineSetup, Player, LyricCreator) and composite component (AppHeader, Titlebar, TimingStep, PipelineInstaller, WindowControls, SongRow, all 6 dialogs) to use them; `ReviewPane`/`WaveformStrip`/`SongCard` needed no changes (no flex/gap layouts to convert). Added `gap=5` to `StackGap`/`GAP` to preserve TimingStep's exact spacing. Decision held throughout: inter-element spacing → `gap` via these primitives; intrinsic component padding (cards/dialogs/buttons/fieldsets) and label-caption micro-margins (`mb-1`/`mt-1` etc.) stay as margin/padding — only structural block-to-block spacing was converted, using nested Stacks where gap values differ. `npm run check` green after every commit. Playwright verification: per-file screenshots during each migration (Pipeline settings, Library grid/list/artists, all 3 triggerable dialogs — Import w/ probe, EditMeta, SongDetails, Confirm) plus a final cross-screen pass (Library grid/list/artists, Settings top/bottom, Player, LyricCreator text view) — no visual regressions. One incident: a concurrent session switched the shared working tree to another branch mid-edit, losing one small uncommitted PipelineInstaller.tsx edit (redone) and triggering a repo-wide CRLF/biome formatting issue from git's autocrlf smudge filter on 21 files (fixed by normalizing line endings back to LF with zero content change; only the 1 file with a real edit was committed). **[x]**.
