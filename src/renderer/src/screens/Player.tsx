@@ -40,6 +40,7 @@ import {
   Text,
   Toggle
 } from '../components/ui'
+import { useSettings } from '../hooks/useSettings'
 import { AudioEngine } from '../lib/audioEngine'
 
 interface Props {
@@ -95,19 +96,26 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
   const [peaks, setPeaks] = useState<Float32Array | null>(null)
   const [windowHidden, setWindowHidden] = useState(document.hidden)
   const hideTimer = useRef<number>(0)
+  const { settings, patch } = useSettings()
+  const settingsReady = settings !== null
+  const settingsRef = useRef(settings)
+  settingsRef.current = settings
 
+  // Build the engine once settings are available; reads the snapshot via a ref
+  // so toggling pin/stageVisual (which patches settings) never rebuilds it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: settings read once from the ref snapshot
   useEffect(() => {
+    const s = settingsRef.current
+    if (!s) return
     let disposed = false
     let eng: AudioEngine | null = null
+    setPinned(s.playerBarPinned)
+    setStageVisual(s.stageVisual)
     Promise.all([
-      window.singray.settings.get().then((s) => {
-        setPinned(s.playerBarPinned)
-        setStageVisual(s.stageVisual)
-        return AudioEngine.load(song.id, {
-          mode: s.audioOutputMode,
-          monitorDeviceId: s.monitorDeviceId,
-          streamDeviceId: s.streamDeviceId
-        })
+      AudioEngine.load(song.id, {
+        mode: s.audioOutputMode,
+        monitorDeviceId: s.monitorDeviceId,
+        streamDeviceId: s.streamDeviceId
       }),
       window.singray.lyrics.get(song.id)
     ])
@@ -132,7 +140,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
       disposed = true
       eng?.dispose()
     }
-  }, [song.id])
+  }, [song.id, settingsReady])
 
   // Coarse UI clock for the seek bar / timecode (the lyric wipe runs its own full-rate rAF).
   // Also hosts the sing gate (R1.5): ≥60% accumulated playback → one timestamp per session.
@@ -176,18 +184,18 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
   const togglePin = useCallback(() => {
     setPinned((p) => {
       const next = !p
-      window.singray.settings.set({ playerBarPinned: next })
+      void patch({ playerBarPinned: next })
       return next
     })
-  }, [])
+  }, [patch])
 
   const cycleStageVisual = useCallback(() => {
     setStageVisual((v) => {
       const next = STAGE_VISUAL_NEXT[v]
-      window.singray.settings.set({ stageVisual: next })
+      void patch({ stageVisual: next })
       return next
     })
-  }, [])
+  }, [patch])
 
   // Visual sources are per-engine (analyser dies with its context, peaks come
   // from the decoded buffers) and only built for the active mode.

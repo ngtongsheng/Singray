@@ -14,6 +14,7 @@ import type { Settings as SettingsModel } from '../../../shared/types'
 import PipelineInstaller from '../components/PipelineInstaller'
 import Titlebar from '../components/Titlebar'
 import { Button, Container, Field, IconButton, Input, Select, Stack, Text } from '../components/ui'
+import { useSettings } from '../hooks/useSettings'
 import { availableLocales, i18n, localeName, resolveLocale } from '../lib/i18n'
 
 /** Play a short sine tone on a specific output device ('' = system default). */
@@ -117,7 +118,7 @@ function SeparationModelSelect({
 
 function Settings({ onBack }: Props): React.JSX.Element {
   const { t } = useTranslation()
-  const [settings, setSettings] = useState<SettingsModel | null>(null)
+  const { settings, patch } = useSettings()
   const [test, setTest] = useState<TestState>({ kind: 'idle' })
   const [llmTest, setLlmTest] = useState<TestState>({ kind: 'idle' })
   const [outputs, setOutputs] = useState<MediaDeviceInfo[]>([])
@@ -125,7 +126,6 @@ function Settings({ onBack }: Props): React.JSX.Element {
   const [toneError, setToneError] = useState<string | null>(null)
 
   useEffect(() => {
-    window.singray.settings.get().then(setSettings)
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onBack()
     }
@@ -159,10 +159,6 @@ function Settings({ onBack }: Props): React.JSX.Element {
     } finally {
       setToneBusy(null)
     }
-  }
-
-  const patch = async (p: Partial<SettingsModel>): Promise<void> => {
-    setSettings(await window.singray.settings.set(p))
   }
 
   const [newCode, setNewCode] = useState('')
