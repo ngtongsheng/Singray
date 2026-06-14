@@ -7,6 +7,8 @@ interface Props {
   /** Master clock (SPEC §7.3) — read every animation frame. */
   clock: () => number
   onSeek: (t: number) => void
+  /** Show bottom gradient fade (false in review mode so the full lyric list is visible). */
+  showGradient?: boolean
 }
 
 type Role = 'past' | 'current' | 'future'
@@ -32,7 +34,7 @@ const DIM_SCALE = 'scale(0.52)'
  * gradient (paint), line role flips + column auto-scroll (transform), break dots
  * (opacity). Zero layout work per frame.
  */
-function LyricRenderer({ lyrics, clock, onSeek }: Props): React.JSX.Element {
+function LyricRenderer({ lyrics, clock, onSeek, showGradient = true }: Props): React.JSX.Element {
   const viewRef = useRef<HTMLDivElement>(null)
   const colRef = useRef<HTMLDivElement>(null)
   const lineEls = useRef<(HTMLElement | null)[]>([])
@@ -164,7 +166,11 @@ function LyricRenderer({ lyrics, clock, onSeek }: Props): React.JSX.Element {
   return (
     <div
       ref={viewRef}
-      className="relative h-full overflow-hidden [-webkit-mask-image:linear-gradient(to_bottom,black,black_calc(100%-220px),transparent_calc(100%-120px))] [mask-image:linear-gradient(to_bottom,black,black_calc(100%-220px),transparent_calc(100%-120px))]"
+      className={`relative h-full overflow-hidden${
+        showGradient
+          ? ' [-webkit-mask-image:linear-gradient(to_bottom,black,black_calc(100%-220px),transparent_calc(100%-120px))] [mask-image:linear-gradient(to_bottom,black,black_calc(100%-220px),transparent_calc(100%-120px))]'
+          : ''
+      }`}
     >
       <div
         ref={colRef}

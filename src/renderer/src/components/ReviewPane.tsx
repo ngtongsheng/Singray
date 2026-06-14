@@ -14,7 +14,7 @@ function ReviewPane({ lyrics, audioRef, onSeek }: Props): React.JSX.Element {
   const clock = useCallback(() => audioRef.current?.currentTime ?? 0, [audioRef])
   return (
     <div className="min-h-0 flex-1">
-      <LyricRenderer lyrics={lyrics} clock={clock} onSeek={onSeek} />
+      <LyricRenderer lyrics={lyrics} clock={clock} onSeek={onSeek} showGradient={false} />
     </div>
   )
 }
