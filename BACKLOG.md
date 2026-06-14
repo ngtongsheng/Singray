@@ -6,7 +6,7 @@ Round 3 feature source: user feedback 2026-06-14 round 3, grilled same day. Deci
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Round 2 Phases 0-5 all `[x]`.** Round 2 Phase 6 (`FX1`-`FX3`) was reconciled into Round 3 (FX3/EQ dropped, FX1/record folded into the mic feature, FX2/vocal-FX → MIC3). **Now: R3.SNG5** — Player chrome polish (R3 Phase 1, see `## Round 3` below). Mic feature has a dedicated spec at `SPEC.md` §14 (Microphone & recording).
+> **Round 2 Phases 0-5 all `[x]`.** Round 2 Phase 6 (`FX1`-`FX3`) was reconciled into Round 3 (FX3/EQ dropped, FX1/record folded into the mic feature, FX2/vocal-FX → MIC3). **Now: R3.SET1** — Separation-model list bug + layout (R3 Phase 2, see `## Round 3` below). Mic feature has a dedicated spec at `SPEC.md` §14 (Microphone & recording).
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
 
@@ -217,7 +217,7 @@ Library: move the sort Select and the grid/list view toggle onto the same row as
 `ImportDialog`: the search icon doesn't match the input height — size it to the input. **Segmented tabs replacement was dropped** (user changed mind after implementation — Tabs kept as-is).
 - **Done when:** search icon matches the input metrics; check green.
 
-### [ ] R3.SNG5 Player chrome polish
+### [x] R3.SNG5 Player chrome polish
 Player: (a) header action buttons (stage-visual / edit / lyrics / overflow) get a border like the key/tempo controls. (b) Fix the guide on/off label wrapping to a 2nd line because the volume slider pushes it. (c) **Revert NAV4** — title + artist back to horizontal (inline), not stacked (**SPEC §10 / NAV4 reversal** — note in commit). (d) Shorten the instrumental-volume and guide-vocal-volume sliders.
 - **Done when:** header buttons are bordered; guide label never wraps; title+artist render inline and truncate; both volume sliders are shorter and don't crowd neighbours; check green.
 
@@ -293,6 +293,7 @@ Dedicated screen listing takes (per song, with a song↔take association): each 
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-14 · R3.SNG5 · Player chrome polish: header buttons `variant="secondary"` (bordered), guide toggle `shrink-0` (no wrap), title+artist back to horizontal inline (NAV4 revert), sliders shortened (inst w-24→w-16, vocal w-20→w-14). Extra: top gradient scrim changed from `h-28 via-bg/85` to `h-1/3 from-bg to-transparent` (matches bottom gradient's height and stops, opposite direction). `npm run check` green. Now pointer → R3.SET1. **[x]**.
 - 2026-06-14 · R3.ADD4 · Search Input gets `uiSize="sm"` (h-8, 32px) to match adjacent IconButton height. Segmented tabs replacement was **dropped** (user changed mind after implementation — Tabs kept as-is). Now pointer → R3.SNG5. **[x]**.
 - 2026-06-14 · R3.HOME2 · Sort Select and grid/list view toggle moved from Titlebar into the filter chips row. Titlebar right side now only has Add Song + Settings. View toggle has `ml-auto` to push controls to the right edge. `npm run check` green. **[x]**.
 - 2026-06-14 · R3.LYR1 · LyricCreator reflowed to 4-row layout: header (back+title | Segmented+Continue), action buttons, textarea, helper text. Segmented moved to header with FileText/Keyboard/Eye icons. Removed Edit text button. TimingStep: removed review/tap toggle, shortcuts permanent (no dismiss), progress strip moved below shortcuts (h-8, bottom-aligned text). Removed unused `onReviewChange` prop from TimingStep. Added `showGradient` prop to LyricRenderer (default `true`); ReviewPane passes `showGradient={false}` so the full lyric list is visible without bottom fade. `npm run check` green. **[x]**.

@@ -277,15 +277,15 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
             >
               <ArrowLeft className="size-4" strokeWidth={1.5} />
             </IconButton>
-            <Stack direction="column" gap={0.5} justify="center" className="min-w-0">
-              <Text as="h1" variant="subtitle" className="leading-tight">
+            <Stack gap={2} justify="center" className="min-w-0">
+              <Text as="h1" variant="subtitle" className="truncate">
                 {song.title}
               </Text>
               <button
                 type="button"
                 onClick={() => onArtistClick(song.artist)}
                 title={t('library.viewArtist', { name: song.artist })}
-                className="app-no-drag truncate text-left text-text-dim text-xs leading-tight hover:text-text hover:underline"
+                className="app-no-drag shrink-0 text-left text-text-dim text-xs hover:text-text hover:underline"
               >
                 {song.artist}
               </button>
@@ -294,7 +294,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
           {!error && (
             <Stack gap={3}>
               <Button
-                variant="ghost"
+                variant="secondary"
                 active={stageVisual !== 'off'}
                 onClick={cycleStageVisual}
                 title={t('player.stageVisualTip', { mode: t(STAGE_VISUAL_KEY[stageVisual]) })}
@@ -307,18 +307,18 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                 )}
               </Button>
               <Button
-                variant="ghost"
+                variant="secondary"
                 onClick={() => setEditOpen(true)}
                 title={t('editMeta.title')}
-                className="app-no-drag text-text-dim hover:text-text"
+                className="app-no-drag"
               >
                 <Pencil className="size-4" strokeWidth={1.5} /> {t('editMeta.title')}
               </Button>
               <Button
-                variant="ghost"
+                variant="secondary"
                 onClick={() => onEditLyrics(song)}
                 title={lyrics ? t('player.editLyrics') : t('player.addLyrics')}
-                className="app-no-drag text-text-dim hover:text-text"
+                className="app-no-drag"
               >
                 <Type className="size-4" strokeWidth={1.5} />{' '}
                 {lyrics ? t('player.editLyrics') : t('player.addLyrics')}
@@ -328,11 +328,11 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                 className="top-full right-0 mt-1 w-44 overflow-hidden py-1"
                 trigger={(open, toggle) => (
                   <IconButton
-                    variant="ghost"
+                    variant="secondary"
                     active={open}
                     onClick={toggle}
                     title={t('player.moreActions')}
-                    className="app-no-drag text-text-dim hover:text-text"
+                    className="app-no-drag"
                   >
                     <MoreVertical className="size-4" strokeWidth={1.5} />
                   </IconButton>
@@ -449,7 +449,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                     engine.setInstrumentalVolume(v)
                   }}
                   title={t('player.instrVolTip')}
-                  className="h-11 w-24"
+                  className="h-11 w-16"
                 />
               </span>
 
@@ -464,6 +464,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                   pressed={vocalOn}
                   onClick={toggleVocal}
                   title={t('player.guideTip')}
+                  className="shrink-0 whitespace-nowrap"
                 >
                   {vocalOn ? (
                     <Mic className="size-4" strokeWidth={1.5} />
@@ -483,7 +484,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                     engine.setVocalVolume(v)
                   }}
                   title={t('player.guideVolTip')}
-                  className="h-8 w-20"
+                  className="h-8 w-14"
                 />
               </Stack>
 
