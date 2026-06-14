@@ -215,7 +215,7 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
 
       <div className="absolute inset-0 overflow-y-auto pt-19">
         {section === 'songs' && (
-          <div className="flex items-center gap-2 px-6 py-3">
+          <div className="flex items-center gap-2 pl-6 pr-[14px] py-3">
             {artistFilter !== null && (
               <Chip
                 active
@@ -253,7 +253,7 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
             </Button>
           </div>
         ) : section === 'artists' ? (
-          <div className="flex flex-col gap-2 px-6 pb-12">
+          <div className="flex flex-col gap-2 pl-6 pr-[14px] pb-12">
             {artists.map(({ name, count }) => (
               <button
                 key={name}
@@ -269,9 +269,9 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <p className="px-6 py-12 text-center text-text-dim">{t('library.noMatch')}</p>
+          <p className="pl-6 pr-[14px] py-12 text-center text-text-dim">{t('library.noMatch')}</p>
         ) : view === 'grid' ? (
-          <div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 px-6 pb-12">
+          <div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 pl-6 pr-[14px] pb-12">
             {filtered.map((song, i) => (
               // Entrance stagger (SPEC §10.5): 30ms per card, capped, animates once per mount.
               <motion.div
@@ -291,7 +291,7 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
             ))}
           </div>
         ) : (
-          <div className="flex flex-col gap-2 px-6 pb-12">
+          <div className="flex flex-col gap-2 pl-6 pr-[14px] pb-12">
             {filtered.map((song, i) => (
               // Entrance stagger (SPEC §10.5): 30ms per card, capped, animates once per mount.
               <motion.div

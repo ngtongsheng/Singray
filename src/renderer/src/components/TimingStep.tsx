@@ -409,7 +409,7 @@ function TimingStep({
             </p>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-6 pb-4">
+          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto pl-6 pr-[14px] pb-4">
             {lyrics.lines.map((line, li) =>
               line.units.length === 0 ? (
                 // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable while timing
