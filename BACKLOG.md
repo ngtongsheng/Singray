@@ -6,7 +6,7 @@ Round 3 feature source: user feedback 2026-06-14 round 3, grilled same day. Deci
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Round 2 Phases 0-5 all `[x]`.** Round 2 Phase 6 (`FX1`-`FX3`) was reconciled into Round 3 (FX3/EQ dropped, FX1/record folded into the mic feature, FX2/vocal-FX → MIC3). **Now: R3.HOME2** — sort + view toggle onto the filter row (R3 Phase 1, see `## Round 3` below). Mic feature has a dedicated spec at `SPEC.md` §14 (Microphone & recording).
+> **Round 2 Phases 0-5 all `[x]`.** Round 2 Phase 6 (`FX1`-`FX3`) was reconciled into Round 3 (FX3/EQ dropped, FX1/record folded into the mic feature, FX2/vocal-FX → MIC3). **Now: R3.ADD4** — Add-Song: icon sizing + Segmented tabs (R3 Phase 1, see `## Round 3` below). Mic feature has a dedicated spec at `SPEC.md` §14 (Microphone & recording).
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
 
@@ -209,7 +209,7 @@ Focus outline on `Input`/controls reads too thick. Reduce ring width to a subtle
 Reorder the creator (`LyricCreator`/`TimingStep`) to: **row 1** page header = back + title (left), Segmented step-switch + Continue (right); **row 2** action buttons (find lyrics / import LRC / clean-up-with-AI / align); **row 3** lyric textarea; **row 4** the "one lyric per row — empty row…" helper text. Move the Segmented control from its current spot to the page header beside Continue; add icons to each Segmented option. Remove the "Edit text" button on the tab/preview screens. Remove the tab/preview toggle beside the tempo. Progress strip (EL3): vertical-align its text to the bottom, match its height to the keyboard-shortcut tip section, place it **below** the shortcut tips, and show it permanently (drop the dismiss icon).
 - **Done when:** the four rows render in that order; Segmented sits in the header with icons; no "Edit text" button on tab/preview; no tab/preview toggle by the tempo; progress strip is permanent, bottom-aligned, height-matched, below the tips; works zh + en; check green.
 
-### [ ] R3.HOME2 Sort + view toggle onto the filter row
+### [x] R3.HOME2 Sort + view toggle onto the filter row
 Library: move the sort Select and the grid/list view toggle onto the same row as the filter chips.
 - **Done when:** sort + view toggle render inline with the filters on one row; holds at min width; no overlap with window buttons; check green.
 
@@ -293,6 +293,7 @@ Dedicated screen listing takes (per song, with a song↔take association): each 
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-14 · R3.HOME2 · Sort Select and grid/list view toggle moved from Titlebar into the filter chips row. Titlebar right side now only has Add Song + Settings. View toggle has `ml-auto` to push controls to the right edge. `npm run check` green. **[x]**.
 - 2026-06-14 · R3.LYR1 · LyricCreator reflowed to 4-row layout: header (back+title | Segmented+Continue), action buttons, textarea, helper text. Segmented moved to header with FileText/Keyboard/Eye icons. Removed Edit text button. TimingStep: removed review/tap toggle, shortcuts permanent (no dismiss), progress strip moved below shortcuts (h-8, bottom-aligned text). Removed unused `onReviewChange` prop from TimingStep. Added `showGradient` prop to LyricRenderer (default `true`); ReviewPane passes `showGradient={false}` so the full lyric list is visible without bottom fade. `npm run check` green. **[x]**.
 - 2026-06-14 · R3.SNG4 · Removed sing-history section from SongDetailsDialog. Added `window:openExternal` IPC (shell.openExternal) for opening YouTube source links. Source row now shows a clickable "YouTube" link for URL-sourced songs; file paths unchanged. Removed unused `details.history`/`details.noHistory` i18n keys (en+zh). `npm run check` green. **[x]**.
 - 2026-06-14 · R3.UI8 · Reduced global `:focus-visible` outline from 2px→1.5px and outline-offset from 2px→1px in `main.css`. Commits `ddeafbf` + `fc103cd` on `round3-plan` (later amended with outline-offset tweak). `npm run check` green. **[x]**.
