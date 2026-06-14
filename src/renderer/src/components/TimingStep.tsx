@@ -1,10 +1,10 @@
-import { Eye, Keyboard, Pause, Play, X } from 'lucide-react'
+import { Pause, Play } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Lyrics } from '../../../shared/types'
 import { inferEnds } from '../lib/inferEnds'
 import ReviewPane from './ReviewPane'
-import { Button, IconButton, Slider, Stack, Toggle } from './ui'
+import { IconButton, Slider, Stack } from './ui'
 import WaveformStrip from './WaveformStrip'
 
 interface Props {
@@ -14,7 +14,6 @@ interface Props {
   onChange: (next: Lyrics) => void
   /** Review toggle is lifted to the creator (EL4) so Ctrl+Tab can cycle it as a step. */
   review: boolean
-  onReviewChange: (next: boolean) => void
 }
 
 /** Flat cursor position: line index + unit index. Break lines have no units, so the cursor skips them. */
@@ -49,13 +48,7 @@ function lineTimestampClass(line: LyricLine): string {
 }
 
 /** Tap-along timing step (SPEC §6.3): Space stamps, original.m4a as reference. */
-function TimingStep({
-  songId,
-  lyrics,
-  onChange,
-  review,
-  onReviewChange
-}: Props): React.JSX.Element {
+function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const audioRef = useRef<HTMLAudioElement>(null)
   const lineRefs = useRef(new Map<number, HTMLButtonElement>())
@@ -63,7 +56,6 @@ function TimingStep({
   const [time, setTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [rateIdx, setRateIdx] = useState(3)
-  const [showKeys, setShowKeys] = useState(true)
 
   const flatUnits = useMemo<UnitPos[]>(
     () => lyrics.lines.flatMap((l, line) => l.units.map((_, unit) => ({ line, unit }))),
@@ -244,19 +236,6 @@ function TimingStep({
     [cursor, flatUnits, lyrics]
   )
 
-  /** SPEC §6.7: Space in review re-enters tap mode at the line currently playing. */
-  const exitReview = useCallback((): void => {
-    const t = audioRef.current?.currentTime ?? 0
-    let lineIdx = -1
-    lyrics.lines.forEach((l, li) => {
-      if (l.units.length > 0 && l.start !== null && l.start <= t) lineIdx = li
-    })
-    if (lineIdx === -1) lineIdx = lyrics.lines.findIndex((l) => l.units.length > 0)
-    const idx = flatUnits.findIndex((p) => p.line === lineIdx)
-    if (idx !== -1) setCursor(idx)
-    onReviewChange(false)
-  }, [flatUnits, lyrics, onReviewChange])
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       switch (e.key) {
@@ -328,7 +307,6 @@ function TimingStep({
         onPause={() => setPlaying(false)}
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
       />
-
       <Stack gap={4} className="border-border border-b px-6 py-3">
         <IconButton
           variant="primary"
@@ -359,29 +337,8 @@ function TimingStep({
         <span className="rounded-control border border-border px-2 py-1 text-sm text-text-dim tabular-nums">
           {RATES[rateIdx]}×
         </span>
-        <Toggle
-          pressed={review}
-          onClick={(e) => {
-            if (review) exitReview()
-            else onReviewChange(true)
-            e.currentTarget.blur()
-          }}
-          title={review ? t('timing.tapTip') : t('timing.reviewTip')}
-        >
-          {review ? (
-            <>
-              <Keyboard className="size-4" strokeWidth={1.5} /> {t('timing.tap')}
-            </>
-          ) : (
-            <>
-              <Eye className="size-4" strokeWidth={1.5} /> {t('timing.review')}
-            </>
-          )}
-        </Toggle>
       </Stack>
-
       <WaveformStrip songId={songId} audioRef={audioRef} stamps={stamps} onSeek={seekTo} />
-
       {review ? (
         <ReviewPane lyrics={lyrics} audioRef={audioRef} onSeek={seekTo} />
       ) : (
@@ -421,10 +378,10 @@ function TimingStep({
                   · · ·
                 </div>
               ) : (
-                <Button
+                <button
                   // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable while timing
                   key={li}
-                  variant="bare"
+                  type="button"
                   ref={(el) => {
                     if (el) lineRefs.current.set(li, el)
                     else lineRefs.current.delete(li)
@@ -446,15 +403,38 @@ function TimingStep({
                   <span className={li === currentLine && !done ? 'text-lyric-active' : ''}>
                     {line.text}
                   </span>
-                </Button>
+                </button>
               )
             )}
           </Stack>
         </>
       )}
-
-      <div className="relative border-border border-t bg-surface px-6 py-1.5">
-        <Stack gap={2} className="text-xs">
+      {/* Keyboard shortcuts (permanent — no dismiss button) */}
+      <Stack className="border-border border-t bg-surface px-6 py-2 text-text-dim text-xs">
+        <Stack gap={5}>
+          {review ? (
+            <Hint k="Space / Enter" label={t('timing.hintPlay')} />
+          ) : (
+            <>
+              <Hint k="Space" label={t('timing.hintStamp')} />
+              <Hint k="⌫" label={t('timing.hintUndo')} />
+              {stamps.length > 0 && stamps.length < flatUnits.length && (
+                <Hint k="Tab" label={t('timing.hintGap')} />
+              )}
+              <Hint k="Enter" label={t('timing.hintPlay')} />
+            </>
+          )}
+          <Hint k="← →" label={t('timing.hintSeek')} />
+          <Hint k="↑ ↓" label={t('timing.hintSpeed')} />
+        </Stack>
+      </Stack>
+      {/* Progress strip (below shortcuts; height-matched, text bottom-aligned) */}{' '}
+      <div className="relative h-8 border-border border-t bg-surface px-6">
+        <div
+          className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
+          style={{ width: `${progressPct}%` }}
+        />
+        <Stack gap={2} align="end" className="h-full text-xs">
           {done ? (
             <span className="font-medium text-success">{t('timing.done')}</span>
           ) : (
@@ -466,43 +446,7 @@ function TimingStep({
             </>
           )}
         </Stack>
-        <div
-          className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
-          style={{ width: `${progressPct}%` }}
-        />
       </div>
-
-      {showKeys && (
-        <Stack
-          justify="between"
-          className="border-border border-t bg-surface px-6 py-2 text-text-dim text-xs"
-        >
-          <Stack gap={5}>
-            {review ? (
-              <Hint k="Space / Enter" label={t('timing.hintPlay')} />
-            ) : (
-              <>
-                <Hint k="Space" label={t('timing.hintStamp')} />
-                <Hint k="⌫" label={t('timing.hintUndo')} />
-                {stamps.length > 0 && stamps.length < flatUnits.length && (
-                  <Hint k="Tab" label={t('timing.hintGap')} />
-                )}
-                <Hint k="Enter" label={t('timing.hintPlay')} />
-              </>
-            )}
-            <Hint k="← →" label={t('timing.hintSeek')} />
-            <Hint k="↑ ↓" label={t('timing.hintSpeed')} />
-          </Stack>
-          <IconButton
-            variant="bare"
-            onClick={() => setShowKeys(false)}
-            title={t('timing.hideShortcuts')}
-            className="rounded-control p-1 hover:bg-surface-2 hover:text-text"
-          >
-            <X className="size-3.5" strokeWidth={1.5} />
-          </IconButton>
-        </Stack>
-      )}
     </Stack>
   )
 }

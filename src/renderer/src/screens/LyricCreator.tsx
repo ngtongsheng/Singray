@@ -1,4 +1,15 @@
-import { ArrowLeft, ArrowRight, FileDown, Loader2, Search, Sparkles, Wand2 } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  FileDown,
+  FileText,
+  Keyboard,
+  Loader2,
+  Search,
+  Sparkles,
+  Wand2
+} from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -8,7 +19,6 @@ import CleanLyricsDialog from '../components/CleanLyricsDialog'
 import ConfirmDialog from '../components/ConfirmDialog'
 import LrclibFinderDialog from '../components/LrclibFinderDialog'
 import TimingStep from '../components/TimingStep'
-import Titlebar from '../components/Titlebar'
 import { Button, IconButton, Segmented, Stack, Text, useTabCycle } from '../components/ui'
 import { inferEnds } from '../lib/inferEnds'
 import { type BuildResult, buildLyrics, lyricsToText } from '../lib/lyricsText'
@@ -160,17 +170,13 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
     }
   }
 
-  const goToText = (): void => {
-    setReview(false)
-    setStep('text')
-  }
-
   /** EL4: derive the current step from `step` + `review` and translate cycle moves back into them. */
   const creatorStep: CreatorStep = step === 'text' ? 'text' : review ? 'review' : 'tap'
 
   const setCreatorStep = (next: CreatorStep): void => {
     if (next === 'text') {
-      goToText()
+      setReview(false)
+      setStep('text')
       return
     }
     if (step === 'text') {
@@ -184,27 +190,74 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
 
   return (
     <div className="relative h-full">
-      <Titlebar>
-        <Stack justify="between" className="w-full">
-          <Stack gap={2}>
+      {/* Content starts below the floating AppHeader (pt-19) */}
+      <Stack direction="column" gap={0} className="absolute inset-0 pt-19">
+        {/* Row 1: Header — left: back + title, right: Segmented + Continue */}
+        <Stack as="header" justify="between" className="app-no-drag border-border border-b px-6">
+          <Stack gap={2} align="center" className="min-w-0">
             <IconButton
               onClick={onBack}
               title={t('common.back')}
-              className="app-no-drag text-text-dim hover:text-text"
+              className="shrink-0 text-text-dim hover:text-text"
             >
               <ArrowLeft className="size-4" strokeWidth={1.5} />
             </IconButton>
             <Stack gap={2} align="baseline" className="min-w-0">
-              <Text as="h1" variant="subtitle">
+              <Text as="h1" variant="subtitle" className="truncate">
                 {song.title}
               </Text>
-              <Text variant="hint" className="truncate">
+              <Text variant="hint" className="hidden truncate sm:inline">
                 {t('creator.subtitle', { artist: song.artist })}
               </Text>
             </Stack>
           </Stack>
-          {step === 'text' ? (
-            <Stack gap={3}>
+          <Stack gap={3} align="center" className="shrink-0">
+            <Segmented
+              value={creatorStep}
+              onChange={setCreatorStep}
+              options={[
+                {
+                  value: 'text',
+                  label: (
+                    <>
+                      <FileText className="size-4" strokeWidth={1.5} /> {t('creator.stepText')}
+                    </>
+                  )
+                },
+                {
+                  value: 'tap',
+                  label: (
+                    <>
+                      <Keyboard className="size-4" strokeWidth={1.5} /> {t('creator.stepTap')}
+                    </>
+                  )
+                },
+                {
+                  value: 'review',
+                  label: (
+                    <>
+                      <Eye className="size-4" strokeWidth={1.5} /> {t('creator.stepReview')}
+                    </>
+                  )
+                }
+              ]}
+            />
+            {step === 'text' && (
+              <Button
+                variant="primary"
+                onClick={onContinue}
+                disabled={!loaded || parsedEmpty(text) || aligning}
+              >
+                {t('creator.continue')} <ArrowRight className="size-4" strokeWidth={2} />
+              </Button>
+            )}
+          </Stack>
+        </Stack>
+
+        {/* Row 2: Action buttons (text step only) */}
+        {step === 'text' && (
+          <div className="border-border border-b px-6 py-2">
+            <Stack gap={2}>
               <input
                 ref={fileRef}
                 type="file"
@@ -216,7 +269,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
                 onClick={() => setFinderOpen(true)}
                 disabled={!loaded || aligning}
                 title={t('finder.findTip')}
-                className="app-no-drag font-medium text-text-dim hover:text-text"
+                className="font-medium text-text-dim hover:text-text"
               >
                 <Search className="size-4" strokeWidth={1.5} /> {t('finder.find')}
               </Button>
@@ -224,7 +277,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
                 onClick={() => fileRef.current?.click()}
                 disabled={!loaded || aligning}
                 title={t('creator.importLrcTip')}
-                className="app-no-drag font-medium text-text-dim hover:text-text"
+                className="font-medium text-text-dim hover:text-text"
               >
                 <FileDown className="size-4" strokeWidth={1.5} /> {t('creator.importLrc')}
               </Button>
@@ -232,7 +285,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
                 onClick={() => void onClean()}
                 disabled={!loaded || parsedEmpty(text) || cleaning || aligning}
                 title={t('clean.tip')}
-                className="app-no-drag font-medium text-text-dim hover:text-text"
+                className="font-medium text-text-dim hover:text-text"
               >
                 {cleaning ? (
                   <>
@@ -249,7 +302,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
                 onClick={onAlign}
                 disabled={!loaded || parsedEmpty(text) || aligning}
                 title={t('creator.alignTip')}
-                className="app-no-drag font-medium text-text-dim hover:text-text"
+                className="font-medium text-text-dim hover:text-text"
               >
                 {aligning ? (
                   <>
@@ -262,64 +315,44 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
                   </>
                 )}
               </Button>
-              <Button
-                variant="primary"
-                onClick={onContinue}
-                disabled={!loaded || parsedEmpty(text) || aligning}
-                className="app-no-drag"
-              >
-                {t('creator.continue')} <ArrowRight className="size-4" strokeWidth={2} />
-              </Button>
             </Stack>
-          ) : (
-            <Button onClick={goToText} className="app-no-drag">
-              {t('creator.editText')}
-            </Button>
-          )}
-        </Stack>
-      </Titlebar>
-
-      <Stack direction="column" gap={6} className="absolute inset-0 pt-19">
-        <Segmented
-          className="mx-6 self-start"
-          value={creatorStep}
-          onChange={setCreatorStep}
-          options={[
-            { value: 'text', label: t('creator.stepText') },
-            { value: 'tap', label: t('creator.stepTap') },
-            { value: 'review', label: t('creator.stepReview') }
-          ]}
-        />
-        {step === 'text' ? (
-          <Stack direction="column" gap={3} className="min-h-0 flex-1 px-6 pb-4">
-            <Text variant="hint">
-              {t('creator.hint')}
-              {hasTiming && <span className="text-accent-soft">{t('creator.hintTimed')}</span>}
-            </Text>
-            {alignError && (
-              <Text variant="error">{t('creator.alignFailed', { message: alignError })}</Text>
+            {(alignError || lrcError) && (
+              <div className="mt-1">
+                {alignError && (
+                  <Text variant="error">{t('creator.alignFailed', { message: alignError })}</Text>
+                )}
+                {lrcError && <Text variant="error">{lrcError}</Text>}
+              </div>
             )}
-            {lrcError && <Text variant="error">{lrcError}</Text>}
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              disabled={!loaded}
-              spellCheck={false}
-              placeholder={t('creator.placeholder')}
-              className="min-h-0 flex-1 resize-none overflow-y-auto rounded-card border border-border bg-surface p-4 font-lyric text-base leading-7 placeholder:text-text-dim/40"
-            />
-          </Stack>
-        ) : (
-          saved && (
-            <TimingStep
-              songId={song.id}
-              lyrics={saved}
-              onChange={setSaved}
-              review={review}
-              onReviewChange={setReview}
-            />
-          )
+          </div>
         )}
+
+        {/* Row 3 + 4: Content area (textarea + hint, or TimingStep) */}
+        <div className="flex min-h-0 flex-1 flex-col">
+          {step === 'text' ? (
+            <>
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                disabled={!loaded}
+                spellCheck={false}
+                placeholder={t('creator.placeholder')}
+                className="min-h-0 flex-1 resize-none overflow-y-auto bg-surface p-6 font-lyric text-base leading-7 placeholder:text-text-dim/40"
+              />
+              {/* Row 4: Helper text under textarea */}
+              <div className="border-border border-t px-6 py-2">
+                <Text variant="hint">
+                  {t('creator.hint')}
+                  {hasTiming && <span className="text-accent-soft">{t('creator.hintTimed')}</span>}
+                </Text>
+              </div>
+            </>
+          ) : (
+            saved && (
+              <TimingStep songId={song.id} lyrics={saved} onChange={setSaved} review={review} />
+            )
+          )}
+        </div>
       </Stack>
 
       <AnimatePresence>
