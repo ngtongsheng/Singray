@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Stack } from './ui'
 
 /**
  * Per-screen page header (row 2, NAV2/NAV3): floats under the app's AppHeader
@@ -7,9 +8,9 @@ import type { ReactNode } from 'react'
  */
 function Titlebar({ children }: { children?: ReactNode }): React.JSX.Element {
   return (
-    <header className="app-drag absolute inset-x-0 top-9 z-30 flex h-10 items-center gap-3 px-6">
+    <Stack as="header" gap={3} className="app-drag absolute inset-x-0 top-9 z-30 h-10 px-6">
       {children}
-    </header>
+    </Stack>
   )
 }
 

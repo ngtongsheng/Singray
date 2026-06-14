@@ -1,4 +1,5 @@
 import { Mic2 } from 'lucide-react'
+import { Stack } from './ui'
 import WindowControls from './WindowControls'
 
 /**
@@ -9,14 +10,13 @@ function AppHeader(): React.JSX.Element {
   return (
     <>
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-19 bg-gradient-to-b from-bg via-bg/85 to-transparent" />
-      <header className="app-drag absolute inset-x-0 top-0 z-30 flex h-9 items-center">
-        <div className="flex items-center gap-2 pl-6">
+      <Stack as="header" justify="between" className="app-drag absolute inset-x-0 top-0 z-30 h-9">
+        <Stack gap={2} className="pl-6">
           <Mic2 className="size-4 text-accent" strokeWidth={1.5} />
           <span className="font-semibold text-sm">Singray</span>
-        </div>
-        <div className="flex-1" />
+        </Stack>
         <WindowControls />
-      </header>
+      </Stack>
     </>
   )
 }
