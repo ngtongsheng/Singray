@@ -9,7 +9,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import LrclibFinderDialog from '../components/LrclibFinderDialog'
 import TimingStep from '../components/TimingStep'
 import Titlebar from '../components/Titlebar'
-import { Button, IconButton, Segmented, useTabCycle } from '../components/ui'
+import { Button, IconButton, Segmented, Stack, useTabCycle } from '../components/ui'
 import { inferEnds } from '../lib/inferEnds'
 import { type BuildResult, buildLyrics, lyricsToText } from '../lib/lyricsText'
 import { mergeAlignment } from '../lib/mergeAlignment'
@@ -185,97 +185,101 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
   return (
     <div className="relative h-full">
       <Titlebar>
-        <IconButton
-          onClick={onBack}
-          title={t('common.back')}
-          className="app-no-drag text-text-dim hover:text-text"
-        >
-          <ArrowLeft className="size-4" strokeWidth={1.5} />
-        </IconButton>
-        <div className="flex min-w-0 items-baseline gap-2">
-          <h1 className="truncate font-semibold text-sm">{song.title}</h1>
-          <p className="truncate text-text-dim text-xs">
-            {t('creator.subtitle', { artist: song.artist })}
-          </p>
-        </div>
-        <div className="flex-1" />
-        {step === 'text' ? (
-          <>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".lrc,.txt,text/plain"
-              onChange={onFile}
-              className="hidden"
-            />
-            <Button
-              onClick={() => setFinderOpen(true)}
-              disabled={!loaded || aligning}
-              title={t('finder.findTip')}
-              className="app-no-drag font-medium text-text-dim hover:text-text"
+        <Stack justify="between" className="w-full">
+          <Stack gap={2}>
+            <IconButton
+              onClick={onBack}
+              title={t('common.back')}
+              className="app-no-drag text-text-dim hover:text-text"
             >
-              <Search className="size-4" strokeWidth={1.5} /> {t('finder.find')}
+              <ArrowLeft className="size-4" strokeWidth={1.5} />
+            </IconButton>
+            <Stack gap={2} align="baseline" className="min-w-0">
+              <h1 className="truncate font-semibold text-sm">{song.title}</h1>
+              <p className="truncate text-text-dim text-xs">
+                {t('creator.subtitle', { artist: song.artist })}
+              </p>
+            </Stack>
+          </Stack>
+          {step === 'text' ? (
+            <Stack gap={3}>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".lrc,.txt,text/plain"
+                onChange={onFile}
+                className="hidden"
+              />
+              <Button
+                onClick={() => setFinderOpen(true)}
+                disabled={!loaded || aligning}
+                title={t('finder.findTip')}
+                className="app-no-drag font-medium text-text-dim hover:text-text"
+              >
+                <Search className="size-4" strokeWidth={1.5} /> {t('finder.find')}
+              </Button>
+              <Button
+                onClick={() => fileRef.current?.click()}
+                disabled={!loaded || aligning}
+                title={t('creator.importLrcTip')}
+                className="app-no-drag font-medium text-text-dim hover:text-text"
+              >
+                <FileDown className="size-4" strokeWidth={1.5} /> {t('creator.importLrc')}
+              </Button>
+              <Button
+                onClick={() => void onClean()}
+                disabled={!loaded || parsedEmpty(text) || cleaning || aligning}
+                title={t('clean.tip')}
+                className="app-no-drag font-medium text-text-dim hover:text-text"
+              >
+                {cleaning ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" strokeWidth={2} />{' '}
+                    {t('clean.cleaning')}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="size-4" strokeWidth={1.5} /> {t('clean.button')}
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={onAlign}
+                disabled={!loaded || parsedEmpty(text) || aligning}
+                title={t('creator.alignTip')}
+                className="app-no-drag font-medium text-text-dim hover:text-text"
+              >
+                {aligning ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" strokeWidth={2} />{' '}
+                    {t('creator.aligning')}
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="size-4" strokeWidth={1.5} /> {t('creator.align')}
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="primary"
+                onClick={onContinue}
+                disabled={!loaded || parsedEmpty(text) || aligning}
+                className="app-no-drag"
+              >
+                {t('creator.continue')} <ArrowRight className="size-4" strokeWidth={2} />
+              </Button>
+            </Stack>
+          ) : (
+            <Button onClick={goToText} className="app-no-drag">
+              {t('creator.editText')}
             </Button>
-            <Button
-              onClick={() => fileRef.current?.click()}
-              disabled={!loaded || aligning}
-              title={t('creator.importLrcTip')}
-              className="app-no-drag font-medium text-text-dim hover:text-text"
-            >
-              <FileDown className="size-4" strokeWidth={1.5} /> {t('creator.importLrc')}
-            </Button>
-            <Button
-              onClick={() => void onClean()}
-              disabled={!loaded || parsedEmpty(text) || cleaning || aligning}
-              title={t('clean.tip')}
-              className="app-no-drag font-medium text-text-dim hover:text-text"
-            >
-              {cleaning ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" strokeWidth={2} /> {t('clean.cleaning')}
-                </>
-              ) : (
-                <>
-                  <Sparkles className="size-4" strokeWidth={1.5} /> {t('clean.button')}
-                </>
-              )}
-            </Button>
-            <Button
-              onClick={onAlign}
-              disabled={!loaded || parsedEmpty(text) || aligning}
-              title={t('creator.alignTip')}
-              className="app-no-drag font-medium text-text-dim hover:text-text"
-            >
-              {aligning ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" strokeWidth={2} />{' '}
-                  {t('creator.aligning')}
-                </>
-              ) : (
-                <>
-                  <Wand2 className="size-4" strokeWidth={1.5} /> {t('creator.align')}
-                </>
-              )}
-            </Button>
-            <Button
-              variant="primary"
-              onClick={onContinue}
-              disabled={!loaded || parsedEmpty(text) || aligning}
-              className="app-no-drag"
-            >
-              {t('creator.continue')} <ArrowRight className="size-4" strokeWidth={2} />
-            </Button>
-          </>
-        ) : (
-          <Button onClick={goToText} className="app-no-drag">
-            {t('creator.editText')}
-          </Button>
-        )}
+          )}
+        </Stack>
       </Titlebar>
 
-      <div className="absolute inset-0 flex flex-col pt-19">
+      <Stack direction="column" gap={6} className="absolute inset-0 pt-19">
         <Segmented
-          className="mx-6 mb-6 self-start"
+          className="mx-6 self-start"
           value={creatorStep}
           onChange={setCreatorStep}
           options={[
@@ -285,7 +289,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
           ]}
         />
         {step === 'text' ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 pb-4">
+          <Stack direction="column" gap={3} className="min-h-0 flex-1 px-6 pb-4">
             <p className="text-text-dim text-xs">
               {t('creator.hint')}
               {hasTiming && <span className="text-accent-soft">{t('creator.hintTimed')}</span>}
@@ -304,7 +308,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
               placeholder={t('creator.placeholder')}
               className="min-h-0 flex-1 resize-none overflow-y-auto rounded-card border border-border bg-surface p-4 font-lyric text-base leading-7 placeholder:text-text-dim/40"
             />
-          </div>
+          </Stack>
         ) : (
           saved && (
             <TimingStep
@@ -316,7 +320,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
             />
           )
         )}
-      </div>
+      </Stack>
 
       <AnimatePresence>
         {cleanPreview !== null && (
