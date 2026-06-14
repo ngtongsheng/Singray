@@ -5,7 +5,7 @@ Round 2 feature source: user feedback 2026-06-14 (`docs/feedback/2026-06-14-roun
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Round 2 Phases 1-5 all `[x]`.** Remaining `[~]` are R4.2-R5.2 (Phase 0, env-blocked/owner-side — see their own notes). **Next: FX1** (Phase 6) is an undetailed one-line stub — needs spec/grilling into a proper story (Done-when, decisions) before it's startable; not a drop-in continuation of the verification pass.
+> **Round 2 Phases 1-5 all `[x]`.** Remaining `[~]` are R4.2-R5.2 (Phase 0, env-blocked/owner-side — see their own notes) and **UI7** (Phase 5, in progress — see below). **Now: UI7**. After UI7: **FX1** (Phase 6) is an undetailed one-line stub — needs spec/grilling into a proper story (Done-when, decisions) before it's startable; not a drop-in continuation of the verification pass.
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
 
@@ -164,6 +164,10 @@ Remove the sung-count badge from library cards (R1.5). Count stays in the SNG1 d
 ### [x] META1 Align AI cleanup button with Cancel/Save
 Edit-meta dialog: put "Clean up with AI" on the same action row as Cancel/Save.
 - **Done when:** the three buttons sit on one aligned row; sane at min width in zh + en.
+
+### [~] UI7 Layout primitives + full migration to gap-based spacing
+New `ui/Stack` (flex row/column, typed `gap`/`justify`/`align`, default `align=center`, `as='div'|'header'|'footer'`), `ui/Grid` (fixed `cols` or responsive `minItemWidth` auto-fill), `ui/Container` (page scroll wrapper: `pl-6 pr-[14px] pt-19` — `pr` compensates the UI2 scrollbar-gutter — plus `pb`/`maxWidth`). **Decision (grilled): inter-element spacing → `gap` via these primitives; a component's own intrinsic padding (cards, dialogs, buttons, fieldsets) stays as `padding`.** Migrate every screen + composite component (not `ui/` leaf primitives) to use them: Library, Settings, PipelineSetup, Player, LyricCreator, AppHeader, Titlebar, TimingStep, PipelineInstaller, WindowControls, SongCard, SongRow, ReviewPane, WaveformStrip, and the 6 dialogs (Confirm/Import/EditMeta/SongDetails/CleanLyrics/LrclibFinder).
+- **Done when:** `npm run check` green; every migrated screen verified via playwright screenshot with no visual regression vs pre-migration layout.
 
 ## Phase 6 — Audio (deferred Round-2 candidates)
 
