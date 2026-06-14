@@ -28,7 +28,17 @@ import SongDetailsDialog from '../components/SongDetailsDialog'
 import Soundwave from '../components/Soundwave'
 import StageWaveform from '../components/StageWaveform'
 import Titlebar from '../components/Titlebar'
-import { Button, IconButton, Menu, MenuItem, Popover, Slider, Toggle } from '../components/ui'
+import {
+  Button,
+  Grid,
+  IconButton,
+  Menu,
+  MenuItem,
+  Popover,
+  Slider,
+  Stack,
+  Toggle
+} from '../components/ui'
 import { AudioEngine } from '../lib/audioEngine'
 
 interface Props {
@@ -249,78 +259,81 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
   return (
     <div className="relative h-full">
       <Titlebar>
-        <IconButton
-          onClick={onExit}
-          title={t('common.backEsc')}
-          className="app-no-drag text-text-dim hover:text-text"
-        >
-          <ArrowLeft className="size-4" strokeWidth={1.5} />
-        </IconButton>
-        <div className="flex min-w-0 flex-col justify-center gap-0.5">
-          <h1 className="truncate font-semibold text-sm leading-tight">{song.title}</h1>
-          <button
-            type="button"
-            onClick={() => onArtistClick(song.artist)}
-            title={t('library.viewArtist', { name: song.artist })}
-            className="app-no-drag truncate text-left text-text-dim text-xs leading-tight hover:text-text hover:underline"
-          >
-            {song.artist}
-          </button>
-        </div>
-        <div className="flex-1" />
-        {!error && (
-          <>
-            <Button
-              variant="ghost"
-              active={stageVisual !== 'off'}
-              onClick={cycleStageVisual}
-              title={t('player.stageVisualTip', { mode: t(STAGE_VISUAL_KEY[stageVisual]) })}
-              className="app-no-drag"
-            >
-              {stageVisual === 'bars' ? (
-                <BarChart3 className="size-4" strokeWidth={1.5} />
-              ) : (
-                <AudioWaveform className="size-4" strokeWidth={1.5} />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => setEditOpen(true)}
-              title={t('editMeta.title')}
+        <Stack justify="between" className="w-full">
+          <Stack gap={3}>
+            <IconButton
+              onClick={onExit}
+              title={t('common.backEsc')}
               className="app-no-drag text-text-dim hover:text-text"
             >
-              <Pencil className="size-4" strokeWidth={1.5} /> {t('editMeta.title')}
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => onEditLyrics(song)}
-              title={lyrics ? t('player.editLyrics') : t('player.addLyrics')}
-              className="app-no-drag text-text-dim hover:text-text"
-            >
-              <Type className="size-4" strokeWidth={1.5} />{' '}
-              {lyrics ? t('player.editLyrics') : t('player.addLyrics')}
-            </Button>
-            <Menu
-              origin="top right"
-              className="top-full right-0 mt-1 w-44 overflow-hidden py-1"
-              trigger={(open, toggle) => (
-                <IconButton
-                  variant="ghost"
-                  active={open}
-                  onClick={toggle}
-                  title={t('player.moreActions')}
-                  className="app-no-drag text-text-dim hover:text-text"
-                >
-                  <MoreVertical className="size-4" strokeWidth={1.5} />
-                </IconButton>
-              )}
-            >
-              <MenuItem onSelect={() => setDetailsOpen(true)}>
-                <Info className="size-3.5" strokeWidth={1.5} /> {t('player.songDetails')}
-              </MenuItem>
-            </Menu>
-          </>
-        )}
+              <ArrowLeft className="size-4" strokeWidth={1.5} />
+            </IconButton>
+            <Stack direction="column" gap={0.5} justify="center" className="min-w-0">
+              <h1 className="truncate font-semibold text-sm leading-tight">{song.title}</h1>
+              <button
+                type="button"
+                onClick={() => onArtistClick(song.artist)}
+                title={t('library.viewArtist', { name: song.artist })}
+                className="app-no-drag truncate text-left text-text-dim text-xs leading-tight hover:text-text hover:underline"
+              >
+                {song.artist}
+              </button>
+            </Stack>
+          </Stack>
+          {!error && (
+            <Stack gap={3}>
+              <Button
+                variant="ghost"
+                active={stageVisual !== 'off'}
+                onClick={cycleStageVisual}
+                title={t('player.stageVisualTip', { mode: t(STAGE_VISUAL_KEY[stageVisual]) })}
+                className="app-no-drag"
+              >
+                {stageVisual === 'bars' ? (
+                  <BarChart3 className="size-4" strokeWidth={1.5} />
+                ) : (
+                  <AudioWaveform className="size-4" strokeWidth={1.5} />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setEditOpen(true)}
+                title={t('editMeta.title')}
+                className="app-no-drag text-text-dim hover:text-text"
+              >
+                <Pencil className="size-4" strokeWidth={1.5} /> {t('editMeta.title')}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => onEditLyrics(song)}
+                title={lyrics ? t('player.editLyrics') : t('player.addLyrics')}
+                className="app-no-drag text-text-dim hover:text-text"
+              >
+                <Type className="size-4" strokeWidth={1.5} />{' '}
+                {lyrics ? t('player.editLyrics') : t('player.addLyrics')}
+              </Button>
+              <Menu
+                origin="top right"
+                className="top-full right-0 mt-1 w-44 overflow-hidden py-1"
+                trigger={(open, toggle) => (
+                  <IconButton
+                    variant="ghost"
+                    active={open}
+                    onClick={toggle}
+                    title={t('player.moreActions')}
+                    className="app-no-drag text-text-dim hover:text-text"
+                  >
+                    <MoreVertical className="size-4" strokeWidth={1.5} />
+                  </IconButton>
+                )}
+              >
+                <MenuItem onSelect={() => setDetailsOpen(true)}>
+                  <Info className="size-3.5" strokeWidth={1.5} /> {t('player.songDetails')}
+                </MenuItem>
+              </Menu>
+            </Stack>
+          )}
+        </Stack>
       </Titlebar>
 
       <div className={`absolute inset-0 overflow-hidden bg-bg ${barVisible ? '' : 'cursor-none'}`}>
@@ -342,24 +355,24 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
 
         <div className="absolute inset-0 z-0">
           {error ? (
-            <div className="flex h-full flex-col items-center justify-center gap-3">
+            <Stack direction="column" gap={3} justify="center" align="center" className="h-full">
               <p className="text-danger">{error}</p>
               <Button size="md" onClick={onExit}>
                 {t('common.back')}
               </Button>
-            </div>
+            </Stack>
           ) : !engine ? (
-            <div className="flex h-full items-center justify-center gap-2 text-text-dim">
+            <Stack gap={2} justify="center" className="h-full text-text-dim">
               <Loader2 className="size-5 animate-spin" /> {t('player.loadingStems')}
-            </div>
+            </Stack>
           ) : lyrics ? (
             <LyricRenderer lyrics={lyrics} clock={clock} onSeek={seek} />
           ) : (
-            <div className="flex h-full items-center justify-center">
+            <Stack justify="center" className="h-full">
               <Button variant="primary" size="md" onClick={() => onEditLyrics(song)}>
                 <Type className="size-4" strokeWidth={1.5} /> {t('player.addLyrics')}
               </Button>
-            </div>
+            </Stack>
           )}
         </div>
 
@@ -383,7 +396,10 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
             }
             className={`absolute inset-x-0 bottom-0 z-10 ${barVisible ? '' : 'pointer-events-none'}`}
           >
-            <div className="flex items-center gap-4 bg-gradient-to-t from-black/80 to-transparent px-6 pt-12 pb-5">
+            <Stack
+              gap={4}
+              className="bg-gradient-to-t from-black/80 to-transparent px-6 pt-12 pb-5"
+            >
               <IconButton
                 variant="primary"
                 size="lg"
@@ -426,8 +442,9 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                 />
               </span>
 
-              <div
-                className={`flex h-11 items-center gap-2 rounded-control border px-2 ${
+              <Stack
+                gap={2}
+                className={`h-11 rounded-control border px-2 ${
                   vocalOn ? 'border-accent' : 'border-border'
                 }`}
               >
@@ -457,10 +474,11 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                   title={t('player.guideVolTip')}
                   className="h-8 w-20"
                 />
-              </div>
+              </Stack>
 
-              <div
-                className={`flex h-11 items-center gap-1 rounded-control border px-2 ${
+              <Stack
+                gap={1}
+                className={`h-11 rounded-control border px-2 ${
                   keyVal !== 0 ? 'border-accent text-accent' : 'border-border text-text-dim'
                 }`}
               >
@@ -485,7 +503,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                 >
                   <Plus className="size-4" strokeWidth={1.5} />
                 </IconButton>
-              </div>
+              </Stack>
 
               <div className="relative">
                 <Popover
@@ -493,7 +511,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                   origin="bottom right"
                   className="right-0 bottom-full mb-2 w-max p-3"
                 >
-                  <div className="flex items-center justify-between pb-2">
+                  <Stack justify="between" className="pb-2">
                     <span className="text-text-dim text-xs">{t('player.tempo')}</span>
                     <Button
                       size="bare"
@@ -502,8 +520,8 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                     >
                       {t('common.reset')}
                     </Button>
-                  </div>
-                  <div className="grid grid-cols-4 gap-1">
+                  </Stack>
+                  <Grid cols={4} gap={1}>
                     {TEMPO_PRESETS.map((t) => (
                       <Toggle
                         key={t}
@@ -515,7 +533,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                         {t.toFixed(2)}×
                       </Toggle>
                     ))}
-                  </div>
+                  </Grid>
                 </Popover>
                 <Button
                   size="lg"
@@ -542,7 +560,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                   <PinOff className="size-4" strokeWidth={1.5} />
                 )}
               </Toggle>
-            </div>
+            </Stack>
           </motion.div>
         )}
       </div>
