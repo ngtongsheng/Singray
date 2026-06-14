@@ -50,12 +50,15 @@ function Stack({
   direction = 'row',
   gap = 0,
   justify,
-  align = 'center',
+  align,
   wrap = false,
   className,
   ...rest
 }: StackProps): React.JSX.Element {
   const Tag = as as ElementType
+  // Default align: 'stretch' for columns (full-width children, e.g. lists/sections),
+  // 'center' for rows (vertically centered controls). Override via `align`.
+  const resolvedAlign = align ?? (direction === 'column' ? 'stretch' : 'center')
   return (
     <Tag
       className={cx(
@@ -63,7 +66,7 @@ function Stack({
         direction === 'column' ? 'flex-col' : 'flex-row',
         GAP[gap],
         justify && JUSTIFY[justify],
-        ALIGN[align],
+        ALIGN[resolvedAlign],
         wrap && 'flex-wrap',
         className
       )}

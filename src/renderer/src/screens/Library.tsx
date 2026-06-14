@@ -18,7 +18,17 @@ import ImportDialog from '../components/ImportDialog'
 import SongCard from '../components/SongCard'
 import SongRow from '../components/SongRow'
 import Titlebar from '../components/Titlebar'
-import { Button, Chip, IconButton, Input, Segmented, Select } from '../components/ui'
+import {
+  Button,
+  Chip,
+  Container,
+  Grid,
+  IconButton,
+  Input,
+  Segmented,
+  Select,
+  Stack
+} from '../components/ui'
 import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
 import { usePrefersReducedMotion } from '../lib/motionPresets'
@@ -147,75 +157,80 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
   return (
     <div className="relative h-full">
       <Titlebar>
-        <div className="app-no-drag w-72">
-          <Input
-            ref={searchRef}
-            uiSize="sm"
-            icon={<Search className="size-4 text-text-dim" />}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('library.searchPlaceholder')}
-          />
-        </div>
-        <Segmented
-          className="app-no-drag"
-          value={section}
-          onChange={setSection}
-          options={[
-            { value: 'songs', label: t('library.songs') },
-            { value: 'artists', label: t('library.artists') }
-          ]}
-        />
-        <div className="flex-1" />
-        {section === 'songs' && (
-          <>
-            <Segmented
-              className="app-no-drag"
-              value={view}
-              onChange={setViewMode}
-              options={[
-                {
-                  value: 'grid',
-                  label: <LayoutGrid className="size-4" strokeWidth={1.5} />,
-                  title: t('library.viewGrid')
-                },
-                {
-                  value: 'list',
-                  label: <List className="size-4" strokeWidth={1.5} />,
-                  title: t('library.viewList')
-                }
-              ]}
-            />
-            <div className="app-no-drag">
-              <Select
+        <Stack justify="between" className="w-full">
+          <Stack gap={3}>
+            <div className="app-no-drag w-72">
+              <Input
+                ref={searchRef}
                 uiSize="sm"
-                value={sort}
-                onChange={(v) => setSort(v as SortMode)}
-                title={t('library.sort')}
-                options={[
-                  { value: 'added', label: t('library.sortAdded') },
-                  { value: 'mostSung', label: t('library.sortMostSung') },
-                  { value: 'recentSung', label: t('library.sortRecentSung') }
-                ]}
+                icon={<Search className="size-4 text-text-dim" />}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('library.searchPlaceholder')}
               />
             </div>
-          </>
-        )}
-        <Button variant="primary" onClick={() => setShowImport(true)} className="app-no-drag">
-          <Plus className="size-4" strokeWidth={2} /> {t('library.addSong')}
-        </Button>
-        <IconButton
-          onClick={onOpenSettings}
-          title={t('library.settings')}
-          className="app-no-drag text-text-dim hover:text-text"
-        >
-          <SettingsIcon className="size-4" strokeWidth={1.5} />
-        </IconButton>
+            <Segmented
+              className="app-no-drag"
+              value={section}
+              onChange={setSection}
+              options={[
+                { value: 'songs', label: t('library.songs') },
+                { value: 'artists', label: t('library.artists') }
+              ]}
+            />
+          </Stack>
+          <Stack gap={3}>
+            {section === 'songs' && (
+              <>
+                <Segmented
+                  className="app-no-drag"
+                  value={view}
+                  onChange={setViewMode}
+                  options={[
+                    {
+                      value: 'grid',
+                      label: <LayoutGrid className="size-4" strokeWidth={1.5} />,
+                      title: t('library.viewGrid')
+                    },
+                    {
+                      value: 'list',
+                      label: <List className="size-4" strokeWidth={1.5} />,
+                      title: t('library.viewList')
+                    }
+                  ]}
+                />
+                <div className="app-no-drag">
+                  <Select
+                    uiSize="sm"
+                    value={sort}
+                    onChange={(v) => setSort(v as SortMode)}
+                    title={t('library.sort')}
+                    options={[
+                      { value: 'added', label: t('library.sortAdded') },
+                      { value: 'mostSung', label: t('library.sortMostSung') },
+                      { value: 'recentSung', label: t('library.sortRecentSung') }
+                    ]}
+                  />
+                </div>
+              </>
+            )}
+            <Button variant="primary" onClick={() => setShowImport(true)} className="app-no-drag">
+              <Plus className="size-4" strokeWidth={2} /> {t('library.addSong')}
+            </Button>
+            <IconButton
+              onClick={onOpenSettings}
+              title={t('library.settings')}
+              className="app-no-drag text-text-dim hover:text-text"
+            >
+              <SettingsIcon className="size-4" strokeWidth={1.5} />
+            </IconButton>
+          </Stack>
+        </Stack>
       </Titlebar>
 
-      <div className="absolute inset-0 overflow-y-auto pt-19">
+      <Container>
         {section === 'songs' && (
-          <div className="flex items-center gap-2 pl-6 pr-[14px] py-3">
+          <Stack gap={2} className="py-3">
             {artistFilter !== null && (
               <Chip
                 active
@@ -241,19 +256,19 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
             <Chip active={needsLyricsOnly} onClick={() => setNeedsLyricsOnly(!needsLyricsOnly)}>
               <Type className="size-3.5" strokeWidth={1.5} /> {t('library.needsLyrics')}
             </Chip>
-          </div>
+          </Stack>
         )}
 
         {songs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-4 py-24">
+          <Stack direction="column" gap={4} justify="center" align="center" className="py-24">
             <Mic2 className="size-12 text-accent" strokeWidth={1.5} />
             <p className="text-text-dim">{t('library.emptyHint')}</p>
             <Button variant="primary" size="md" onClick={() => setShowImport(true)}>
               <Plus className="size-4" strokeWidth={2} /> {t('library.addSong')}
             </Button>
-          </div>
+          </Stack>
         ) : section === 'artists' ? (
-          <div className="flex flex-col gap-2 pl-6 pr-[14px] pb-12">
+          <Stack direction="column" gap={2} className="pb-12">
             {artists.map(({ name, count }) => (
               <button
                 key={name}
@@ -267,11 +282,11 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
                 </span>
               </button>
             ))}
-          </div>
+          </Stack>
         ) : filtered.length === 0 ? (
-          <p className="pl-6 pr-[14px] py-12 text-center text-text-dim">{t('library.noMatch')}</p>
+          <p className="py-12 text-center text-text-dim">{t('library.noMatch')}</p>
         ) : view === 'grid' ? (
-          <div className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 pl-6 pr-[14px] pb-12">
+          <Grid minItemWidth={220} autoRows="min" gap={4} className="pb-12">
             {filtered.map((song, i) => (
               // Entrance stagger (SPEC §10.5): 30ms per card, capped, animates once per mount.
               <motion.div
@@ -289,9 +304,9 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
                 />
               </motion.div>
             ))}
-          </div>
+          </Grid>
         ) : (
-          <div className="flex flex-col gap-2 pl-6 pr-[14px] pb-12">
+          <Stack direction="column" gap={2} className="pb-12">
             {filtered.map((song, i) => (
               // Entrance stagger (SPEC §10.5): 30ms per card, capped, animates once per mount.
               <motion.div
@@ -309,9 +324,9 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
                 />
               </motion.div>
             ))}
-          </div>
+          </Stack>
         )}
-      </div>
+      </Container>
 
       {imports.size > 0 &&
         (() => {
@@ -321,7 +336,7 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
           const title = songs.find((s) => s.id === job.songId)?.title ?? job.songId
           return (
             <div className="absolute inset-x-0 bottom-0 z-20 border-border border-t bg-surface px-6 py-1.5">
-              <div className="flex items-center gap-2 text-xs">
+              <Stack gap={2} className="text-xs">
                 <span className="text-text-dim">
                   {STRIP_KEY[job.stage] ? t(STRIP_KEY[job.stage] as string) : job.stage} · {title}
                 </span>
@@ -331,7 +346,7 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
                     {t('library.moreQueued', { count: imports.size - 1 })}
                   </span>
                 )}
-              </div>
+              </Stack>
               <div
                 className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
                 style={{ width: `${job.progress * 100}%` }}
