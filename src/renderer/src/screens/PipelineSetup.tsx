@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import PipelineInstaller from '../components/PipelineInstaller'
 import Titlebar from '../components/Titlebar'
-import { Button } from '../components/ui'
+import { Button, Container, Stack } from '../components/ui'
 
 interface Props {
   /** Pipeline became ready (install finished). */
@@ -18,8 +18,8 @@ function PipelineSetup({ onReady, onSkip }: Props): React.JSX.Element {
       <Titlebar>
         <h1 className="font-semibold text-base">{t('settings.setup.firstRunTitle')}</h1>
       </Titlebar>
-      <div className="absolute inset-0 overflow-y-auto pl-6 pr-[14px] pt-19 pb-10">
-        <div className="mx-auto flex max-w-lg flex-col gap-6">
+      <Container pb={10} maxWidth="lg">
+        <Stack direction="column" gap={6}>
           <p className="text-sm text-text-dim">{t('settings.setup.firstRunDesc')}</p>
           <PipelineInstaller onReady={onReady} />
           <div>
@@ -27,8 +27,8 @@ function PipelineSetup({ onReady, onSkip }: Props): React.JSX.Element {
               {t('settings.setup.skip')}
             </Button>
           </div>
-        </div>
-      </div>
+        </Stack>
+      </Container>
     </div>
   )
 }
