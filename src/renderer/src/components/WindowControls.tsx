@@ -1,5 +1,6 @@
 import { Copy, Minus, Square, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Stack } from './ui'
 import { cx } from './ui/cx'
 
 const BTN =
@@ -15,7 +16,7 @@ function WindowControls(): React.JSX.Element {
   }, [])
 
   return (
-    <div className="flex h-full items-stretch">
+    <Stack align="stretch" className="h-full">
       <button
         type="button"
         aria-label="Minimize"
@@ -44,7 +45,7 @@ function WindowControls(): React.JSX.Element {
       >
         <X className="size-4" strokeWidth={1.5} />
       </button>
-    </div>
+    </Stack>
   )
 }
 

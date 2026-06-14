@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ImportProgress, SongListItem } from '../../../shared/types'
-import { IconButton, Menu, MenuItem } from './ui'
+import { IconButton, Menu, MenuItem, Stack } from './ui'
 
 interface Props {
   song: SongListItem
@@ -27,7 +27,8 @@ function SongRow({ song, importing, onDelete, onSing, onArtistClick }: Props): R
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: row contains nested buttons (artist/heart/menu/retry) — a real <button> can't nest them
-    <div
+    <Stack
+      gap={3}
       role="button"
       tabIndex={0}
       onClick={() => openable && onSing(song)}
@@ -37,7 +38,7 @@ function SongRow({ song, importing, onDelete, onSing, onArtistClick }: Props): R
           onSing(song)
         }
       }}
-      className={`group flex items-center gap-3 rounded-card border border-border bg-surface px-3 py-2 transition-colors hover:border-text-dim/40 ${
+      className={`group rounded-card border border-border bg-surface px-3 py-2 transition-colors hover:border-text-dim/40 ${
         openable ? 'cursor-pointer' : ''
       }`}
     >
@@ -132,7 +133,7 @@ function SongRow({ song, importing, onDelete, onSing, onArtistClick }: Props): R
           <Trash2 className="size-3.5" strokeWidth={1.5} /> {t('common.delete')}
         </MenuItem>
       </Menu>
-    </div>
+    </Stack>
   )
 }
 
