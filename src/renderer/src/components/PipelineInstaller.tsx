@@ -2,7 +2,7 @@ import { CheckCircle2, Circle, Download, Loader2, XCircle } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { InstallEvent, InstallStep, PipelineStatus } from '../../../shared/types'
-import { Button } from './ui'
+import { Button, Stack } from './ui'
 
 const STEPS: InstallStep[] = ['uv', 'venv', 'torch', 'deps', 'ffmpeg', 'verify']
 const STEP_KEY: Record<InstallStep, string> = {
@@ -82,7 +82,7 @@ export default function PipelineInstaller({ onReady }: Props): React.JSX.Element
   if (!status) return <span className="text-text-dim text-xs">{t('common.loading')}</span>
 
   return (
-    <div className="flex flex-col gap-3">
+    <Stack direction="column" gap={3}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
         {chip(
           t('settings.setup.python'),
@@ -143,7 +143,7 @@ export default function PipelineInstaller({ onReady }: Props): React.JSX.Element
         </span>
       )}
 
-      <div className="flex gap-2">
+      <Stack gap={2}>
         {installing ? (
           <Button variant="secondary" size="md" onClick={cancel}>
             {t('settings.setup.cancel')}
@@ -159,7 +159,7 @@ export default function PipelineInstaller({ onReady }: Props): React.JSX.Element
             <Loader2 className="size-3.5 animate-spin" /> {t('settings.setup.installing')}
           </span>
         )}
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   )
 }
