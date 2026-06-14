@@ -1,11 +1,12 @@
-# Singray — Story Backlog (Round 2)
+# Singray — Story Backlog (Round 3)
 
-Round 1 (Enhancement) archived at `docs/rounds/01-enhancement.md`. MVP at `docs/rounds/00-mvp.md`.
+Round 1 (Enhancement) archived at `docs/rounds/01-enhancement.md`. MVP at `docs/rounds/00-mvp.md`. Round 2 stories are all `[x]` — kept below for the Session Log to resolve.
 Round 2 feature source: user feedback 2026-06-14 (`docs/feedback/2026-06-14-round2.md`), grilled + triaged. Decisions from the grilling session are baked into each story below.
+Round 3 feature source: user feedback 2026-06-14 round 3, grilled same day. Decisions baked into each Round 3 story (see `## Round 3` below).
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Round 2 Phases 0-5 all `[x]`.** Only Phase 6 (`FX1`-`FX3`) remains, all undetailed one-line stubs. **Now: none startable** — Phase 6 needs spec/grilling into proper stories (Done-when, decisions) before any is startable; not a drop-in continuation.
+> **Round 2 Phases 0-5 all `[x]`.** Round 2 Phase 6 (`FX1`-`FX3`) was reconciled into Round 3 (FX3/EQ dropped, FX1/record folded into the mic feature, FX2/vocal-FX → MIC3). **Now: R3.DX1** — start of Round 3 (see `## Round 3` below). Mic feature has a dedicated spec at `SPEC.md` §14 (Microphone & recording).
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
 
@@ -169,24 +170,130 @@ Edit-meta dialog: put "Clean up with AI" on the same action row as Cancel/Save.
 New `ui/Stack` (flex row/column, typed `gap`/`justify`/`align`, default `align=center`, `as='div'|'header'|'footer'`), `ui/Grid` (fixed `cols` or responsive `minItemWidth` auto-fill), `ui/Container` (page scroll wrapper: `pl-6 pr-[14px] pt-19` — `pr` compensates the UI2 scrollbar-gutter — plus `pb`/`maxWidth`). **Decision (grilled): inter-element spacing → `gap` via these primitives; a component's own intrinsic padding (cards, dialogs, buttons, fieldsets) stays as `padding`.** Migrate every screen + composite component (not `ui/` leaf primitives) to use them: Library, Settings, PipelineSetup, Player, LyricCreator, AppHeader, Titlebar, TimingStep, PipelineInstaller, WindowControls, SongCard, SongRow, ReviewPane, WaveformStrip, and the 6 dialogs (Confirm/Import/EditMeta/SongDetails/CleanLyrics/LrclibFinder).
 - **Done when:** `npm run check` green; every migrated screen verified via playwright screenshot with no visual regression vs pre-migration layout.
 
-## Phase 6 — Audio (deferred Round-2 candidates)
+## Phase 6 — Audio (Round-2 deferred — reconciled into Round 3)
+- **FX1 (record-to-file)** → folded into the mic feature: `R3.REC1`/`R3.REC2`.
+- **FX2 (vocal reverb/echo)** → `R3.MIC3` (mic FX presets).
+- **FX3 (EQ)** → **dropped** (Round 3 decision; not building).
 
-### [ ] FX1 Record singing — mic capture + mix-down to file.
-### [ ] FX2 Vocal effects — reverb/echo on monitor path.
-### [ ] FX3 EQ — per-output or master.
+---
 
-## Unscheduled
-- [ ] Themed Tooltip primitive + retrofit native `title=` (~40 sites) — UI4 scoped this out, native title tooltips kept
-- [ ] Playlists / up-next queue (dropped from R1)
-- [ ] Fullscreen two-line stage mode (dropped)
-- [ ] Per-unit timing nudge editor (dropped)
-- [ ] Mic-input waveform via getUserMedia (chose output-mix analyser)
-- [ ] Per-song key/tempo persistence (MVP decision was per-session)
+# Round 3
+
+Source: user feedback 2026-06-14 round 3, grilled same day. Headline = **microphone support** (self-monitoring + reverb/echo) and **performance recording**; plus a waveform split, settings fixes, and a batch of UI tweaks. Two small DX refactors land first (grilled separately — adopt no new deps; extract two internal hooks). All decisions below are baked from the grilling session.
+
+ID scheme: `R3.<AREA><n>`. Areas: `DX` (dev-experience refactor), `LYR` (add/edit lyric screen), `SET` (settings), `WAVE` (waveform), `MIC` (microphone + FX), `REC` (recording), plus continued `UI`/`HOME`/`ADD`/`SNG` from Round 2.
+
+## R3 Phase 0 — DX cleanup (foundation, no new deps)
+> Grilled: current scale doesn't justify Redux/Zustand/RQ/RHF or a pnpm migration. Two internal helpers only.
+
+### [ ] R3.DX1 `useSettings` hook
+Single source for settings get/patch. Today `settings` is fetched independently in `Settings.tsx` and `Player.tsx` (and Round 3 adds more consumers: mic device, recording format). New `hooks/useSettings.ts` wrapping `window.singray.settings.get/set` with in-memory state; patch updates state optimistically; no library.
+- **Done when:** Settings + Player read/write settings via the hook; a change made in Settings is reflected on next Player open without a manual refetch; `npm run check` green; no behavior change vs today.
+
+### [ ] R3.DX2 `useAsync(fn)` helper
+`{ data, loading, error, run }` for one-shot IPC requests. Migrate the hand-rolled `useState`+`try/catch` request-state in `Settings.tsx` (pipeline test, llm test, separation-model list) and `ImportDialog` probe. Sets up Round 3's new async surfaces (model list, mic devices, recordings).
+- **Done when:** those call sites use `useAsync`; loading/error/success behavior identical to today; `npm run check` green.
+
+## R3 Phase 1 — UI tweaks (batch; no architecture change)
+> Unambiguous layout moves; semantic tokens only; verify each screen via screenshot.
+
+### [ ] R3.UI8 Thinner input focus outline
+Focus outline on `Input`/controls reads too thick. Reduce ring width to a subtler value (still visible, a11y-adequate).
+- **Done when:** focused inputs show a thinner outline; keyboard focus still clearly visible on every control; check green.
+
+### [ ] R3.SNG4 Song-detail modal: drop history, link source
+`SongDetailsDialog`: remove the sing-history list entirely. Source row: when source is a URL (YouTube), render a "YouTube" link that opens in the external browser (`shell.openExternal` via a new `window:openExternal` IPC) instead of printing the full URL; file sources unchanged.
+- **Done when:** no sing-history section in the modal; a YouTube-sourced song shows a clickable "YouTube" link opening the default browser; a file-sourced song shows its path as before; check green.
+
+### [ ] R3.LYR1 Add/Edit-lyric screen reflow
+Reorder the creator (`LyricCreator`/`TimingStep`) to: **row 1** page header = back + title (left), Segmented step-switch + Continue (right); **row 2** action buttons (find lyrics / import LRC / clean-up-with-AI / align); **row 3** lyric textarea; **row 4** the "one lyric per row — empty row…" helper text. Move the Segmented control from its current spot to the page header beside Continue; add icons to each Segmented option. Remove the "Edit text" button on the tab/preview screens. Remove the tab/preview toggle beside the tempo. Progress strip (EL3): vertical-align its text to the bottom, match its height to the keyboard-shortcut tip section, place it **below** the shortcut tips, and show it permanently (drop the dismiss icon).
+- **Done when:** the four rows render in that order; Segmented sits in the header with icons; no "Edit text" button on tab/preview; no tab/preview toggle by the tempo; progress strip is permanent, bottom-aligned, height-matched, below the tips; works zh + en; check green.
+
+### [ ] R3.HOME2 Sort + view toggle onto the filter row
+Library: move the sort Select and the grid/list view toggle onto the same row as the filter chips.
+- **Done when:** sort + view toggle render inline with the filters on one row; holds at min width; no overlap with window buttons; check green.
+
+### [ ] R3.ADD4 Add-Song: icon sizing + Segmented tabs
+`ImportDialog`: the search icon doesn't match the input height — size it to the input. Replace the UI6 Tabs (YouTube / file) with the `Segmented` primitive, with an icon per option (per [[ui-control-preferences]]).
+- **Done when:** search icon matches the input metrics; source switch is a Segmented control with icons; each mode's state survives switching; check green.
+
+### [ ] R3.SNG5 Player chrome polish
+Player: (a) header action buttons (stage-visual / edit / lyrics / overflow) get a border like the key/tempo controls. (b) Fix the guide on/off label wrapping to a 2nd line because the volume slider pushes it. (c) **Revert NAV4** — title + artist back to horizontal (inline), not stacked (**SPEC §10 / NAV4 reversal** — note in commit). (d) Shorten the instrumental-volume and guide-vocal-volume sliders.
+- **Done when:** header buttons are bordered; guide label never wraps; title+artist render inline and truncate; both volume sliders are shorter and don't crowd neighbours; check green.
+
+## R3 Phase 2 — Settings fixes
+### [ ] R3.SET1 Separation-model list bug + layout
+Bug: the UVR separation-model list "doesn't load all models" and refresh doesn't repopulate. Investigate `pipeline.listModels(force)` (main) — likely cache/dir-scan/parse issue; fix so refresh re-scans and lists every available model. Make the dropdown full-width (match Stem format). Give the refresh button a border.
+- **Done when:** opening Settings lists every model in the UVR models dir; refresh re-scans and reflects newly-added models without restart; dropdown is full-width; refresh button is bordered; check green.
+
+### [ ] R3.SET2 Dynamic AI-assist model list
+Replace the free-text `llmModel` Input with an editable Select populated from `GET {llmBaseUrl}/v1/models` (OpenAI-compatible — covers Ollama's compat layer, LM Studio, etc.). Keep type-to-override for unlisted/remote models. Fetch via `useAsync` (R3.DX2) with a refresh.
+- **Done when:** the model field lists models returned by the configured base URL; a value not in the list can still be typed/kept; an unreachable endpoint degrades gracefully (keeps the current value, shows an error, stays editable); check green.
+
+### [ ] R3.SET3 GPU-detected check-icon consistency
+`PipelineInstaller`: the "GPU detected" status lacks the success check icon other detected items show. Add it for visual consistency.
+- **Done when:** GPU-detected shows the same success check treatment as the other detected rows; check green.
+
+### [ ] R3.SET4 Full-width audio routing + recording-format setting
+Audio routing controls (output-mode / monitor / stream selects + test buttons) all full-width. Add a `recordingFormat` setting (Select, e.g. `webm` | `wav`, default `webm`) feeding R3.REC1; store in settings model + main.
+- **Done when:** every audio-routing control spans full width; `recordingFormat` persists and round-trips through `settings.get/set`; check green.
+
+## R3 Phase 3 — Waveform split
+> Grilled: "wave bar" = bottom seek transport; "wave form" = top visualization. **SPEC §7 update.**
+
+### [ ] R3.WAVE1 Bottom waveform seek bar
+Replace the Player's plain seek `Slider` with a compact waveform-styled seek bar (full-mix peaks via `engine.peaks()`, click-to-seek, playhead overlay — WaveformStrip-style, full-rate rAF playhead off the engine clock). Stays pinned at the bottom of the control bar.
+- **Done when:** the bottom transport shows the mix waveform with a moving playhead; click/drag seeks; timecodes intact; perf — playhead is a clear+line redraw, no per-frame React render; check green.
+
+### [ ] R3.WAVE2 Visualization relocated below the header
+Move the stage visualization (`StageWaveform` / `Soundwave`) out of the full-stage bottom overlay into a strip **below the app header** (top). The stage-visual button keeps cycling off / waveform / bars, now driving the top strip; lyrics get the full middle area. **SPEC §7/§10 update.**
+- **Done when:** the visualization renders as a top strip under the header (not behind lyrics at the bottom); the toggle cycles off/waveform/bars for it; lyric layout unaffected by the move; paused/hidden behavior preserved; check green.
+
+## R3 Phase 4 — Microphone + FX (heavy; see SPEC §14)
+> Full design in **SPEC §14 (Microphone & recording)**. Mic → both monitor + stream legs, bypasses the SoundTouch worklets, FX duplicated per context.
+
+### [ ] R3.MIC1 Engine mic plumbing
+`AudioEngine` gains a mic graph: `getUserMedia({ audio: { deviceId, echoCancellation:false, noiseSuppression:false, autoGainControl:false } })`, one `MediaStreamAudioSourceNode` **per context** off the single `MediaStream`, mic gain → both monitor and (dual) stream destinations, **not** through the SoundTouch worklets. Mic graph builds/tears down independently of the song sources (mic survives seek/pause/tempo rebuilds). Settings device enumeration extends to `audioinput`. Engine constructed with `latencyHint:'interactive'`.
+- **Done when:** enabling mic on a real input makes voice audible on the monitor output; mic stays alive across play/pause/seek/tempo changes; mic is unaffected by key/tempo (no pitch shift); disabling releases the `getUserMedia` track; `routingWarning`-style handling for a denied/absent mic; check green; verified by ear.
+
+### [ ] R3.MIC2 Monitor toggle + routing semantics
+"Monitor" toggle mutes only the **monitor leg** (mic still flows to the stream/record bus in dual mode — AG06 hardware-monitor case). In **single** mode there is no stream context, so the toggle mutes mic entirely (mic is dual-mode-useful only). Mic volume control (ramped gain, both legs).
+- **Done when:** dual mode — monitor-off silences mic on the monitor output while a recording still captures the mic; single mode — monitor-off silences mic completely; mic volume ramps click-free on both legs; check green; verified by ear.
+
+### [ ] R3.MIC3 Mic FX presets (reverb / echo)
+Preset set: Off / Room / Hall / Echo / Karaoke. Reverb = `ConvolverNode` fed a **synthesized** decaying-noise impulse response (no bundled audio files); echo = `DelayNode` + feedback `GainNode`. One wet/dry "amount" knob. FX nodes sit in the mic path and are **duplicated per context** so both monitor and the recorded stream get identical FX.
+- **Done when:** each preset audibly changes the mic; the amount knob blends dry→wet; the recorded take (R3.REC1) contains the same FX heard on monitor; preset/amount switch click-free; check green; verified by ear.
+
+### [ ] R3.MIC4 Mic UI (Settings + Player)
+Settings audio fieldset: mic **device** Select (`audioinput`) + enable. Player control bar (live): mic volume + monitor toggle + FX preset + amount. Show a "software monitor may lag — prefer hardware monitoring (e.g. AG06)" hint near the monitor toggle. First mic use triggers the `getUserMedia` permission prompt — handle grant/deny.
+- **Done when:** mic device persists from Settings; Player exposes live mic volume/monitor/FX; the latency hint is visible; permission denial shows a clear message and leaves the rest of the player working; works zh + en; check green.
+
+## R3 Phase 5 — Recording (FX1 folded in)
+> Record source = the **stream bus** (instrumental + mic + FX, no guide vocal); dual-mode only. See SPEC §14.
+
+### [ ] R3.REC1 Capture stream bus to file
+`MediaStreamAudioDestinationNode` tapping the stream-context mix → `MediaRecorder` → Blob → IPC save to the song's `recordings/<ISO-timestamp>.<recordingFormat>` (R3.SET4). Record button in the Player control bar, **only shown in dual mode** (the stream bus exists there). Start/stop with clear recording state; guard against unsaved-on-exit.
+- **Done when:** in dual mode, record captures instrumental + mic + FX with **no guide vocal**; the file lands in the song's `recordings/` in the configured format; the button is absent in single mode; stopping/exiting mid-record flushes the file; check green; verified by playing the file back.
+
+### [ ] R3.REC2 Recordings view
+Dedicated screen listing takes (per song, with a song↔take association): each take shows song, timestamp, duration, with play / delete / reveal-in-folder. Navigation entry to reach it (e.g. from the library header and/or the song-details modal). Playback via an `<audio>` element off the recordings file URL (new protocol/IPC if needed).
+- **Done when:** the view lists existing recordings with correct metadata; play works in-app; delete removes the file; reveal opens the OS folder; reachable via navigation; empty state handled; check green.
+
+## Round 3 — Unscheduled / dropped
+- [ ] EQ (FX3) — **dropped** Round 3, not building.
+- [ ] Themed Tooltip primitive + retrofit native `title=` (~40 sites) — UI4 scoped out, native title tooltips kept.
+- [ ] Playlists / up-next queue (dropped from R1).
+- [ ] Fullscreen two-line stage mode (dropped).
+- [ ] Per-unit timing nudge editor (dropped).
+- [ ] Mic-input waveform via getUserMedia (output-mix analyser chosen instead; revisit if a mic-level meter is wanted alongside R3.MIC4).
+- [ ] Per-song key/tempo persistence (MVP decision was per-session).
+- [ ] Recording mixdown to mp3/m4a via bundled ffmpeg (R3.SET4 ships webm/wav from MediaRecorder; transcode is a later option).
 
 ---
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-14 · — · **Round 3 opened.** Grilled the round-3 feedback; baked decisions into a new `## Round 3` section (Phases 0-5, `R3.<AREA><n>` IDs). Headline = microphone (self-monitor + reverb/echo) + performance recording; full design written to **SPEC §14 (Microphone & recording)**. Key decisions: mic routes to **both** monitor + stream legs (one `MediaStream`, a `MediaStreamAudioSourceNode` per context), **bypasses** the SoundTouch worklets (live voice, no pitch/tempo shift); "monitor" toggle mutes only the monitor leg (mic still → record bus in dual; AG06 case), single mode = mic muted entirely; FX = synth-IR ConvolverNode reverb + DelayNode echo presets (Off/Room/Hall/Echo/Karaoke) + one wet/dry knob, duplicated per context. Recording = capture the **stream bus** (instrumental + mic + FX, no guide vocal) via MediaRecorder, **dual-mode only**, format configurable (`recordingFormat`, R3.SET4), saved to song `recordings/`, surfaced in a **dedicated recordings view** (R3.REC2). Round-2 Phase 6 reconciled: **FX3/EQ dropped**, FX1/record folded into R3.REC, FX2 → R3.MIC3. Waveform split: bottom = waveform **seek bar** (R3.WAVE1), top-under-header = the **visualization** (R3.WAVE2). Library decision (grilled separately): **no new deps** — not adopting Redux/Zustand/RQ/RHF, not migrating to pnpm now; instead two internal hooks `useSettings` (R3.DX1) + `useAsync` (R3.DX2) as Phase-0 cleanup. AI-assist model list → `GET /v1/models` (R3.SET2). Now pointer = **R3.DX1**.
 - 2026-06-14 · R5.1+R5.2 · Verified via existing CI runs: `pipeline-macos.yml` run `27488482708` (smoke job) green — setup.sh, real `probe`, and separation smoke all passed on the macOS Actions runner (R5.1). v0.1.0 Release (from R4.4 fix) contains `singray-0.1.0.dmg` alongside the `.exe`, and README already has the unsigned-open section (R5.2). This closes Phase 0 entirely — Round 2 Phases 0-5 all **[x]**; only Phase 6 (`FX1`-`FX3`, undetailed stubs) remains.
 - 2026-06-14 · R0.1+R0.2+R4.2 · R0.1 ear-check batch confirmed (all 4 checks). R4.2 owner-side GitHub actions (public repo, branch protection, red/green PR test) confirmed done. R0.2 (live AG06 validation): **decision** — dropped, no AG06/VB-Cable hardware on hand to test; optimistically marked done on the strength of the routing config + R0.1 ear-checks. All three **[x]**.
 - 2026-06-14 · R4.3+R4.4 · R4.3 (Python bootstrapper) and R4.4 (release pipeline) clean-machine smoke tests both passed. R4.4 was blocked: every `release.yml` run failed at `npm run build:win` with biome reporting CRLF format errors across nearly all tracked files — `windows-latest` runners have `core.autocrlf=true`, so `actions/checkout` converts the repo's LF-stored blobs to CRLF on disk, and biome's `lineEnding: lf` rejects them. Fixed by adding `.gitattributes` (`* text=auto eol=lf`) so checkout normalizes to LF regardless of runner config; pushed (commit `3b25ac7`), CI green, v0.1.0 Release published with `singray-0.1.0-setup.exe` + `singray-0.1.0.dmg`. Both **[x]**.

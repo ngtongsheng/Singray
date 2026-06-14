@@ -586,3 +586,126 @@ Dark theme only. No design system ceremony — plain CSS modules or Tailwind, wh
 | SoundTouch worklet artifacts at large shifts | Audio quality | Clamp ±6 semitones; bypass at neutral |
 | Long separation time blocks adding many songs | Annoyance | Queue + background processing; library stays usable during jobs |
 | `Intl.Segmenter` edge cases (mixed-script lines) | Bad units | Tokenizer is one pure function — fix cases as they appear; creator shows units before tapping |
+
+---
+
+## 14. Microphone & Recording (Round 3)
+
+Extends §9 (Audio Engine) and §7 (Player). Adds a live microphone path (self-monitoring + reverb/echo) and performance recording. Grilled 2026-06-14; decisions baked. Backlog stories: `R3.MIC1-4`, `R3.REC1-2`, `R3.SET4`.
+
+### 14.1 Goals & scope
+
+- **Self-monitoring:** the singer hears their own voice through the app's monitor output, with a toggle to disable it (for users whose hardware — e.g. Yamaha AG06 — already monitors with zero latency).
+- **Vocal FX:** preset reverb/echo on the mic, one wet/dry amount knob.
+- **Recording:** capture the performance (instrumental + mic + FX, **no guide vocal**) to a file.
+- **Non-goals (v1):** EQ (dropped); pitch/tempo on the live mic; noise-gate/compressor; per-band FX params; mic-level VU meter (see Unscheduled); mixdown transcode to mp3/m4a (webm/wav only for now).
+
+### 14.2 Latency reality (decision)
+
+Chromium on Windows has **no ASIO** — `getUserMedia → WebAudio → output` round-trips ~30–150ms (WASAPI shared mode). That is audible when monitoring your own voice. **Decision: ship the software monitor anyway**, labelled "may lag — prefer hardware monitoring (e.g. AG06)". Mitigations applied unconditionally:
+
+- `getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, deviceId } })` — the browser DSP chain otherwise adds latency and mangles singing.
+- `AudioContext({ latencyHint: 'interactive' })` (both contexts).
+- Mic path is **short**: source → (FX) → gain → destination. No SoundTouch, no extra buffering.
+
+The AG06 user sets monitor-off and relies on hardware monitoring; the app still routes their mic into the recording (§14.5).
+
+### 14.3 Routing model
+
+Mic goes to **both** legs: the monitor leg (hear yourself) and the stream leg (so the recording/"singing website" path carries your voice). Graph, extending §9.2:
+
+```
+            getUserMedia(MediaStream)          ← one stream, shared
+              │                 │
+   ctxMonitor │                 │ ctxStream (dual mode only)
+   srcMic(monitor)         srcMic(stream)      ← MediaStreamAudioSourceNode is per-context;
+     │                       │                   each context builds its own from the SAME stream
+   micFX(monitor)          micFX(stream)        ← FX graph duplicated per context (§14.4)
+     │                       │
+   gainMicMon ─→ destMon     gainMicStr ─→ destStr (→ record tap, §14.5)
+```
+
+- A `MediaStreamAudioSourceNode` cannot be shared across contexts → build one **per context** off the single `MediaStream`. FX nodes likewise duplicate per context.
+- **Mic bypasses the SoundTouch worklets entirely** — it is live voice; pitch/tempo shifting it is neither wanted nor feasible in real time. Key/tempo changes never touch the mic graph.
+- The mic graph is **independent of the song sources**: it builds when mic is enabled and persists across play/pause/seek/tempo rebuilds (which only tear down `srcInstr`/`srcVocal`). It tears down when mic is disabled (and the `getUserMedia` track is stopped to release the device + mic indicator).
+- Drift: the stream leg already runs the §9.3 resync watchdog. Mic on the stream leg inherits any blip on resync — inaudible on a recording, acceptable.
+
+### 14.4 Monitor toggle, single mode, volume, FX
+
+**Monitor toggle** mutes only the **monitor leg** (`gainMicMon → 0`, ramped). In dual mode the **stream leg keeps the mic**, so a recording still captures the voice while the singer monitors via hardware. In **single mode there is no stream context**, so monitor-off mutes the mic entirely — mic is only practically useful in dual mode; this is accepted, not worked around.
+
+**Volume:** mic gain on both legs, ramped click-free (reuse the §9 `RAMP` pattern). Monitor and stream mic gains move together off one control (the monitor toggle is a separate mute on the monitor leg only).
+
+**FX presets** (one set, applied to the mic path, duplicated per context so monitor and recording get identical FX):
+
+| Preset | Graph |
+|---|---|
+| Off | mic → gain (no FX node) |
+| Room | small reverb (short synth IR) |
+| Hall | large reverb (long synth IR) |
+| Echo | `DelayNode` (~250ms) + feedback `GainNode` (~0.35) |
+| Karaoke | light reverb + light echo |
+
+- **Reverb** = `ConvolverNode` fed a **synthesized impulse response** — a decaying-noise buffer generated at runtime (length/decay per preset). **No bundled audio files.**
+- **Echo** = `DelayNode` + feedback `GainNode` + wet/dry mix.
+- **Amount** = one wet/dry knob (`dryGain`/`wetGain` crossfade). Switching preset or amount ramps to avoid clicks.
+
+### 14.5 Recording
+
+**Source = the stream bus** (instrumental + mic + FX, **guide vocal excluded by construction** — the stream leg never carries the guide vocal, §9.1). That is exactly a clean karaoke take. **Dual-mode only** (the stream bus only exists in dual mode); the record button is **hidden in single mode**.
+
+- Tap: a `MediaStreamAudioDestinationNode` on `ctxStream` fed by the stream mix (instrumental gain + mic gain) → `MediaRecorder` → `Blob`.
+- Save: Blob → IPC → song folder `recordings/<ISO-timestamp>.<recordingFormat>`.
+- **Format** configurable in Settings (`recordingFormat`, default `webm`): `webm` = `MediaRecorder` native (audio/webm; opus), zero encode; `wav` = decode + PCM-encode in the renderer. (mp3/m4a via bundled ffmpeg is a later option — Unscheduled.)
+- State: explicit recording indicator in the player bar; stopping or exiting mid-record flushes/saves the partial file (guard against silent loss).
+
+**Recordings view (`R3.REC2`):** a dedicated screen listing takes (associated to their song) with timestamp + duration and play / delete / reveal-in-folder. Playback via an `<audio>` element off a recordings file URL. Reachable from navigation (library header and/or the song-details modal).
+
+### 14.6 Data model additions
+
+`settings.json` (§4.5) gains:
+
+```jsonc
+{
+  "micDeviceId": "",            // R3.MIC4: input device, '' = system default
+  "micEnabled": false,          // R3.MIC4: mic path built on player load when true
+  "micMonitor": true,           // R3.MIC2: monitor leg audible (false = AG06 hardware-monitor case)
+  "micVolume": 1,               // R3.MIC2: 0..1
+  "micFxPreset": "off",         // R3.MIC3: "off"|"room"|"hall"|"echo"|"karaoke"
+  "micFxAmount": 0.3,           // R3.MIC3: wet/dry 0..1
+  "recordingFormat": "webm"     // R3.SET4: "webm" | "wav"
+}
+```
+
+Recordings live under each song folder: `<song>/recordings/<ISO-timestamp>.<ext>`. No central index file in v1 — the recordings view scans song folders (revisit if slow).
+
+### 14.7 IPC additions (§8)
+
+```ts
+// invoke/handle
+window.openExternal(url: string): void          // R3.SNG4: open YouTube source in default browser
+recordings.save(songId, bytes: ArrayBuffer, ext: string): string   // → saved file path
+recordings.list(songId?: string): RecordingItem[]                  // all, or per song
+recordings.delete(path: string): void
+recordings.reveal(path: string): void           // open OS folder
+audio.recordingUrl(path: string): string        // karaoke:// URL for <audio> playback
+
+// renderer-side (no IPC): getUserMedia, MediaStream graph, MediaRecorder all live in AudioEngine
+```
+
+Mic device + recording-format selection reuse `settings.get/set`. Mic capture, FX, and the `MediaRecorder` are entirely renderer-side (the engine owns them); only file persistence + external-open cross the IPC boundary.
+
+### 14.8 Failure modes
+
+- **Mic permission denied / no device:** surface a clear message (mirrors `routingWarning`); the rest of the player keeps working, mic stays disabled.
+- **Saved `micDeviceId` device gone:** fall back to system default, warn (same pattern as the stream-device degrade in §9, `AudioEngine.load`).
+- **Record requested in single mode:** not possible — button hidden; defensively, recording APIs no-op if `ctxStream` is null.
+- **Exit / song-change mid-record:** stop the recorder and flush the file before tearing down `ctxStream` in `dispose()`.
+
+### 14.9 Verification (by ear + by file — personal app, §conventions)
+
+- Enable mic on a real input → voice audible on monitor; survives play/pause/seek/tempo; unaffected by key/tempo shift.
+- Dual mode, monitor-off → mic silent on monitor but present in the saved recording; single mode, monitor-off → mic fully silent.
+- Each FX preset audibly changes the voice; amount blends dry→wet; the saved take contains the same FX heard live.
+- Recorded file = instrumental + mic + FX, **no guide vocal**; lands in `recordings/` in the configured format; plays back in the recordings view.
+- Record button absent in single mode.
