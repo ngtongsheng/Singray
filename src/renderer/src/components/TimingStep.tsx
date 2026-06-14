@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { Lyrics } from '../../../shared/types'
 import { inferEnds } from '../lib/inferEnds'
 import ReviewPane from './ReviewPane'
-import { Button, IconButton, Slider, Toggle } from './ui'
+import { Button, IconButton, Slider, Stack, Toggle } from './ui'
 import WaveformStrip from './WaveformStrip'
 
 interface Props {
@@ -319,7 +319,7 @@ function TimingStep({
   })
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <Stack direction="column" className="min-h-0 flex-1">
       {/* biome-ignore lint/a11y/useMediaCaption: timing reference track; the lyrics ARE the captions being authored */}
       <audio
         ref={audioRef}
@@ -329,7 +329,7 @@ function TimingStep({
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
       />
 
-      <div className="flex items-center gap-4 border-border border-b px-6 py-3">
+      <Stack gap={4} className="border-border border-b px-6 py-3">
         <IconButton
           variant="primary"
           size="md"
@@ -378,7 +378,7 @@ function TimingStep({
             </>
           )}
         </Toggle>
-      </div>
+      </Stack>
 
       <WaveformStrip songId={songId} audioRef={audioRef} stamps={stamps} onSeek={seekTo} />
 
@@ -386,7 +386,7 @@ function TimingStep({
         <ReviewPane lyrics={lyrics} audioRef={audioRef} onSeek={seekTo} />
       ) : (
         <>
-          <div className="flex min-h-28 items-center justify-center px-6 py-6">
+          <Stack justify="center" className="min-h-28 px-6 py-6">
             <p className="max-w-full text-center font-lyric text-4xl leading-snug">
               {lyrics.lines[currentLine]?.units.map((u, ui) => {
                 const idx = (lineStartIdx[currentLine] ?? 0) + ui
@@ -407,9 +407,13 @@ function TimingStep({
                 )
               })}
             </p>
-          </div>
+          </Stack>
 
-          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto pl-6 pr-[14px] pb-4">
+          <Stack
+            direction="column"
+            gap={1}
+            className="min-h-0 flex-1 overflow-y-auto pl-6 pr-[14px] pb-4"
+          >
             {lyrics.lines.map((line, li) =>
               line.units.length === 0 ? (
                 // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable while timing
@@ -445,12 +449,12 @@ function TimingStep({
                 </Button>
               )
             )}
-          </div>
+          </Stack>
         </>
       )}
 
       <div className="relative border-border border-t bg-surface px-6 py-1.5">
-        <div className="flex items-center gap-2 text-xs">
+        <Stack gap={2} className="text-xs">
           {done ? (
             <span className="font-medium text-success">{t('timing.done')}</span>
           ) : (
@@ -461,7 +465,7 @@ function TimingStep({
               <span className="font-medium text-accent">{progressPct}%</span>
             </>
           )}
-        </div>
+        </Stack>
         <div
           className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
           style={{ width: `${progressPct}%` }}
@@ -469,22 +473,26 @@ function TimingStep({
       </div>
 
       {showKeys && (
-        <div className="flex items-center gap-5 border-border border-t bg-surface px-6 py-2 text-text-dim text-xs">
-          {review ? (
-            <Hint k="Space / Enter" label={t('timing.hintPlay')} />
-          ) : (
-            <>
-              <Hint k="Space" label={t('timing.hintStamp')} />
-              <Hint k="⌫" label={t('timing.hintUndo')} />
-              {stamps.length > 0 && stamps.length < flatUnits.length && (
-                <Hint k="Tab" label={t('timing.hintGap')} />
-              )}
-              <Hint k="Enter" label={t('timing.hintPlay')} />
-            </>
-          )}
-          <Hint k="← →" label={t('timing.hintSeek')} />
-          <Hint k="↑ ↓" label={t('timing.hintSpeed')} />
-          <div className="flex-1" />
+        <Stack
+          justify="between"
+          className="border-border border-t bg-surface px-6 py-2 text-text-dim text-xs"
+        >
+          <Stack gap={5}>
+            {review ? (
+              <Hint k="Space / Enter" label={t('timing.hintPlay')} />
+            ) : (
+              <>
+                <Hint k="Space" label={t('timing.hintStamp')} />
+                <Hint k="⌫" label={t('timing.hintUndo')} />
+                {stamps.length > 0 && stamps.length < flatUnits.length && (
+                  <Hint k="Tab" label={t('timing.hintGap')} />
+                )}
+                <Hint k="Enter" label={t('timing.hintPlay')} />
+              </>
+            )}
+            <Hint k="← →" label={t('timing.hintSeek')} />
+            <Hint k="↑ ↓" label={t('timing.hintSpeed')} />
+          </Stack>
           <IconButton
             variant="bare"
             onClick={() => setShowKeys(false)}
@@ -493,9 +501,9 @@ function TimingStep({
           >
             <X className="size-3.5" strokeWidth={1.5} />
           </IconButton>
-        </div>
+        </Stack>
       )}
-    </div>
+    </Stack>
   )
 }
 

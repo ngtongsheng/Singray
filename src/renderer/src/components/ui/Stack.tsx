@@ -1,7 +1,7 @@
 import type { ComponentProps, ElementType } from 'react'
 import { cx } from './cx'
 
-export type StackGap = 0 | 0.5 | 1 | 1.5 | 2 | 3 | 4 | 6 | 8
+export type StackGap = 0 | 0.5 | 1 | 1.5 | 2 | 3 | 4 | 5 | 6 | 8
 export type StackJustify = 'start' | 'center' | 'end' | 'between' | 'around' | 'evenly'
 export type StackAlign = 'start' | 'center' | 'end' | 'stretch' | 'baseline'
 
@@ -13,6 +13,7 @@ export const GAP: Record<StackGap, string> = {
   2: 'gap-2',
   3: 'gap-3',
   4: 'gap-4',
+  5: 'gap-5',
   6: 'gap-6',
   8: 'gap-8'
 }
