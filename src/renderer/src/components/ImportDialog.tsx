@@ -9,7 +9,7 @@ import {
   type SearchResult
 } from '../../../shared/types'
 import { detectLanguage } from '../lib/detectLanguage'
-import { Button, Dialog, IconButton, Input, Select, Tabs } from './ui'
+import { Button, Dialog, IconButton, Input, Select, Stack, Tabs } from './ui'
 import { cx } from './ui/cx'
 
 interface Props {
@@ -182,163 +182,174 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
 
   return (
     <Dialog label={t('import.title')} width="w-[640px]" onClose={onClose}>
-      <h2 className="font-semibold text-base">{t('import.title')}</h2>
+      <Stack direction="column" gap={6}>
+        <Stack direction="column" gap={4}>
+          <h2 className="font-semibold text-base">{t('import.title')}</h2>
 
-      <Tabs
-        className="mt-4"
-        tabs={[
-          { id: 'youtube', label: t('import.tabYoutube') },
-          { id: 'file', label: t('import.tabFile') }
-        ]}
-        active={mode}
-        onChange={setMode}
-      />
+          <Tabs
+            tabs={[
+              { id: 'youtube', label: t('import.tabYoutube') },
+              { id: 'file', label: t('import.tabFile') }
+            ]}
+            active={mode}
+            onChange={setMode}
+          />
 
-      {mode === 'youtube' ? (
-        <>
-          <label className="mt-4 block">
-            <span className="mb-1 block text-text-dim text-xs">{t('import.searchLabel')}</span>
-            <div className="flex gap-2">
-              <Input
-                ref={searchRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && runSearch()}
-                placeholder={t('import.searchPlaceholder')}
-                trailing={searching && <Loader2 className="size-4 animate-spin text-text-dim" />}
-              />
-              <IconButton
-                aria-label={t('import.searchLabel')}
-                onClick={runSearch}
-                disabled={!query.trim() || searching}
-              >
-                <Search className="size-4" />
-              </IconButton>
-            </div>
-            {searchError && <p className="mt-1 text-danger text-xs">{searchError}</p>}
-          </label>
-
-          {results && (
-            <ul className="mt-2 max-h-64 divide-y divide-border overflow-y-auto rounded-card border border-border">
-              {results.length === 0 && (
-                <li className="px-3 py-4 text-center text-text-dim text-xs">
-                  {t('import.noResults')}
-                </li>
-              )}
-              {results.map((r) => (
-                <li key={r.url}>
-                  <Button
-                    variant="bare"
-                    size="bare"
-                    onClick={() => pickResult(r)}
-                    className="flex w-full items-center gap-3 px-2 py-2 text-left hover:bg-surface"
+          {mode === 'youtube' ? (
+            <>
+              <label className="block">
+                <span className="mb-1 block text-text-dim text-xs">{t('import.searchLabel')}</span>
+                <Stack gap={2}>
+                  <Input
+                    ref={searchRef}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && runSearch()}
+                    placeholder={t('import.searchPlaceholder')}
+                    trailing={
+                      searching && <Loader2 className="size-4 animate-spin text-text-dim" />
+                    }
+                  />
+                  <IconButton
+                    aria-label={t('import.searchLabel')}
+                    onClick={runSearch}
+                    disabled={!query.trim() || searching}
                   >
-                    <div className="aspect-video w-24 shrink-0 overflow-hidden rounded bg-surface">
-                      {r.thumbnailUrl && (
-                        <img src={r.thumbnailUrl} alt="" className="h-full w-full object-cover" />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm">{r.title}</p>
-                      <p className="truncate text-text-dim text-xs">
-                        {r.channel}
-                        {r.duration > 0 && ` · ${formatDuration(r.duration)}`}
-                      </p>
-                    </div>
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
+                    <Search className="size-4" />
+                  </IconButton>
+                </Stack>
+                {searchError && <p className="mt-1 text-danger text-xs">{searchError}</p>}
+              </label>
 
-          <label className="mt-4 block">
-            <span className="mb-1 block text-text-dim text-xs">{t('import.urlLabel')}</span>
-            <Input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://www.youtube.com/watch?v=…"
-              trailing={probing && <Loader2 className="size-4 animate-spin text-text-dim" />}
-            />
-            {probeError && <p className="mt-1 text-danger text-xs">{probeError}</p>}
-          </label>
-        </>
-      ) : (
-        // biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop zone; the picker Button inside is the keyboard/AT path
-        <div
-          className={cx(
-            'mt-4 flex flex-col items-center gap-2 rounded-card border-2 border-dashed p-6 text-center transition-colors',
-            dragOver ? 'border-accent bg-accent/5' : 'border-border'
-          )}
-          onDragOver={(e) => {
-            e.preventDefault()
-            setDragOver(true)
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={onDrop}
-        >
-          <Button onClick={pickFile}>
-            <FolderOpen className="size-4" strokeWidth={1.5} /> {t('import.fromFile')}
-          </Button>
-          <p className="text-text-dim text-xs">{t('import.dropHint')}</p>
-          {filePath && (
-            <span className="min-w-0 truncate text-text-dim text-xs">
-              {filePath.split(/[\\/]/).pop()}
-            </span>
-          )}
-          {probeError && <p className="text-danger text-xs">{probeError}</p>}
-          {probing && <Loader2 className="size-4 animate-spin text-text-dim" />}
-        </div>
-      )}
-
-      {probed && (
-        <div className="mt-4 flex gap-4">
-          <div className="w-56 shrink-0">
-            <div className="aspect-video overflow-hidden rounded-card bg-surface">
-              {probed.thumbnailUrl && (
-                <img src={probed.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+              {results && (
+                <ul className="max-h-64 divide-y divide-border overflow-y-auto rounded-card border border-border">
+                  {results.length === 0 && (
+                    <li className="px-3 py-4 text-center text-text-dim text-xs">
+                      {t('import.noResults')}
+                    </li>
+                  )}
+                  {results.map((r) => (
+                    <li key={r.url}>
+                      <Button
+                        variant="bare"
+                        size="bare"
+                        onClick={() => pickResult(r)}
+                        className="flex w-full items-center gap-3 px-2 py-2 text-left hover:bg-surface"
+                      >
+                        <div className="aspect-video w-24 shrink-0 overflow-hidden rounded bg-surface">
+                          {r.thumbnailUrl && (
+                            <img
+                              src={r.thumbnailUrl}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm">{r.title}</p>
+                          <p className="truncate text-text-dim text-xs">
+                            {r.channel}
+                            {r.duration > 0 && ` · ${formatDuration(r.duration)}`}
+                          </p>
+                        </div>
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
               )}
-            </div>
-            <p className="mt-2 line-clamp-2 text-text-dim text-xs">{probed.title}</p>
-          </div>
-          <div className="flex flex-1 flex-col gap-3">
-            <label className="block">
-              <span className="mb-1 block text-text-dim text-xs">{t('common.title')}</span>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-text-dim text-xs">{t('common.artist')}</span>
-              <Input value={artist} onChange={(e) => setArtist(e.target.value)} />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-text-dim text-xs">{t('common.language')}</span>
-              <Select
-                value={language}
-                onChange={(v) => setLanguage(v as Language)}
-                options={[
-                  ...languages.map((l) => ({ value: l.code, label: l.label })),
-                  ...(languages.some((l) => l.code === 'unknown')
-                    ? []
-                    : [{ value: 'unknown', label: t('common.unknown') }])
-                ]}
-              />
-            </label>
-          </div>
-        </div>
-      )}
 
-      <div className="mt-6 flex justify-end gap-3">
-        <Button size="md" onClick={onClose}>
-          {t('common.cancel')}
-        </Button>
-        <Button
-          variant="primary"
-          size="md"
-          onClick={submit}
-          disabled={!probed || !title.trim() || submitting}
-        >
-          {t('import.add')}
-        </Button>
-      </div>
+              <label className="block">
+                <span className="mb-1 block text-text-dim text-xs">{t('import.urlLabel')}</span>
+                <Input
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=…"
+                  trailing={probing && <Loader2 className="size-4 animate-spin text-text-dim" />}
+                />
+                {probeError && <p className="mt-1 text-danger text-xs">{probeError}</p>}
+              </label>
+            </>
+          ) : (
+            <Stack
+              direction="column"
+              gap={2}
+              align="center"
+              className={cx(
+                'rounded-card border-2 border-dashed p-6 text-center transition-colors',
+                dragOver ? 'border-accent bg-accent/5' : 'border-border'
+              )}
+              onDragOver={(e) => {
+                e.preventDefault()
+                setDragOver(true)
+              }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={onDrop}
+            >
+              <Button onClick={pickFile}>
+                <FolderOpen className="size-4" strokeWidth={1.5} /> {t('import.fromFile')}
+              </Button>
+              <p className="text-text-dim text-xs">{t('import.dropHint')}</p>
+              {filePath && (
+                <span className="min-w-0 truncate text-text-dim text-xs">
+                  {filePath.split(/[\\/]/).pop()}
+                </span>
+              )}
+              {probeError && <p className="text-danger text-xs">{probeError}</p>}
+              {probing && <Loader2 className="size-4 animate-spin text-text-dim" />}
+            </Stack>
+          )}
+
+          {probed && (
+            <Stack gap={4}>
+              <div className="w-56 shrink-0">
+                <div className="aspect-video overflow-hidden rounded-card bg-surface">
+                  {probed.thumbnailUrl && (
+                    <img src={probed.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                  )}
+                </div>
+                <p className="mt-2 line-clamp-2 text-text-dim text-xs">{probed.title}</p>
+              </div>
+              <Stack direction="column" gap={3} className="flex-1">
+                <label className="block">
+                  <span className="mb-1 block text-text-dim text-xs">{t('common.title')}</span>
+                  <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-text-dim text-xs">{t('common.artist')}</span>
+                  <Input value={artist} onChange={(e) => setArtist(e.target.value)} />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-text-dim text-xs">{t('common.language')}</span>
+                  <Select
+                    value={language}
+                    onChange={(v) => setLanguage(v as Language)}
+                    options={[
+                      ...languages.map((l) => ({ value: l.code, label: l.label })),
+                      ...(languages.some((l) => l.code === 'unknown')
+                        ? []
+                        : [{ value: 'unknown', label: t('common.unknown') }])
+                    ]}
+                  />
+                </label>
+              </Stack>
+            </Stack>
+          )}
+        </Stack>
+
+        <Stack justify="end" gap={3}>
+          <Button size="md" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={submit}
+            disabled={!probed || !title.trim() || submitting}
+          >
+            {t('import.add')}
+          </Button>
+        </Stack>
+      </Stack>
     </Dialog>
   )
 }

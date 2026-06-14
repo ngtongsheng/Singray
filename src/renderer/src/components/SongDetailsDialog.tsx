@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LanguageDef, SongListItem } from '../../../shared/types'
-import { Button, Dialog } from './ui'
+import { Button, Dialog, Stack } from './ui'
 
 interface Props {
   song: SongListItem
@@ -34,61 +34,67 @@ function SongDetailsDialog({ song, onClose, onArtistClick }: Props): React.JSX.E
     })
 
   const Row = ({ label, value }: { label: string; value: React.ReactNode }): React.JSX.Element => (
-    <div className="flex items-baseline justify-between gap-4">
+    <Stack justify="between" align="baseline" gap={4}>
       <span className="shrink-0 whitespace-nowrap text-text-dim text-xs">{label}</span>
       <span className="min-w-0 truncate text-right text-sm">{value}</span>
-    </div>
+    </Stack>
   )
 
   return (
     <Dialog label={t('details.title')} width="w-[420px]" onClose={onClose}>
-      <h2 className="truncate font-semibold text-base">{song.title}</h2>
-      <button
-        type="button"
-        onClick={() => {
-          onArtistClick(song.artist)
-          onClose()
-        }}
-        title={t('library.viewArtist', { name: song.artist })}
-        className="truncate text-left text-text-dim text-sm hover:text-text hover:underline"
-      >
-        {song.artist}
-      </button>
+      <Stack direction="column" gap={6}>
+        <Stack direction="column" gap={4}>
+          <div>
+            <h2 className="truncate font-semibold text-base">{song.title}</h2>
+            <button
+              type="button"
+              onClick={() => {
+                onArtistClick(song.artist)
+                onClose()
+              }}
+              title={t('library.viewArtist', { name: song.artist })}
+              className="truncate text-left text-text-dim text-sm hover:text-text hover:underline"
+            >
+              {song.artist}
+            </button>
+          </div>
 
-      <div className="mt-4 flex flex-col gap-2">
-        <Row label={t('details.duration')} value={fmtDuration(song.durationSec)} />
-        <Row label={t('common.language')} value={languageLabel} />
-        <Row label={t('details.added')} value={fmtDate(song.addedAt)} />
-        <Row
-          label={t('details.sungCount')}
-          value={t('details.sungCount_value', { count: song.sings.length })}
-        />
-        <Row
-          label={t('details.source')}
-          value={song.youtubeUrl || song.sourceFile || t('common.unknown')}
-        />
-      </div>
+          <Stack direction="column" gap={2}>
+            <Row label={t('details.duration')} value={fmtDuration(song.durationSec)} />
+            <Row label={t('common.language')} value={languageLabel} />
+            <Row label={t('details.added')} value={fmtDate(song.addedAt)} />
+            <Row
+              label={t('details.sungCount')}
+              value={t('details.sungCount_value', { count: song.sings.length })}
+            />
+            <Row
+              label={t('details.source')}
+              value={song.youtubeUrl || song.sourceFile || t('common.unknown')}
+            />
+          </Stack>
 
-      <div className="mt-4">
-        <p className="mb-1 text-text-dim text-xs">{t('details.history')}</p>
-        {song.sings.length === 0 ? (
-          <p className="text-sm text-text-dim">{t('details.noHistory')}</p>
-        ) : (
-          <ul className="max-h-32 overflow-y-auto text-sm">
-            {[...song.sings].reverse().map((iso) => (
-              <li key={iso} className="py-0.5 text-text-dim">
-                {fmtDate(iso)}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+          <div>
+            <p className="mb-1 text-text-dim text-xs">{t('details.history')}</p>
+            {song.sings.length === 0 ? (
+              <p className="text-sm text-text-dim">{t('details.noHistory')}</p>
+            ) : (
+              <ul className="max-h-32 overflow-y-auto text-sm">
+                {[...song.sings].reverse().map((iso) => (
+                  <li key={iso} className="py-0.5 text-text-dim">
+                    {fmtDate(iso)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Stack>
 
-      <div className="mt-6 flex justify-end">
-        <Button size="md" onClick={onClose}>
-          {t('common.close')}
-        </Button>
-      </div>
+        <Stack justify="end">
+          <Button size="md" onClick={onClose}>
+            {t('common.close')}
+          </Button>
+        </Stack>
+      </Stack>
     </Dialog>
   )
 }

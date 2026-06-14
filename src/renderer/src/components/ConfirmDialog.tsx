@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Button, Dialog } from './ui'
+import { Button, Dialog, Stack } from './ui'
 
 interface Props {
   title: string
@@ -25,16 +25,20 @@ function ConfirmDialog({
 
   return (
     <Dialog alert label={title} width="w-[400px]" onClose={onCancel}>
-      <h2 className="font-semibold text-base">{title}</h2>
-      <p className="mt-2 text-sm text-text-dim">{body}</p>
-      <div className="mt-6 flex justify-end gap-3">
-        <Button ref={cancelRef} size="md" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button variant="danger" size="md" onClick={onConfirm}>
-          {confirmLabel}
-        </Button>
-      </div>
+      <Stack direction="column" gap={6}>
+        <div>
+          <h2 className="font-semibold text-base">{title}</h2>
+          <p className="mt-2 text-sm text-text-dim">{body}</p>
+        </div>
+        <Stack justify="end" gap={3}>
+          <Button ref={cancelRef} size="md" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button variant="danger" size="md" onClick={onConfirm}>
+            {confirmLabel}
+          </Button>
+        </Stack>
+      </Stack>
     </Dialog>
   )
 }
