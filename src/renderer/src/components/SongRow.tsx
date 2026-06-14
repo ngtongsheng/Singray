@@ -26,7 +26,6 @@ function SongRow({ song, importing, onDelete, onSing, onArtistClick }: Props): R
   const openable = !importing && !failed
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: row contains nested buttons (artist/heart/menu/retry) — a real <button> can't nest them
     <Stack
       gap={3}
       role="button"
