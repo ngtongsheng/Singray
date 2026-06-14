@@ -5,8 +5,7 @@ Round 2 feature source: user feedback 2026-06-14 (`docs/feedback/2026-06-14-roun
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Now → UI1** (Phase 5 done; this is the last item in the batched runtime-verification pass). Phase order = execution order chosen in grilling: safety/quick bugs → shared primitives → nav redesign → feature views → polish. Phase 0 (Round 1 verification) is env-blocked / user-side and doesn't block the coding pointer.
-> UI1 marked `[~]`: code complete + `npm run check` green, runtime "Done when" verification batched at session end.
+> **Round 2 Phases 1-5 all `[x]`.** Remaining `[~]` are R4.2-R5.2 (Phase 0, env-blocked/owner-side — see their own notes). **Next: FX1** (Phase 6) is an undetailed one-line stub — needs spec/grilling into a proper story (Done-when, decisions) before it's startable; not a drop-in continuation of the verification pass.
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
 
@@ -70,18 +69,18 @@ Creator is reachable only from the Player (`onEditLyrics`), but `LyricCreator on
 New `src/renderer/components/ui/Tabs.tsx`: clickable tab bar (semantic tokens, aria, motion) **+ `Ctrl+Tab` / `Ctrl+Shift+Tab`** cycle. Consumed by EL4 (add/tab/preview) and ADD1 (search-URL / file).
 - **Done when:** tab bar renders + switches on click; Ctrl+Tab cycles both directions; keyboard-accessible; `npm run check` green.
 
-### [~] UI1 Custom Select (drop native look)
+### [x] UI1 Custom Select (drop native look)
 Replace native `<select>` in the `Select` primitive with a styled popover list (keyboard up/down/enter/esc, matches Menu/Popover).
 - **Done when:** no native dropdown chrome anywhere; keyboard nav works; every Select-using screen consistent; check green.
 
-### [~] UI3 Outside-click closes Dialog
+### [x] UI3 Outside-click closes Dialog
 Popover/Menu already close on outside-click; add scrim-click-to-close to `Dialog`. **Guard destructive/confirm dialogs** — those keep explicit buttons so an accidental click can't discard unsaved edits.
 - **Done when:** non-destructive dialogs/popups close on outside click; confirm/discard dialogs still require an explicit choice; Esc still works everywhere.
 
 ## Phase 3 — Navigation / app-shell redesign
 > Reverses R2.1's single native titlebar. **SPEC §10** + `src/main/index.ts` updated with NAV1.
 
-### [~] NAV1 Two-row header + custom window controls
+### [x] NAV1 Two-row header + custom window controls
 Top row: app logo (left) + **custom** minimize / maximize-restore / close (right). **Decision (grilled): go custom** — drop `titleBarOverlay`, add IPC `window:minimize|toggleMaximize|close`, style buttons to the app. **Accepted trade-off: lose the native snap-layouts hover flyout** (edge-drag snap + double-click-maximize still work).
 - **Done when:** every screen shows the top row (logo left, custom min/max/close right); all three buttons work; drag region moves the window; double-click drag region maximizes/restores; edge-snap still works.
 
@@ -184,6 +183,9 @@ Edit-meta dialog: put "Clean up with AI" on the same action row as Cancel/Save.
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-14 · NAV1 · Found already fully implemented (`titleBarStyle:'hidden'` + `app-drag`/`app-no-drag` CSS, `WindowControls.tsx` w/ minimize/toggleMaximize/close via `window.singray.window.*` IPC, `AppHeader.tsx` rendering it on every screen) — just never flipped to `[x]`. Playwright (`verify-nav1.mjs`): `header.app-drag` present on both Library and Player; Minimize/Maximize/Close buttons all present with correct `aria-label`s; clicking Maximize/Restore toggles `BrowserWindow.isMaximized()` true→false and the icon swaps Maximize↔Restore. Double-click-to-maximize on the drag region didn't toggle `isMaximized` under Playwright's CDP-synthesized `dblclick` — same class of OS-level drag-region behavior as edge-snap (R0.1/R0.2), not exercisable via automation; accepted as user-side like those. `npm run check` already green (no code changes this entry). **[x]**.
+- 2026-06-14 · UI3 · Found already fully implemented (`ui/Dialog.tsx`: scrim-click closes unless `alert`, Esc always closes) — just never flipped to `[x]`. Playwright (`verify-ui3.mjs`): ImportDialog (non-`alert`) closes on scrim click, stays open on inner-panel click, closes on Esc; the delete-song `ConfirmDialog` (`alert`, via Library card's overflow menu) stayed open on scrim click and closed only via Esc (→ `onCancel`, no deletion). All 3 "Done when" clauses covered. `npm run check` already green (no code changes this entry). **[x]**.
+- 2026-06-14 · UI1 · Found already fully implemented (`ui/Select.tsx`: popover-based listbox, full keyboard nav, used by Library/Settings/EditMetaDialog/ImportDialog) — just never flipped to `[x]`. Playwright (`verify-ui1.mjs`): zero native `<select>` elements on Library or Settings; Library's sort Select opens a `role="listbox"`, ArrowDown moves the highlight, Enter selects + closes (label updates to 唱得最多), re-opening and pressing Escape closes without changing the selection; Settings has 5 Selects, all the same primitive, first one opens correctly. This closes Round 2 Phases 1-5 (R0.1/R0.2/R4.2-R5.2 remain `[~]`, all env-blocked/owner-side per their own notes). `npm run check` already green (no code changes this entry). **[x]**.
 - 2026-06-14 · UI6 · Batched runtime verification of the already-landed `Tabs` primitive (`ui/Tabs.tsx`, used by ImportDialog's YouTube/上传文件 tabs since ADD1, and by EL4's creator Text/Tap/Review — though EL4 has since moved to `Segmented` per UI4's follow-up, ImportDialog remains the live consumer). Playwright (`verify-ui6.mjs`): opened ImportDialog, confirmed both tabs render with `role="tab"`; clicking 上传文件 flips `aria-selected`/`tabIndex` (active=0, inactive=-1) and the underline moves; focusing the active tab and pressing ArrowLeft/ArrowRight cycles selection both directions with correct `aria-selected`/`tabIndex` each time. Ctrl+Tab/Ctrl+Shift+Tab cycling already covered by EL4/EL1's prior verification of `useTabCycle`. `npm run check` already green (no code changes this entry). **[x]**.
 - 2026-06-14 · EL5 · Batched runtime verification of the already-landed routing fix (`App.tsx`'s `LyricCreator onBack` already set to `setView({name:'player', song: view.song})`, not `library`). Verified via playwright (`audioOutputMode: single`, reverted after): opened 對愛渴望's player, clicked 编辑歌词 into the creator (Text/Tap/Review segmented control present), clicked the creator's Back button (←, `title="返回"`) — landed back on the player view for the same song (title "對愛渴望楊宗緯", 编辑信息/编辑歌词 buttons, and the lyric line list all present in the body, not the library grid). No code changes; `npm run check` already green. **[x]**.
 - 2026-06-14 · EL2 · Batched runtime verification of the already-landed tri-color timestamp (`lineTimestampClass`/`lineTimestamp` in `TimingStep.tsx`: `text-text-dim`+`—` when `timed===0`, `text-warning` when `0<timed<units.length`, `text-success` when fully timed). No real library line is currently fully-untimed, so for this run only temporarily edited 對愛渴望's `lyrics.json` (backed up, restored after, alongside the usual `audioOutputMode: single` workaround — both reverted): set line4 (8 units) to 0/8 timed and line5 (6 units) to 5/6 timed (last unit null). Playwright (`verify-el2.mjs`) confirmed: line0 (6/6, untouched) → `text-success`/"0:24.2"; line4 (0/8) → `text-text-dim`/"—"; line5 (5/6) → `text-warning`. Pressing Space 13× (stamps line4's 8 units + line5's first 5) left line4 at `text-success` and line5 still `text-warning` (5/6); the 14th Space stamped line5's last unit and it flipped live to `text-success` (6/6) — confirms the amber→complete live transition. All 4 "Done when" clauses covered; `npm run check` already green (no code changes this entry). **[x]**.
