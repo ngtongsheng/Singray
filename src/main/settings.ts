@@ -11,7 +11,8 @@ function defaults(): Settings {
     streamDeviceId: '',
     audioOutputMode: 'single',
     playerBarPinned: true,
-    stageVisual: 'off',
+    showWaveform: false,
+    showBars: false,
     stemFormat: 'flac',
     libraryView: 'grid',
     languages: [

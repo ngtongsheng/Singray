@@ -92,9 +92,10 @@ function modelCachePath(): string {
 }
 
 /**
- * List available separation models from audio-separator's registry.
+ * List available separation models from the pipeline (local dir + registry).
  * Caches to a JSON file so the UI can show the list quickly.
  * Pass `force=true` to re-query the pipeline (ignoring cache).
+ * Errors propagate to the caller so `useAsync` preserves the last good value.
  */
 export async function listPipelineModels(force = false): Promise<string[]> {
   if (!force) {
@@ -107,41 +108,36 @@ export async function listPipelineModels(force = false): Promise<string[]> {
     }
   }
 
-  try {
-    const result = await new Promise<string[]>((resolve, reject) => {
-      const proc = spawn(
-        effectivePythonPath(),
-        [pipelineScript(), 'list-models'],
-        pipelineSpawnOptions()
-      )
-      let models: string[] | null = null
-      let stderrTail = ''
-      const rl = createInterface({ input: proc.stdout })
-      rl.on('line', (line) => {
-        try {
-          const msg = JSON.parse(line) as { stage: string; models?: string[]; message?: string }
-          if (msg.stage === 'done' && msg.models) models = msg.models
-        } catch {
-          // non-JSON noise, ignore
-        }
-      })
-      proc.stderr?.on('data', (d: Buffer) => {
-        stderrTail = (stderrTail + d.toString()).slice(-2000)
-      })
-      proc.on('error', reject)
-      proc.on('close', (code) => {
-        if (code === 0 && models) resolve(models)
-        else reject(new Error(stderrTail.trim().split('\n').pop() || 'list-models failed'))
-      })
+  const result = await new Promise<string[]>((resolve, reject) => {
+    const proc = spawn(
+      effectivePythonPath(),
+      [pipelineScript(), 'list-models'],
+      pipelineSpawnOptions()
+    )
+    let models: string[] | null = null
+    let stderrTail = ''
+    const rl = createInterface({ input: proc.stdout })
+    rl.on('line', (line) => {
+      try {
+        const msg = JSON.parse(line) as { stage: string; models?: string[]; message?: string }
+        if (msg.stage === 'done' && msg.models) models = msg.models
+      } catch {
+        // non-JSON noise, ignore
+      }
     })
-    // Cache the result
-    await mkdir(pipelineEnvDir(), { recursive: true })
-    await writeFile(modelCachePath(), JSON.stringify({ models: result }, null, 2), 'utf-8')
-    return result
-  } catch {
-    // Fallback: return just the default model
-    return ['6_HP-Karaoke-UVR.pth']
-  }
+    proc.stderr?.on('data', (d: Buffer) => {
+      stderrTail = (stderrTail + d.toString()).slice(-2000)
+    })
+    proc.on('error', reject)
+    proc.on('close', (code) => {
+      if (code === 0 && models) resolve(models)
+      else reject(new Error(stderrTail.trim().split('\n').pop() || 'list-models failed'))
+    })
+  })
+  // Cache the result
+  await mkdir(pipelineEnvDir(), { recursive: true })
+  await writeFile(modelCachePath(), JSON.stringify({ models: result }, null, 2), 'utf-8')
+  return result
 }
 
 /**

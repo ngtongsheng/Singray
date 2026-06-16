@@ -90,8 +90,10 @@ export interface Settings {
   audioOutputMode: 'single' | 'dual'
   /** Player control bar: pinned (always visible) vs auto-hide after inactivity. */
   playerBarPinned: boolean
-  /** Stage visual: whole-song waveform with playhead, live analyser bars, or none. */
-  stageVisual: 'off' | 'waveform' | 'bars'
+  /** Top-strip waveform visualization (whole-song peaks + playhead). */
+  showWaveform: boolean
+  /** Bottom bars visualization (live analyser). */
+  showBars: boolean
   /** Stem encode format for new imports (R3.8): flac = lossless (default), m4a = AAC 256k. */
   stemFormat: 'flac' | 'm4a'
   /** Library Songs view layout (HOME1): grid of cards vs compact rows. */

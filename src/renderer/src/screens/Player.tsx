@@ -21,10 +21,9 @@ import {
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Lyrics, Settings, SongListItem } from '../../../shared/types'
+import type { Lyrics, SongListItem } from '../../../shared/types'
 import EditMetaDialog from '../components/EditMetaDialog'
 import LyricRenderer from '../components/LyricRenderer'
-import PlayerSeekWaveform from '../components/PlayerSeekWaveform'
 import SongDetailsDialog from '../components/SongDetailsDialog'
 import Soundwave from '../components/Soundwave'
 import StageWaveform from '../components/StageWaveform'
@@ -54,18 +53,6 @@ interface Props {
 const HIDE_AFTER_MS = 3000
 const TEMPO_PRESETS = [0.75, 0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.25]
 
-type StageVisual = Settings['stageVisual']
-const STAGE_VISUAL_NEXT: Record<StageVisual, StageVisual> = {
-  off: 'waveform',
-  waveform: 'bars',
-  bars: 'off'
-}
-const STAGE_VISUAL_KEY: Record<StageVisual, string> = {
-  off: 'player.stageVisual.off',
-  waveform: 'player.stageVisual.waveform',
-  bars: 'player.stageVisual.bars'
-}
-
 function fmt(s: number): string {
   const m = Math.floor(s / 60)
   return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`
@@ -92,10 +79,10 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
   const [pinned, setPinned] = useState(true)
   const [editOpen, setEditOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
-  const [stageVisual, setStageVisual] = useState<StageVisual>('off')
+  const [showWaveform, setShowWaveform] = useState(false)
+  const [showBars, setShowBars] = useState(false)
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
   const [peaks, setPeaks] = useState<Float32Array | null>(null)
-  const [seekPeaks, setSeekPeaks] = useState<Float32Array | null>(null)
   const [windowHidden, setWindowHidden] = useState(document.hidden)
   const hideTimer = useRef<number>(0)
   const { settings, patch } = useSettings()
@@ -112,7 +99,8 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
     let disposed = false
     let eng: AudioEngine | null = null
     setPinned(s.playerBarPinned)
-    setStageVisual(s.stageVisual)
+    setShowWaveform(s.showWaveform)
+    setShowBars(s.showBars)
     Promise.all([
       AudioEngine.load(song.id, {
         mode: s.audioOutputMode,
@@ -191,25 +179,26 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
     })
   }, [patch])
 
-  const cycleStageVisual = useCallback(() => {
-    setStageVisual((v) => {
-      const next = STAGE_VISUAL_NEXT[v]
-      void patch({ stageVisual: next })
-      return next
+  const toggleWaveform = useCallback(() => {
+    setShowWaveform((v) => {
+      void patch({ showWaveform: !v })
+      return !v
+    })
+  }, [patch])
+
+  const toggleBars = useCallback(() => {
+    setShowBars((v) => {
+      void patch({ showBars: !v })
+      return !v
     })
   }, [patch])
 
   // Visual sources are per-engine (analyser dies with its context, peaks come
   // from the decoded buffers) and only built for the active mode.
   useEffect(() => {
-    setAnalyser(engine && stageVisual === 'bars' ? engine.createMonitorAnalyser() : null)
-    setPeaks(engine && stageVisual === 'waveform' ? engine.peaks() : null)
-  }, [engine, stageVisual])
-
-  // Seek bar always needs peaks (cached after first call).
-  useEffect(() => {
-    setSeekPeaks(engine ? engine.peaks() : null)
-  }, [engine])
+    setAnalyser(engine && showBars ? engine.createMonitorAnalyser() : null)
+    setPeaks(engine && showWaveform ? engine.peaks() : null)
+  }, [engine, showBars, showWaveform])
 
   // Ken Burns pauses while the window is hidden.
   useEffect(() => {
@@ -302,16 +291,21 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
             <Stack gap={3}>
               <Button
                 variant="secondary"
-                active={stageVisual !== 'off'}
-                onClick={cycleStageVisual}
-                title={t('player.stageVisualTip', { mode: t(STAGE_VISUAL_KEY[stageVisual]) })}
+                active={showWaveform}
+                onClick={toggleWaveform}
+                title={t('player.stageVisual.waveform')}
                 className="app-no-drag"
               >
-                {stageVisual === 'bars' ? (
-                  <BarChart3 className="size-4" strokeWidth={1.5} />
-                ) : (
-                  <AudioWaveform className="size-4" strokeWidth={1.5} />
-                )}
+                <AudioWaveform className="size-4" strokeWidth={1.5} />
+              </Button>
+              <Button
+                variant="secondary"
+                active={showBars}
+                onClick={toggleBars}
+                title={t('player.stageVisual.bars')}
+                className="app-no-drag"
+              >
+                <BarChart3 className="size-4" strokeWidth={1.5} />
               </Button>
               <Button
                 variant="secondary"
@@ -367,20 +361,23 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
           }`}
         />
         <div className="absolute inset-0 bg-black/55" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1/3 bg-gradient-to-b from-bg to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-bg to-transparent" />
 
         {/* Spacer matching the Titlebar (top-9 = 36px + h-10 = 40px). */}
         <div className="h-[76px] shrink-0" />
 
-        {/* Visualization strip: top strip below the header (R3.WAVE2). */}
-        {stageVisual !== 'off' && (
+        {/* Waveform strip: top strip below the header. */}
+        {showWaveform && peaks && engine && (
           <div className="relative z-10 h-16 shrink-0 opacity-75">
-            {stageVisual === 'bars' && analyser && (
-              <Soundwave analyser={analyser} playing={playing} />
-            )}
-            {stageVisual === 'waveform' && peaks && engine && (
-              <StageWaveform peaks={peaks} duration={engine.duration} clock={clock} />
-            )}
+            <StageWaveform peaks={peaks} duration={engine.duration} clock={clock} />
+          </div>
+        )}
+
+        {/* Bars overlay: bottom of stage, behind the control bar. */}
+        {showBars && analyser && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-40 opacity-75">
+            <Soundwave analyser={analyser} playing={playing} />
           </div>
         )}
 
@@ -446,24 +443,15 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                 )}
               </IconButton>
               <span className="text-sm text-text-dim tabular-nums">{fmt(position)}</span>
-              {seekPeaks ? (
-                <PlayerSeekWaveform
-                  peaks={seekPeaks}
-                  duration={engine.duration}
-                  clock={clock}
-                  onSeek={seek}
-                />
-              ) : (
-                <Slider
-                  min={0}
-                  max={engine.duration}
-                  step={0.25}
-                  value={position}
-                  onChange={(e) => engine.seek(Number(e.target.value))}
-                  title={t('player.seekTip')}
-                  className="h-11 flex-1"
-                />
-              )}
+              <Slider
+                min={0}
+                max={engine.duration}
+                step={0.25}
+                value={position}
+                onChange={(e) => engine.seek(Number(e.target.value))}
+                title={t('player.seekTip')}
+                className="h-11 flex-1"
+              />
               <span className="text-sm text-text-dim tabular-nums">{fmt(engine.duration)}</span>
 
               <span className="flex items-center gap-2 text-text-dim">

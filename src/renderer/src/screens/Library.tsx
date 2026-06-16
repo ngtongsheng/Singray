@@ -265,7 +265,7 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
             </Button>
           </Stack>
         ) : section === 'artists' ? (
-          <Stack direction="column" gap={2} className="pb-12">
+          <Stack direction="column" gap={2} className="pt-3 pb-12">
             {artists.map(({ name, count }) => (
               <button
                 key={name}
