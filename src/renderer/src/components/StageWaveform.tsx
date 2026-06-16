@@ -89,12 +89,7 @@ function StageWaveform({ peaks, duration, clock }: Props): React.JSX.Element {
     }
   }, [peaks, duration, clock])
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className="pointer-events-none absolute inset-x-0 bottom-0 h-32 w-full opacity-40"
-    />
-  )
+  return <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 size-full" />
 }
 
 export default StageWaveform

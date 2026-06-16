@@ -6,7 +6,7 @@ Round 3 feature source: user feedback 2026-06-14 round 3, grilled same day. Deci
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Round 2 Phases 0-5 all `[x]`.** Round 2 Phase 6 (`FX1`-`FX3`) was reconciled into Round 3 (FX3/EQ dropped, FX1/record folded into the mic feature, FX2/vocal-FX → MIC3). **Now: R3.WAVE2** — Visualization relocated below the header (R3 Phase 2, see `## Round 3` below). Mic feature has a dedicated spec at `SPEC.md` §14 (Microphone & recording).
+> **Round 2 Phases 0-5 all `[x]`.** Round 2 Phase 6 (`FX1`-`FX3`) was reconciled into Round 3 (FX3/EQ dropped, FX1/record folded into the mic feature, FX2/vocal-FX → MIC3). **Now: R3.MIC1** — Engine mic plumbing (R3 Phase 4, see `## Round 3` below). Mic feature has a dedicated spec at `SPEC.md` §14 (Microphone & recording).
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
 
@@ -245,7 +245,7 @@ Audio routing controls (output-mode / monitor / stream selects + test buttons) a
 Replace the Player's plain seek `Slider` with a compact waveform-styled seek bar (full-mix peaks via `engine.peaks()`, click-to-seek, playhead overlay — WaveformStrip-style, full-rate rAF playhead off the engine clock). Stays pinned at the bottom of the control bar.
 - **Done when:** the bottom transport shows the mix waveform with a moving playhead; click/drag seeks; timecodes intact; perf — playhead is a clear+line redraw, no per-frame React render; check green.
 
-### [ ] R3.WAVE2 Visualization relocated below the header
+### [x] R3.WAVE2 Visualization relocated below the header
 Move the stage visualization (`StageWaveform` / `Soundwave`) out of the full-stage bottom overlay into a strip **below the app header** (top). The stage-visual button keeps cycling off / waveform / bars, now driving the top strip; lyrics get the full middle area. **SPEC §7/§10 update.**
 - **Done when:** the visualization renders as a top strip under the header (not behind lyrics at the bottom); the toggle cycles off/waveform/bars for it; lyric layout unaffected by the move; paused/hidden behavior preserved; check green.
 
@@ -293,6 +293,7 @@ Dedicated screen listing takes (per song, with a song↔take association): each 
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-16 · R3.WAVE2 · Stage visualization moved from full-stage bottom overlay to a `h-16 shrink-0 z-10` strip below the header. Stage div changed from `absolute inset-0 overflow-hidden bg-bg` to `absolute inset-0 flex flex-col overflow-hidden bg-bg`; added 76px spacer (matching titlebar top-9+h-10) + conditional vis strip + `relative z-0 min-h-0 flex-1` content div. `StageWaveform`/`Soundwave` canvases changed to `absolute inset-0 size-full` (fill their container). Verified: vis strip at y=76 h=64, content area at y=140, toggle cycles off/waveform/bars/off with DOM correctly unmounting when off, waveform canvas `hasPixels:true` when song loaded. `npm run check` green. Now pointer → R3.MIC1. **[x]**.
 - 2026-06-16 · R3.WAVE1 · New `PlayerSeekWaveform` component (base+played off-screen canvases, rAF playhead per frame, drag-to-seek via native listeners). `engine.peaks()` fetched unconditionally when engine loads (cached) via `seekPeaks` state. Seek Slider replaced; fallback Slider while peaks loading. Click-to-seek and drag both verified: click 50% → 2:02 on 4:05 song, drag 10%→80% → 3:15. No per-frame React render. `npm run check` green. Now pointer → R3.WAVE2. **[x]**.
 - 2026-06-16 · R3.SET4 · Audio routing selects get explicit `w-full`/`className="w-full"` on their wrapper Stacks/Selects so they fill the field at 542px (1.00 ratio). Added `recordingFormat: 'webm' | 'wav'` to Settings type + defaults; Field in the Audio section (Select with WebM default). Setting persists through `settings.get/set` round-trip and re-open. zh keys via PowerShell to avoid CJK corruption. `npm run check` green. Now pointer → R3.WAVE1. **[x]**.
 - 2026-06-16 · R3.SET3 · GPU status chip replaced `<Text as="span">` with the same `chip()` helper used by Python/ffmpeg rows → now shows CheckCircle2/XCircle icon, identical class, identical visual weight. One-line change in `PipelineInstaller.tsx`. `npm run check` green. Now pointer → R3.SET4. **[x]**.

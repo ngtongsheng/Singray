@@ -354,7 +354,9 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
         </Stack>
       </Titlebar>
 
-      <div className={`absolute inset-0 overflow-hidden bg-bg ${barVisible ? '' : 'cursor-none'}`}>
+      <div
+        className={`absolute inset-0 flex flex-col overflow-hidden bg-bg ${barVisible ? '' : 'cursor-none'}`}
+      >
         {/* Blurred artwork under a scrim + bottom fade — lyric contrast independent of art (§10.6). */}
         <img
           src={window.singray.audio.thumbUrl(song.id)}
@@ -366,12 +368,24 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
         />
         <div className="absolute inset-0 bg-black/55" />
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-bg to-transparent" />
-        {stageVisual === 'bars' && analyser && <Soundwave analyser={analyser} playing={playing} />}
-        {stageVisual === 'waveform' && peaks && engine && (
-          <StageWaveform peaks={peaks} duration={engine.duration} clock={clock} />
+
+        {/* Spacer matching the Titlebar (top-9 = 36px + h-10 = 40px). */}
+        <div className="h-[76px] shrink-0" />
+
+        {/* Visualization strip: top strip below the header (R3.WAVE2). */}
+        {stageVisual !== 'off' && (
+          <div className="relative z-10 h-16 shrink-0 opacity-75">
+            {stageVisual === 'bars' && analyser && (
+              <Soundwave analyser={analyser} playing={playing} />
+            )}
+            {stageVisual === 'waveform' && peaks && engine && (
+              <StageWaveform peaks={peaks} duration={engine.duration} clock={clock} />
+            )}
+          </div>
         )}
 
-        <div className="absolute inset-0 z-0">
+        {/* Content area: lyrics / loading / error — fills remaining height. */}
+        <div className="relative z-0 min-h-0 flex-1">
           {error ? (
             <Stack direction="column" gap={3} justify="center" align="center" className="h-full">
               <p className="text-danger">{error}</p>
