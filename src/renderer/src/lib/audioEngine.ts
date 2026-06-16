@@ -37,6 +37,8 @@ const PITCH_MAX = 6
 /** AudioWorklet module path — relative to index.html (public/ is served verbatim). */
 const WORKLET_URL = 'worklets/soundtouch-processor.js'
 
+export type MicFxPreset = 'off' | 'room' | 'hall' | 'echo' | 'karaoke'
+
 export interface AudioRouting {
   mode: 'single' | 'dual'
   monitorDeviceId: string
@@ -423,21 +425,181 @@ export class AudioEngine {
     )
   }
 
-  // ─── Mic graph (R3.MIC1) ──────────────────────────────────────────────────
+  // ─── Mic graph (R3.MIC1-3) ───────────────────────────────────────────────
   // One MediaStream (getUserMedia), one MediaStreamAudioSourceNode per context.
   // Bypasses SoundTouch; survives play/pause/seek/tempo rebuilds.
+  // MIC2: gainMicMon controlled by monitor toggle + volume; gainMicStr by volume only.
+  // MIC3: dry/wet FX crossfade inserted between src and gainMic per context.
   private micStream: MediaStream | null = null
   private srcMicMon: MediaStreamAudioSourceNode | null = null
   private srcMicStr: MediaStreamAudioSourceNode | null = null
-  /** Monitor-leg mic gain — mute target for MIC2 monitor toggle. */
-  gainMicMon: GainNode | null = null
-  /** Stream-leg mic gain — set by MIC2 volume control. */
-  gainMicStr: GainNode | null = null
+  private gainMicMon: GainNode | null = null
+  private gainMicStr: GainNode | null = null
+  private fxNodesMon: AudioNode[] = []
+  private fxNodesStr: AudioNode[] = []
+  private _micMonitor = true
+  private _micVolume = 1
+  private _micFxPreset: MicFxPreset = 'off'
+  private _micFxAmount = 0.3
   /** Non-fatal mic problem (permission denied, no device). */
   micWarning: string | null = null
 
   get micEnabled(): boolean {
     return this.micStream !== null
+  }
+  get micMonitor(): boolean {
+    return this._micMonitor
+  }
+  get micVolume(): number {
+    return this._micVolume
+  }
+  get micFxPreset(): MicFxPreset {
+    return this._micFxPreset
+  }
+  get micFxAmount(): number {
+    return this._micFxAmount
+  }
+
+  /** Synth decaying-noise IR for ConvolverNode (no bundled audio files). */
+  private static makeIR(ctx: AudioContext, durationSec: number, decay: number): AudioBuffer {
+    const len = Math.floor(ctx.sampleRate * durationSec)
+    const buf = ctx.createBuffer(2, len, ctx.sampleRate)
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch)
+      for (let i = 0; i < len; i++) {
+        d[i] = (Math.random() * 2 - 1) * (1 - i / len) ** decay
+      }
+    }
+    return buf
+  }
+
+  /** Build and connect a dry/wet FX graph between src and outputGain.
+   *  Returns {dry, wet, fxNodes} — caller stores these for teardown. */
+  private buildFxGraph(
+    ctx: AudioContext,
+    src: MediaStreamAudioSourceNode,
+    out: GainNode,
+    preset: MicFxPreset,
+    amount: number
+  ): { dry: GainNode; wet: GainNode; fxNodes: AudioNode[] } {
+    const dry = ctx.createGain()
+    const wet = ctx.createGain()
+    const nodes: AudioNode[] = []
+
+    if (preset === 'off') {
+      dry.gain.value = 1
+      wet.gain.value = 0
+      src.connect(dry)
+      dry.connect(out)
+      src.connect(wet)
+      wet.connect(out)
+    } else {
+      dry.gain.value = 1 - amount
+      wet.gain.value = amount
+      src.connect(dry)
+      dry.connect(out)
+
+      // Build FX chain; fxFirst = entry point from src, fxLast = exit to wet.
+      let fxFirst: AudioNode
+      let fxLast: AudioNode
+
+      if (preset === 'room') {
+        const conv = ctx.createConvolver()
+        conv.buffer = AudioEngine.makeIR(ctx, 0.8, 4)
+        fxFirst = conv
+        fxLast = conv
+        nodes.push(conv)
+      } else if (preset === 'hall') {
+        const conv = ctx.createConvolver()
+        conv.buffer = AudioEngine.makeIR(ctx, 2.5, 3)
+        fxFirst = conv
+        fxLast = conv
+        nodes.push(conv)
+      } else if (preset === 'echo') {
+        const delay = ctx.createDelay(1.0)
+        delay.delayTime.value = 0.25
+        const fb = ctx.createGain()
+        fb.gain.value = 0.35
+        delay.connect(fb)
+        fb.connect(delay)
+        fxFirst = delay
+        fxLast = delay
+        nodes.push(delay, fb)
+      } else {
+        // karaoke: light reverb + light echo, parallel into a merge gain
+        const conv = ctx.createConvolver()
+        conv.buffer = AudioEngine.makeIR(ctx, 0.8, 5)
+        const delay = ctx.createDelay(1.0)
+        delay.delayTime.value = 0.2
+        const fb = ctx.createGain()
+        fb.gain.value = 0.2
+        delay.connect(fb)
+        fb.connect(delay)
+        const split = ctx.createGain()
+        split.gain.value = 0.6
+        const merge = ctx.createGain()
+        merge.gain.value = 1
+        split.connect(conv)
+        split.connect(delay)
+        conv.connect(merge)
+        delay.connect(merge)
+        fxFirst = split
+        fxLast = merge
+        nodes.push(split, conv, delay, fb, merge)
+      }
+
+      src.connect(fxFirst)
+      fxLast.connect(wet)
+      wet.connect(out)
+    }
+
+    nodes.push(dry, wet)
+    return { dry, wet, fxNodes: nodes }
+  }
+
+  /** Disconnect and clear all FX nodes for one context leg. */
+  private teardownFxLeg(nodes: AudioNode[]): void {
+    for (const n of nodes) {
+      try {
+        n.disconnect()
+      } catch {
+        /* already disconnected */
+      }
+    }
+  }
+
+  /** Rebuild mic FX graph for both active context legs (used by setMicFx). */
+  private rewireMicFx(): void {
+    if (this.srcMicMon && this.gainMicMon) {
+      try {
+        this.srcMicMon.disconnect()
+      } catch {
+        /* ok */
+      }
+      this.teardownFxLeg(this.fxNodesMon)
+      this.fxNodesMon = this.buildFxGraph(
+        this.ctx,
+        this.srcMicMon,
+        this.gainMicMon,
+        this._micFxPreset,
+        this._micFxAmount
+      ).fxNodes
+    }
+    if (this.srcMicStr && this.gainMicStr && this.streamCtx) {
+      try {
+        this.srcMicStr.disconnect()
+      } catch {
+        /* ok */
+      }
+      this.teardownFxLeg(this.fxNodesStr)
+      this.fxNodesStr = this.buildFxGraph(
+        this.streamCtx,
+        this.srcMicStr,
+        this.gainMicStr,
+        this._micFxPreset,
+        this._micFxAmount
+      ).fxNodes
+    }
   }
 
   async enableMic(deviceId?: string): Promise<void> {
@@ -453,19 +615,57 @@ export class AudioEngine {
         }
       })
       this.micStream = stream
+
+      // Monitor leg
       this.gainMicMon = this.ctx.createGain()
+      this.gainMicMon.gain.value = this._micMonitor ? this._micVolume : 0
       this.gainMicMon.connect(this.ctx.destination)
       this.srcMicMon = this.ctx.createMediaStreamSource(stream)
-      this.srcMicMon.connect(this.gainMicMon)
+      this.fxNodesMon = this.buildFxGraph(
+        this.ctx,
+        this.srcMicMon,
+        this.gainMicMon,
+        this._micFxPreset,
+        this._micFxAmount
+      ).fxNodes
+
+      // Stream leg (dual mode only)
       if (this.streamCtx) {
         this.gainMicStr = this.streamCtx.createGain()
+        this.gainMicStr.gain.value = this._micVolume
         this.gainMicStr.connect(this.streamCtx.destination)
         this.srcMicStr = this.streamCtx.createMediaStreamSource(stream)
-        this.srcMicStr.connect(this.gainMicStr)
+        this.fxNodesStr = this.buildFxGraph(
+          this.streamCtx,
+          this.srcMicStr,
+          this.gainMicStr,
+          this._micFxPreset,
+          this._micFxAmount
+        ).fxNodes
       }
     } catch (err) {
       this.micWarning = `Mic unavailable: ${err instanceof Error ? err.message : String(err)}`
     }
+  }
+
+  /** Mute/unmute the monitor leg only. In single mode (no stream context) this fully silences the mic. */
+  setMicMonitor(on: boolean): void {
+    this._micMonitor = on
+    if (this.gainMicMon) this.ramp(this.gainMicMon, on ? this._micVolume : 0)
+  }
+
+  /** Set mic volume on both legs, click-free ramp. Monitor leg only ramped when monitor is on. */
+  setMicVolume(v: number): void {
+    this._micVolume = Math.min(Math.max(v, 0), 1)
+    if (this.gainMicMon && this._micMonitor) this.ramp(this.gainMicMon, this._micVolume)
+    if (this.gainMicStr) this.ramp(this.gainMicStr, this._micVolume, this.streamCtx)
+  }
+
+  /** Switch FX preset and/or amount. Rebuilds the FX chain if mic is active. */
+  setMicFx(preset: MicFxPreset, amount: number): void {
+    this._micFxPreset = preset
+    this._micFxAmount = Math.min(Math.max(amount, 0), 1)
+    if (this.micEnabled) this.rewireMicFx()
   }
 
   disableMic(): void {
@@ -473,14 +673,34 @@ export class AudioEngine {
       for (const track of this.micStream.getTracks()) track.stop()
       this.micStream = null
     }
-    this.srcMicMon?.disconnect()
-    this.srcMicStr?.disconnect()
-    this.gainMicMon?.disconnect()
-    this.gainMicStr?.disconnect()
+    try {
+      this.srcMicMon?.disconnect()
+    } catch {
+      /* ok */
+    }
+    try {
+      this.srcMicStr?.disconnect()
+    } catch {
+      /* ok */
+    }
+    this.teardownFxLeg(this.fxNodesMon)
+    this.teardownFxLeg(this.fxNodesStr)
+    try {
+      this.gainMicMon?.disconnect()
+    } catch {
+      /* ok */
+    }
+    try {
+      this.gainMicStr?.disconnect()
+    } catch {
+      /* ok */
+    }
     this.srcMicMon = null
     this.srcMicStr = null
     this.gainMicMon = null
     this.gainMicStr = null
+    this.fxNodesMon = []
+    this.fxNodesStr = []
   }
 
   /** Tear down everything; the engine is unusable afterwards. */

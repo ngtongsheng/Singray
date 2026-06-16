@@ -112,6 +112,18 @@ export interface Settings {
   separationModel: string
   /** Container format for R3.REC1 MediaRecorder sessions. */
   recordingFormat: 'webm' | 'wav'
+  /** R3.MIC4: audioinput device, '' = system default. */
+  micDeviceId: string
+  /** R3.MIC4: build mic graph when player loads. */
+  micEnabled: boolean
+  /** R3.MIC2: monitor leg audible (false = AG06 hardware-monitor case). */
+  micMonitor: boolean
+  /** R3.MIC2: mic gain 0..1, both legs. */
+  micVolume: number
+  /** R3.MIC3: FX preset. */
+  micFxPreset: 'off' | 'room' | 'hall' | 'echo' | 'karaoke'
+  /** R3.MIC3: wet/dry 0..1. */
+  micFxAmount: number
 }
 
 /** Cleaned title/artist from metadata enrichment (R3.2). */

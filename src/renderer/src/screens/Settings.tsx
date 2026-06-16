@@ -23,7 +23,8 @@ import {
   Popover,
   Select,
   Stack,
-  Text
+  Text,
+  Toggle
 } from '../components/ui'
 import { useAsync } from '../hooks/useAsync'
 import { useSettings } from '../hooks/useSettings'
@@ -221,7 +222,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
   })
   const llmModels = useAsync((url: string, key: string) => window.singray.llm.listModels(url, key))
   const [outputs, setOutputs] = useState<MediaDeviceInfo[]>([])
-  const [_inputs, setInputs] = useState<MediaDeviceInfo[]>([])
+  const [inputs, setInputs] = useState<MediaDeviceInfo[]>([])
   const [toneBusy, setToneBusy] = useState<'monitor' | 'stream' | null>(null)
   const [toneError, setToneError] = useState<string | null>(null)
 
@@ -237,7 +238,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
     const load = (): void => {
       navigator.mediaDevices.enumerateDevices().then((ds) => {
         setOutputs(ds.filter((d) => d.kind === 'audiooutput'))
-        setInputs(ds.filter((d) => d.kind === 'audioinput'))
+        setInputs(ds.filter((d: MediaDeviceInfo) => d.kind === 'audioinput'))
       })
     }
     load()
@@ -622,6 +623,29 @@ function Settings({ onBack }: Props): React.JSX.Element {
                   <XCircle className="size-3.5" /> {toneError}
                 </Text>
               )}
+              <Field label={t('settings.micDevice')} hint={t('settings.micDeviceHelp')}>
+                <Stack direction="column" gap={2}>
+                  <Select
+                    value={settings.micDeviceId}
+                    onChange={(v) => patch({ micDeviceId: v })}
+                    options={[
+                      { value: '', label: t('settings.systemDefault') },
+                      ...inputs.map((d) => ({
+                        value: d.deviceId,
+                        label: d.label || t('settings.inputN', { id: d.deviceId.slice(0, 8) })
+                      }))
+                    ]}
+                    className="w-full"
+                  />
+                  <Toggle
+                    pressed={settings.micEnabled}
+                    onClick={() => patch({ micEnabled: !settings.micEnabled })}
+                    title={t('settings.micEnableHelp')}
+                  >
+                    {t('settings.micEnable')}
+                  </Toggle>
+                </Stack>
+              </Field>
             </Stack>
           </fieldset>
         </Stack>

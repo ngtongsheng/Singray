@@ -127,6 +127,21 @@
       "off": "Stage visual: off",
       "waveform": "Stage visual: waveform",
       "bars": "Stage visual: bars"
+    },
+    "micVolTip": "Mic volume",
+    "micMonitorOn": "Monitor on",
+    "micMonitorOff": "Monitor off",
+    "micMonitorTip": "Mute/unmute mic on monitor output (stream/record leg unaffected in dual mode)",
+    "micLatencyHint": "Software monitor may lag — prefer hardware monitoring (e.g. AG06)",
+    "micFxLabel": "FX",
+    "micFxAmountTip": "Wet/dry amount",
+    "micWarning": "Mic: {{message}}",
+    "micPreset": {
+      "off": "FX off",
+      "room": "Room",
+      "hall": "Hall",
+      "echo": "Echo",
+      "karaoke": "Karaoke"
     }
   },
   "details": {
@@ -269,6 +284,12 @@
     "recordingFormat": "Recording format",
     "recordingFormatHelp": "Container for recorded karaoke sessions (R3.REC1). webm = smaller; wav = uncompressed, universal.",
     "recordingWebm": "WebM (default)",
-    "recordingWav": "WAV (uncompressed)"
+    "recordingWav": "WAV (uncompressed)",
+    "micInput": "Mic input",
+    "micDevice": "Mic device",
+    "micDeviceHelp": "Microphone for self-monitoring and recording. Saved here; activated per song in the player.",
+    "micEnable": "Enable mic in player",
+    "micEnableHelp": "When on, the mic graph starts automatically when you open a song. Disable to skip getUserMedia permission prompt.",
+    "inputN": "Input {{id}}"
   }
 }

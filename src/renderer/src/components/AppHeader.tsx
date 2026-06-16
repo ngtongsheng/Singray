@@ -8,15 +8,13 @@ import WindowControls from './WindowControls'
  */
 function AppHeader(): React.JSX.Element {
   return (
-    <>
-      <Stack as="header" justify="between" className="app-drag absolute inset-x-0 top-0 z-30 h-9">
-        <Stack gap={2} className="pl-6">
-          <Mic2 className="size-4 text-accent" strokeWidth={1.5} />
-          <span className="font-semibold text-sm">Singray</span>
-        </Stack>
-        <WindowControls />
+    <Stack as="header" justify="between" className="app-drag absolute inset-x-0 top-0 z-30 h-9">
+      <Stack gap={2} className="pl-6">
+        <Mic2 className="size-4 text-accent" strokeWidth={1.5} />
+        <span className="font-semibold text-sm">Singray</span>
       </Stack>
-    </>
+      <WindowControls />
+    </Stack>
   )
 }
 

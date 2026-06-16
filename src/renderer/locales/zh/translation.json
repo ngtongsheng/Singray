@@ -125,6 +125,21 @@
       "off": "舞台视觉：关",
       "waveform": "舞台视觉：波形",
       "bars": "舞台视觉：频谱"
+    },
+    "micVolTip": "麦克风音量",
+    "micMonitorOn": "监听开",
+    "micMonitorOff": "监听关",
+    "micMonitorTip": "静音/取消静音监听输出的麦克风（双路模式下录音不受影响）",
+    "micLatencyHint": "软件监听可能有延迟 — 建议使用硬件监听（如 AG06）",
+    "micFxLabel": "效果",
+    "micFxAmountTip": "湿/干比例",
+    "micWarning": "麦克风：{{message}}",
+    "micPreset": {
+      "off": "效果关",
+      "room": "房间",
+      "hall": "大厅",
+      "echo": "回声",
+      "karaoke": "卡拉OK"
     }
   },
   "details": {
@@ -265,6 +280,12 @@
     "recordingFormatHelp": "卡拉OK录音的封装格式（R3.REC1）。webm 体积更小；wav 无压缩、通用性强。",
     "recordingWebm": "WebM（默认）",
     "recordingWav": "WAV（无压缩）",
-    "deviceMissing": "保存的设备不存在 — 请重新选择（暂时回退到系统默认）。"
+    "deviceMissing": "保存的设备不存在 — 请重新选择（暂时回退到系统默认）。",
+    "micInput": "麦克风输入",
+    "micDevice": "麦克风设备",
+    "micDeviceHelp": "用于自我监听和录音的麦克风。在此保存；在播放器中每首歌启用。",
+    "micEnable": "在播放器中启用麦克风",
+    "micEnableHelp": "开启后，打开歌曲时自动启动麦克风。关闭可跳过 getUserMedia 权限提示。",
+    "inputN": "输入 {{id}}"
   }
 }

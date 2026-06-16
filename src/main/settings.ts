@@ -24,7 +24,13 @@ function defaults(): Settings {
     llmModel: '',
     llmApiKey: '',
     separationModel: '6_HP-Karaoke-UVR.pth',
-    recordingFormat: 'webm'
+    recordingFormat: 'webm',
+    micDeviceId: '',
+    micEnabled: false,
+    micMonitor: true,
+    micVolume: 1,
+    micFxPreset: 'off',
+    micFxAmount: 0.3
   }
 }
 
