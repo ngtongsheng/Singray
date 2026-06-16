@@ -98,10 +98,11 @@ export default function PipelineInstaller({ onReady }: Props): React.JSX.Element
               ? t('settings.setup.managed')
               : t('settings.setup.missing')
         )}
-        <Text as="span" variant="hint" className="flex items-center gap-1.5">
-          {t('settings.setup.gpu')}:{' '}
-          {status.gpu ? t('settings.setup.detected') : t('settings.setup.missing')}
-        </Text>
+        {chip(
+          t('settings.setup.gpu'),
+          status.gpu,
+          status.gpu ? t('settings.setup.detected') : t('settings.setup.missing')
+        )}
       </div>
 
       <Text variant="hint" as="span">
