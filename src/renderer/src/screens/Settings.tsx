@@ -221,6 +221,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
   })
   const llmModels = useAsync((url: string, key: string) => window.singray.llm.listModels(url, key))
   const [outputs, setOutputs] = useState<MediaDeviceInfo[]>([])
+  const [_inputs, setInputs] = useState<MediaDeviceInfo[]>([])
   const [toneBusy, setToneBusy] = useState<'monitor' | 'stream' | null>(null)
   const [toneError, setToneError] = useState<string | null>(null)
 
@@ -234,9 +235,10 @@ function Settings({ onBack }: Props): React.JSX.Element {
 
   useEffect(() => {
     const load = (): void => {
-      navigator.mediaDevices
-        .enumerateDevices()
-        .then((ds) => setOutputs(ds.filter((d) => d.kind === 'audiooutput')))
+      navigator.mediaDevices.enumerateDevices().then((ds) => {
+        setOutputs(ds.filter((d) => d.kind === 'audiooutput'))
+        setInputs(ds.filter((d) => d.kind === 'audioinput'))
+      })
     }
     load()
     navigator.mediaDevices.addEventListener('devicechange', load)

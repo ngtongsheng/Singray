@@ -158,7 +158,7 @@ export class AudioEngine {
    *  Dual mode opens the stream context here; a failing stream sink degrades to
    *  single mode with `routingWarning` set rather than blocking playback. */
   static async load(songId: string, routing?: AudioRouting): Promise<AudioEngine> {
-    const ctx = new AudioContext()
+    const ctx = new AudioContext({ latencyHint: 'interactive' })
     let streamCtx: AudioContext | null = null
     let warning: string | null = null
     try {
@@ -166,7 +166,7 @@ export class AudioEngine {
         if (routing.monitorDeviceId) {
           await (ctx as SinkableContext).setSinkId(routing.monitorDeviceId)
         }
-        streamCtx = new AudioContext()
+        streamCtx = new AudioContext({ latencyHint: 'interactive' })
         try {
           if (routing.streamDeviceId) {
             await (streamCtx as SinkableContext).setSinkId(routing.streamDeviceId)
@@ -423,11 +423,72 @@ export class AudioEngine {
     )
   }
 
+  // ─── Mic graph (R3.MIC1) ──────────────────────────────────────────────────
+  // One MediaStream (getUserMedia), one MediaStreamAudioSourceNode per context.
+  // Bypasses SoundTouch; survives play/pause/seek/tempo rebuilds.
+  private micStream: MediaStream | null = null
+  private srcMicMon: MediaStreamAudioSourceNode | null = null
+  private srcMicStr: MediaStreamAudioSourceNode | null = null
+  /** Monitor-leg mic gain — mute target for MIC2 monitor toggle. */
+  gainMicMon: GainNode | null = null
+  /** Stream-leg mic gain — set by MIC2 volume control. */
+  gainMicStr: GainNode | null = null
+  /** Non-fatal mic problem (permission denied, no device). */
+  micWarning: string | null = null
+
+  get micEnabled(): boolean {
+    return this.micStream !== null
+  }
+
+  async enableMic(deviceId?: string): Promise<void> {
+    this.disableMic()
+    this.micWarning = null
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          ...(deviceId ? { deviceId } : {})
+        }
+      })
+      this.micStream = stream
+      this.gainMicMon = this.ctx.createGain()
+      this.gainMicMon.connect(this.ctx.destination)
+      this.srcMicMon = this.ctx.createMediaStreamSource(stream)
+      this.srcMicMon.connect(this.gainMicMon)
+      if (this.streamCtx) {
+        this.gainMicStr = this.streamCtx.createGain()
+        this.gainMicStr.connect(this.streamCtx.destination)
+        this.srcMicStr = this.streamCtx.createMediaStreamSource(stream)
+        this.srcMicStr.connect(this.gainMicStr)
+      }
+    } catch (err) {
+      this.micWarning = `Mic unavailable: ${err instanceof Error ? err.message : String(err)}`
+    }
+  }
+
+  disableMic(): void {
+    if (this.micStream) {
+      for (const track of this.micStream.getTracks()) track.stop()
+      this.micStream = null
+    }
+    this.srcMicMon?.disconnect()
+    this.srcMicStr?.disconnect()
+    this.gainMicMon?.disconnect()
+    this.gainMicStr?.disconnect()
+    this.srcMicMon = null
+    this.srcMicStr = null
+    this.gainMicMon = null
+    this.gainMicStr = null
+  }
+
   /** Tear down everything; the engine is unusable afterwards. */
   dispose(): void {
     if (this.latencyTimer !== null) window.clearTimeout(this.latencyTimer)
     this.stopDriftWatchdog()
     this.stopSources()
+    this.disableMic()
     this._playing = false
     void this.ctx.close()
     void this.streamCtx?.close()
