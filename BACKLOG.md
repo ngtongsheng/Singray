@@ -6,7 +6,7 @@ Round 3 feature source: user feedback 2026-06-14 round 3, grilled same day. Deci
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
-> **Round 2 Phases 0-5 all `[x]`.** Round 2 Phase 6 (`FX1`-`FX3`) was reconciled into Round 3 (FX3/EQ dropped, FX1/record folded into the mic feature, FX2/vocal-FX → MIC3). **Now: R3.SET4** — Full-width audio routing + recording-format setting (R3 Phase 2, see `## Round 3` below). Mic feature has a dedicated spec at `SPEC.md` §14 (Microphone & recording).
+> **Round 2 Phases 0-5 all `[x]`.** Round 2 Phase 6 (`FX1`-`FX3`) was reconciled into Round 3 (FX3/EQ dropped, FX1/record folded into the mic feature, FX2/vocal-FX → MIC3). **Now: R3.WAVE1** — Seek-bar becomes a waveform strip (R3 Phase 2, see `## Round 3` below). Mic feature has a dedicated spec at `SPEC.md` §14 (Microphone & recording).
 
 **ID scheme:** Phase 0 keeps Round 1 IDs (`R#.#`) so the archived Session Log resolves. New Round 2 stories use area-code IDs (`EL`, `NAV`, `UI`, `HOME`, `ART`, `ADD`, `SNG`, `AIC`, `META`, `FX`) — collision-free with Round 1's `R#.#`. Commit subjects use the story ID, e.g. `EL1: disable stamp in preview`.
 
@@ -234,7 +234,7 @@ Replace the free-text `llmModel` Input with an editable Select populated from `G
 `PipelineInstaller`: the "GPU detected" status lacks the success check icon other detected items show. Add it for visual consistency.
 - **Done when:** GPU-detected shows the same success check treatment as the other detected rows; check green.
 
-### [ ] R3.SET4 Full-width audio routing + recording-format setting
+### [x] R3.SET4 Full-width audio routing + recording-format setting
 Audio routing controls (output-mode / monitor / stream selects + test buttons) all full-width. Add a `recordingFormat` setting (Select, e.g. `webm` | `wav`, default `webm`) feeding R3.REC1; store in settings model + main.
 - **Done when:** every audio-routing control spans full width; `recordingFormat` persists and round-trips through `settings.get/set`; check green.
 
@@ -293,6 +293,7 @@ Dedicated screen listing takes (per song, with a song↔take association): each 
 
 ## Session Log
 <!-- newest on top: date · story · what happened / decisions / gotchas -->
+- 2026-06-16 · R3.SET4 · Audio routing selects get explicit `w-full`/`className="w-full"` on their wrapper Stacks/Selects so they fill the field at 542px (1.00 ratio). Added `recordingFormat: 'webm' | 'wav'` to Settings type + defaults; Field in the Audio section (Select with WebM default). Setting persists through `settings.get/set` round-trip and re-open. zh keys via PowerShell to avoid CJK corruption. `npm run check` green. Now pointer → R3.WAVE1. **[x]**.
 - 2026-06-16 · R3.SET3 · GPU status chip replaced `<Text as="span">` with the same `chip()` helper used by Python/ffmpeg rows → now shows CheckCircle2/XCircle icon, identical class, identical visual weight. One-line change in `PipelineInstaller.tsx`. `npm run check` green. Now pointer → R3.SET4. **[x]**.
 - 2026-06-16 · R3.SET2 · LlmModelCombobox: Input + Popover listbox populated via `llm:listModels` IPC (renderer CSP blocks direct fetch → main process handles all external HTTP). Auto-fetch on mount, refresh button, error strip when endpoint unreachable, type-to-filter, pick sets value, custom names commit on Enter/blur. URL bug: `${base}/v1/models` → `${base}/models` (base already ends with `/v1`). zh file edited via PowerShell regex to avoid CJK byte corruption from Edit tool. `npm run check` green. Now pointer → R3.SET3. **[x]**.
 - 2026-06-14 · R3.SET1 · Two fixes for the separation-model list: (1) `pipeline.py` `cmd_list_models` now scans the local `MODELS_DIR` **and** queries the audio-separator registry, merging with a `set` for dedup — manually-added models now appear alongside registry ones (registry failure is non-fatal). (2) `pipeline.ts` `listPipelineModels` no longer silently swallows errors in a catch-all — errors propagate to `useAsync` which preserves the last good value on failed refresh (instead of the fallback overwriting it). Layout: `SeparationModelSelect` Stack gets `w-full` for full-width dropdown, refresh IconButton changed from `variant="ghost"` to `variant="secondary"` for a border. `npm run check` green; `ruff check` + `ruff format` clean. Now pointer → R3.SET2. **[x]**.

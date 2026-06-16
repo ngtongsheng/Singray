@@ -542,6 +542,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
                     { value: 'single', label: t('settings.modeSingle') },
                     { value: 'dual', label: t('settings.modeDual') }
                   ]}
+                  className="w-full"
                 />
               </Field>
 
@@ -556,7 +557,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
                       which === 'monitor' ? t('settings.monitorDevice') : t('settings.streamDevice')
                     }
                   >
-                    <Stack gap={2}>
+                    <Stack gap={2} className="w-full">
                       <Select
                         value={known ? value : ''}
                         disabled={settings.audioOutputMode === 'single'}
@@ -601,6 +602,19 @@ function Settings({ onBack }: Props): React.JSX.Element {
                   </Field>
                 )
               })}
+              <Field label={t('settings.recordingFormat')} hint={t('settings.recordingFormatHelp')}>
+                <Select
+                  value={settings.recordingFormat}
+                  onChange={(v) =>
+                    patch({ recordingFormat: v as SettingsModel['recordingFormat'] })
+                  }
+                  options={[
+                    { value: 'webm', label: t('settings.recordingWebm') },
+                    { value: 'wav', label: t('settings.recordingWav') }
+                  ]}
+                  className="w-full"
+                />
+              </Field>
               {toneError && (
                 <Text variant="error" className="flex items-center gap-1.5">
                   <XCircle className="size-3.5" /> {toneError}

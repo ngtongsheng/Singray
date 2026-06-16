@@ -108,6 +108,8 @@ export interface Settings {
   llmApiKey: string
   /** UVR separation model filename for new imports (e.g. "6_HP-Karaoke-UVR.pth"). */
   separationModel: string
+  /** Container format for R3.REC1 MediaRecorder sessions. */
+  recordingFormat: 'webm' | 'wav'
 }
 
 /** Cleaned title/artist from metadata enrichment (R3.2). */

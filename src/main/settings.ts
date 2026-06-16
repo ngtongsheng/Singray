@@ -22,7 +22,8 @@ function defaults(): Settings {
     llmBaseUrl: 'http://localhost:11434/v1',
     llmModel: '',
     llmApiKey: '',
-    separationModel: '6_HP-Karaoke-UVR.pth'
+    separationModel: '6_HP-Karaoke-UVR.pth',
+    recordingFormat: 'webm'
   }
 }
 

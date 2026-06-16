@@ -1,4 +1,4 @@
-{
+﻿{
   "languageName": "中文",
   "common": {
     "cancel": "取消",
@@ -261,6 +261,10 @@
     "test": "测试",
     "toneTipMonitor": "在监听设备上播放测试音",
     "toneTipStream": "在直播设备上播放测试音",
+    "recordingFormat": "录音格式",
+    "recordingFormatHelp": "卡拉OK录音的封装格式（R3.REC1）。webm 体积更小；wav 无压缩、通用性强。",
+    "recordingWebm": "WebM（默认）",
+    "recordingWav": "WAV（无压缩）",
     "deviceMissing": "保存的设备不存在 — 请重新选择（暂时回退到系统默认）。"
   }
 }

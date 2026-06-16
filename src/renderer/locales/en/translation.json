@@ -265,6 +265,10 @@
     "test": "Test",
     "toneTipMonitor": "Play a test tone on the monitor device",
     "toneTipStream": "Play a test tone on the stream device",
-    "deviceMissing": "Saved device not found — pick again (falls back to system default)."
+    "deviceMissing": "Saved device not found — pick again (falls back to system default).",
+    "recordingFormat": "Recording format",
+    "recordingFormatHelp": "Container for recorded karaoke sessions (R3.REC1). webm = smaller; wav = uncompressed, universal.",
+    "recordingWebm": "WebM (default)",
+    "recordingWav": "WAV (uncompressed)"
   }
 }
