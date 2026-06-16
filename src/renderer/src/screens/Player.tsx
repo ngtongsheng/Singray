@@ -24,6 +24,7 @@ import { useTranslation } from 'react-i18next'
 import type { Lyrics, Settings, SongListItem } from '../../../shared/types'
 import EditMetaDialog from '../components/EditMetaDialog'
 import LyricRenderer from '../components/LyricRenderer'
+import PlayerSeekWaveform from '../components/PlayerSeekWaveform'
 import SongDetailsDialog from '../components/SongDetailsDialog'
 import Soundwave from '../components/Soundwave'
 import StageWaveform from '../components/StageWaveform'
@@ -94,6 +95,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
   const [stageVisual, setStageVisual] = useState<StageVisual>('off')
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
   const [peaks, setPeaks] = useState<Float32Array | null>(null)
+  const [seekPeaks, setSeekPeaks] = useState<Float32Array | null>(null)
   const [windowHidden, setWindowHidden] = useState(document.hidden)
   const hideTimer = useRef<number>(0)
   const { settings, patch } = useSettings()
@@ -203,6 +205,11 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
     setAnalyser(engine && stageVisual === 'bars' ? engine.createMonitorAnalyser() : null)
     setPeaks(engine && stageVisual === 'waveform' ? engine.peaks() : null)
   }, [engine, stageVisual])
+
+  // Seek bar always needs peaks (cached after first call).
+  useEffect(() => {
+    setSeekPeaks(engine ? engine.peaks() : null)
+  }, [engine])
 
   // Ken Burns pauses while the window is hidden.
   useEffect(() => {
@@ -425,15 +432,24 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                 )}
               </IconButton>
               <span className="text-sm text-text-dim tabular-nums">{fmt(position)}</span>
-              <Slider
-                min={0}
-                max={engine.duration}
-                step={0.25}
-                value={position}
-                onChange={(e) => engine.seek(Number(e.target.value))}
-                title={t('player.seekTip')}
-                className="h-11 flex-1"
-              />
+              {seekPeaks ? (
+                <PlayerSeekWaveform
+                  peaks={seekPeaks}
+                  duration={engine.duration}
+                  clock={clock}
+                  onSeek={seek}
+                />
+              ) : (
+                <Slider
+                  min={0}
+                  max={engine.duration}
+                  step={0.25}
+                  value={position}
+                  onChange={(e) => engine.seek(Number(e.target.value))}
+                  title={t('player.seekTip')}
+                  className="h-11 flex-1"
+                />
+              )}
               <span className="text-sm text-text-dim tabular-nums">{fmt(engine.duration)}</span>
 
               <span className="flex items-center gap-2 text-text-dim">
