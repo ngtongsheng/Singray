@@ -110,6 +110,23 @@ export async function chat(messages: ChatMessage[], opts: ChatOptions = {}): Pro
   return content
 }
 
+/** GET /v1/models from the configured OpenAI-compat endpoint; returns sorted model IDs. */
+export async function listLlmModels(baseUrl: string, apiKey: string): Promise<string[]> {
+  const base = baseUrl.trim().replace(/\/+$/, '')
+  if (!base) return []
+  const headers: Record<string, string> = {}
+  if (apiKey.trim()) headers.Authorization = `Bearer ${apiKey.trim()}`
+  let res: Response
+  try {
+    res = await fetch(`${base}/models`, { headers, signal: AbortSignal.timeout(5000) })
+  } catch (err) {
+    throw friendlyNetworkError(err, base, 5000)
+  }
+  if (!res.ok) throw await friendlyHttpError(res, '')
+  const body = (await res.json()) as { data?: { id: string }[] }
+  return (body.data ?? []).map((m) => m.id).sort()
+}
+
 /** Settings "Test" button: tiny round-trip proving URL + model + key all work. */
 export async function testLlm(): Promise<LlmTestResult> {
   const started = Date.now()

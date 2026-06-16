@@ -65,6 +65,8 @@ const api: SingrayApi = {
   },
   llm: {
     test: () => ipcRenderer.invoke('llm:test') as Promise<LlmTestResult>,
+    listModels: (baseUrl: string, apiKey: string) =>
+      ipcRenderer.invoke('llm:listModels', baseUrl, apiKey) as Promise<string[]>,
     enrichProbe: (probe) => ipcRenderer.invoke('llm:enrichProbe', probe) as Promise<EnrichResult>,
     cleanMeta: (input) => ipcRenderer.invoke('llm:cleanMeta', input) as Promise<EnrichResult>,
     cleanLyrics: (input) => ipcRenderer.invoke('llm:cleanLyrics', input) as Promise<string>

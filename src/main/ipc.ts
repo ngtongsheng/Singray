@@ -13,7 +13,7 @@ import { cancelInstall, installPipeline, pipelineStatus } from './bootstrap'
 import { cleanLyrics, cleanMeta, enrichProbe } from './enrich'
 import { cancelImport, retryImport, startImport } from './importQueue'
 import { deleteSong, getLyrics, listSongs, openSongFolder, saveLyrics, updateMeta } from './library'
-import { testLlm } from './llm'
+import { listLlmModels, testLlm } from './llm'
 import { findLyrics } from './lyricsFinder'
 import { alignLyrics, listPipelineModels, probe, probeFile, searchYoutube } from './pipeline'
 import { getSettings, setSettings } from './settings'
@@ -39,6 +39,9 @@ export function registerIpc(): void {
   ipcMain.handle('lyrics:findLyrics', (_e, query: LrclibQuery) => findLyrics(query))
 
   ipcMain.handle('llm:test', () => testLlm())
+  ipcMain.handle('llm:listModels', (_e, baseUrl: string, apiKey: string) =>
+    listLlmModels(baseUrl, apiKey)
+  )
   ipcMain.handle('llm:enrichProbe', (_e, probe: ProbeResult) => enrichProbe(probe))
   ipcMain.handle(
     'llm:cleanMeta',

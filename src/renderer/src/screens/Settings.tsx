@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  Check,
   CheckCircle2,
   Loader2,
   Plus,
@@ -8,12 +9,22 @@ import {
   X,
   XCircle
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Settings as SettingsModel } from '../../../shared/types'
 import PipelineInstaller from '../components/PipelineInstaller'
 import Titlebar from '../components/Titlebar'
-import { Button, Container, Field, IconButton, Input, Select, Stack, Text } from '../components/ui'
+import {
+  Button,
+  Container,
+  Field,
+  IconButton,
+  Input,
+  Popover,
+  Select,
+  Stack,
+  Text
+} from '../components/ui'
 import { useAsync } from '../hooks/useAsync'
 import { useSettings } from '../hooks/useSettings'
 import { availableLocales, i18n, localeName, resolveLocale } from '../lib/i18n'
@@ -73,7 +84,7 @@ function SeparationModelSelect({
   const valid = models?.includes(value) ?? false
 
   return (
-    <Stack gap={2}>
+    <Stack gap={2} className="w-full">
       <Select
         value={valid ? value : ''}
         onChange={onChange}
@@ -90,16 +101,108 @@ function SeparationModelSelect({
         className="flex-1"
       />
       <IconButton
-        variant="ghost"
+        variant="secondary"
         size="sm"
         onClick={() => run(true)}
         disabled={loading}
         title={t('settings.modelRefresh')}
-        className="shrink-0 text-text-dim hover:text-text"
       >
         <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={1.5} />
       </IconButton>
     </Stack>
+  )
+}
+
+/** Editable combobox for the LLM model field: type freely or pick from the fetched list. */
+function LlmModelCombobox({
+  value,
+  onChange,
+  models
+}: {
+  value: string
+  onChange: (v: string) => void
+  models: string[]
+}): React.JSX.Element {
+  const [inputVal, setInputVal] = useState(value)
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => setInputVal(value), [value])
+
+  const filtered = inputVal.trim()
+    ? models.filter((m) => m.toLowerCase().includes(inputVal.toLowerCase()))
+    : models
+
+  const commit = (v: string): void => {
+    const trimmed = v.trim()
+    if (trimmed !== value) onChange(trimmed)
+    setOpen(false)
+  }
+
+  const pick = (model: string): void => {
+    setInputVal(model)
+    if (model !== value) onChange(model)
+    setOpen(false)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent): void => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    window.addEventListener('mousedown', onDown)
+    return () => window.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  return (
+    <div ref={rootRef} className="relative flex-1">
+      <Input
+        value={inputVal}
+        onChange={(e) => {
+          setInputVal(e.target.value)
+          setOpen(true)
+        }}
+        onFocus={() => {
+          if (models.length) setOpen(true)
+        }}
+        onBlur={(e) => {
+          const v = e.target.value
+          setTimeout(() => commit(v), 150)
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') setOpen(false)
+          if (e.key === 'Enter') {
+            commit(inputVal)
+            ;(e.target as HTMLInputElement).blur()
+          }
+        }}
+        placeholder="gemma4:12b-it-qat"
+      />
+      <Popover
+        open={open && filtered.length > 0}
+        origin="top"
+        className="inset-x-0 top-full mt-1 max-h-48 overflow-y-auto py-1"
+      >
+        <div role="listbox">
+          {filtered.map((model) => (
+            <button
+              key={model}
+              type="button"
+              role="option"
+              aria-selected={model === value}
+              onMouseDown={(e) => {
+                e.preventDefault()
+                pick(model)
+              }}
+              className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm hover:bg-surface-2${model === value ? ' text-accent' : ''}`}
+            >
+              <span className="truncate">{model}</span>
+              {model === value && <Check className="size-3.5 shrink-0" strokeWidth={2} />}
+            </button>
+          ))}
+        </div>
+      </Popover>
+    </div>
   )
 }
 
@@ -116,6 +219,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
     const r = await window.singray.llm.test()
     return t('settings.llmOk', { reply: r.reply, secs: (r.ms / 1000).toFixed(1) })
   })
+  const llmModels = useAsync((url: string, key: string) => window.singray.llm.listModels(url, key))
   const [outputs, setOutputs] = useState<MediaDeviceInfo[]>([])
   const [toneBusy, setToneBusy] = useState<'monitor' | 'stream' | null>(null)
   const [toneError, setToneError] = useState<string | null>(null)
@@ -138,6 +242,14 @@ function Settings({ onBack }: Props): React.JSX.Element {
     navigator.mediaDevices.addEventListener('devicechange', load)
     return () => navigator.mediaDevices.removeEventListener('devicechange', load)
   }, [])
+
+  const llmBaseUrl = settings?.llmBaseUrl ?? ''
+  const llmApiKey = settings?.llmApiKey ?? ''
+  const { run: runLlmModels } = llmModels
+  useEffect(() => {
+    if (!llmBaseUrl) return
+    void runLlmModels(llmBaseUrl, llmApiKey)
+  }, [runLlmModels, llmBaseUrl, llmApiKey])
 
   const testTone = async (which: 'monitor' | 'stream'): Promise<void> => {
     if (!settings || toneBusy) return
@@ -356,25 +468,41 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 />
               </Field>
               <Field label={t('settings.llmModel')}>
-                <Stack gap={2}>
-                  <Input
-                    defaultValue={settings.llmModel}
-                    placeholder="gemma4:12b-it-qat"
-                    onBlur={(e) => {
-                      if (e.target.value.trim() !== settings.llmModel)
-                        patch({ llmModel: e.target.value.trim() })
-                    }}
-                  />
-                  <Button
-                    size="md"
-                    onClick={() => llmTest.run()}
-                    disabled={llmTest.loading}
-                    title={t('settings.llmTestTip')}
-                    className="shrink-0"
-                  >
-                    {llmTest.loading && <Loader2 className="size-4 animate-spin" />}
-                    {t('settings.test')}
-                  </Button>
+                <Stack direction="column" gap={1.5}>
+                  <Stack gap={2}>
+                    <LlmModelCombobox
+                      value={settings.llmModel}
+                      onChange={(v) => patch({ llmModel: v })}
+                      models={llmModels.data ?? []}
+                    />
+                    <IconButton
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void llmModels.run(settings.llmBaseUrl, settings.llmApiKey)}
+                      disabled={llmModels.loading}
+                      title={t('settings.modelRefresh')}
+                    >
+                      <RefreshCw
+                        className={`size-4 ${llmModels.loading ? 'animate-spin' : ''}`}
+                        strokeWidth={1.5}
+                      />
+                    </IconButton>
+                    <Button
+                      size="md"
+                      onClick={() => llmTest.run()}
+                      disabled={llmTest.loading}
+                      title={t('settings.llmTestTip')}
+                      className="shrink-0"
+                    >
+                      {llmTest.loading && <Loader2 className="size-4 animate-spin" />}
+                      {t('settings.test')}
+                    </Button>
+                  </Stack>
+                  {!llmModels.loading && llmModels.error && (
+                    <Text variant="error" className="flex items-center gap-1.5">
+                      <XCircle className="size-3.5" /> {t('settings.llmModelsError')}
+                    </Text>
+                  )}
                 </Stack>
               </Field>
               <Field label={t('settings.llmApiKey')}>

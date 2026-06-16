@@ -251,6 +251,7 @@
     "llmApiKey": "API key (optional)",
     "llmTestTip": "Send a tiny prompt to check URL, model and key",
     "llmOk": "Replied \"{{reply}}\" in {{secs}}s",
+    "llmModelsError": "Could not load model list — type a model name manually",
     "llmHelp": "Used for metadata cleanup and lyric tools. Works with Ollama (default URL) or any OpenAI-compatible endpoint.",
     "audio": "Audio routing",
     "outputMode": "Output mode",

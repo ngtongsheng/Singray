@@ -275,6 +275,8 @@ export interface SingrayApi {
   llm: {
     /** Round-trips a tiny prompt through the configured endpoint; rejects with a readable message. */
     test(): Promise<LlmTestResult>
+    /** Lists available models from the configured OpenAI-compat /v1/models endpoint; rejects readably. */
+    listModels(baseUrl: string, apiKey: string): Promise<string[]>
     /** Cleans probe metadata for import prefill; falls back to the heuristic parser, never rejects. */
     enrichProbe(probe: ProbeResult): Promise<EnrichResult>
     /** "Clean up with AI" on an existing song; rejects with a readable message. */

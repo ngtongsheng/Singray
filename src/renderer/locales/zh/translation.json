@@ -247,6 +247,7 @@
     "llmApiKey": "API 密钥（可选）",
     "llmTestTip": "发送一个小提示词，检查地址、模型和密钥",
     "llmOk": "{{secs}} 秒内回复“{{reply}}”",
+    "llmModelsError": "无法加载模型列表 — 请手动输入模型名称",
     "llmHelp": "用于元数据清理和歌词工具。兼容 Ollama（默认地址）或任何 OpenAI 兼容接口。",
     "audio": "音频路由",
     "outputMode": "输出模式",
