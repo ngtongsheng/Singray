@@ -2,8 +2,13 @@
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/noto-sans-sc";
 
-/* Design tokens — SPEC §10.2. Semantic tokens only; no raw hex in components. */
+/* Design tokens — SPEC §10.2. Semantic tokens only; no raw hex in components.
+   --color-*: initial wipes Tailwind's default palette (red-500, gray-200, ...)
+   so only the tokens below exist — typos/defaults fail to compile a style instead
+   of silently working. */
 @theme {
+  --color-*: initial;
+
   /* Color */
   --color-bg: #0e0e12;
   --color-surface: #17171d;

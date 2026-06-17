@@ -86,14 +86,14 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
   }
 
   return (
-    <Dialog label={t('editMeta.aria')} width="w-[420px]" onClose={onClose}>
+    <Dialog label={t('editMeta.aria')} width="md" onClose={onClose}>
       <Stack direction="column" gap={6}>
-        <div>
+        <Stack direction="column" gap={4}>
           <Text as="h2" variant="title">
             {t('editMeta.title')}
           </Text>
 
-          <Stack direction="column" gap={3} className="mt-4">
+          <Stack direction="column" gap={3}>
             <Field label={t('common.title')}>
               <Input ref={titleRef} value={title} onChange={(e) => setTitle(e.target.value)} />
             </Field>
@@ -110,19 +110,23 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
           </Stack>
 
           {(cleanError || preview) && (
-            <div className="mt-3">
+            <Stack direction="column" gap={2}>
               {cleanError && <Text variant="error">{cleanError}</Text>}
               {preview &&
                 (previewIsNoop ? (
                   <Text variant="hint">{t('editMeta.noChanges')}</Text>
                 ) : (
-                  <div className="rounded-card border border-border bg-surface p-3">
+                  <Stack
+                    direction="column"
+                    gap={2}
+                    className="rounded-card border border-border bg-surface p-3"
+                  >
                     <Text variant="hint">{t('editMeta.preview')}</Text>
-                    <p className="mt-1 text-sm">
+                    <p className="text-sm">
                       {preview.title}
                       {preview.artist && <span className="text-text-dim"> · {preview.artist}</span>}
                     </p>
-                    <Stack gap={2} className="mt-2">
+                    <Stack gap={2}>
                       <Button variant="primary" size="sm" onClick={applyPreview}>
                         {t('editMeta.apply')}
                       </Button>
@@ -130,11 +134,11 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
                         {t('editMeta.dismiss')}
                       </Button>
                     </Stack>
-                  </div>
+                  </Stack>
                 ))}
-            </div>
+            </Stack>
           )}
-        </div>
+        </Stack>
 
         <Stack justify="between" align="center" gap={3}>
           <Button

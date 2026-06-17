@@ -322,7 +322,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
               </Button>
               <Menu
                 origin="top right"
-                className="top-full right-0 mt-1 w-44 overflow-hidden py-1"
+                className="top-full right-0 translate-y-1 w-44 overflow-hidden py-1"
                 trigger={(open, toggle) => (
                   <IconButton
                     variant="secondary"
@@ -359,24 +359,22 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
         <div className="absolute inset-0 bg-black/55" />
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1/3 bg-gradient-to-b from-bg to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-bg to-transparent" />
-
         {/* Spacer matching the Titlebar (top-9 = 36px + h-10 = 40px). */}
-        <div className="h-[76px] shrink-0" />
-
+        <div
+          className="h-[76px] shrink-0" /* design-allow: exact Titlebar height, no scale token matches */
+        />
         {/* Waveform strip: top strip below the header. */}
         {showWaveform && peaks && engine && (
           <div className="relative z-10 h-16 shrink-0 opacity-75">
             <StageWaveform peaks={peaks} duration={engine.duration} clock={clock} />
           </div>
         )}
-
         {/* Bars overlay: bottom of stage, behind the control bar. */}
         {showBars && analyser && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-40 opacity-75">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-40 opacity-75">
             <Soundwave analyser={analyser} playing={playing} />
           </div>
         )}
-
         {/* Content area: lyrics / loading / error — fills remaining height. */}
         <div className="relative z-0 min-h-0 flex-1">
           {error ? (
@@ -400,7 +398,6 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
             </Stack>
           )}
         </div>
-
         <AnimatePresence>
           {editOpen && <EditMetaDialog song={song} onClose={() => setEditOpen(false)} />}
           {detailsOpen && (
@@ -411,7 +408,6 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
             />
           )}
         </AnimatePresence>
-
         {engine && (
           // Pin/unpin slide (R2.2): bar dips and fades on auto-hide, rises on poke.
           <motion.div
@@ -421,12 +417,16 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
             }
             className={`absolute inset-x-0 bottom-0 z-10 ${barVisible ? '' : 'pointer-events-none'}`}
           >
-            <div className="bg-gradient-to-t from-black/80 to-transparent px-6 pt-12 pb-5">
+            <Stack
+              direction="column"
+              gap={2}
+              className="bg-gradient-to-t from-black/80 to-transparent px-6 pt-12 pb-5"
+            >
               {micActive && micMonitor && (
-                <p className="mb-2 text-[10px] text-text-dim">{t('player.micLatencyHint')}</p>
+                <p className="text-xs text-text-dim">{t('player.micLatencyHint')}</p>
               )}
               {micWarning && (
-                <p className="mb-2 text-[10px] text-danger">
+                <p className="text-xs text-danger">
                   {t('player.micWarning', { message: micWarning })}
                 </p>
               )}
@@ -624,7 +624,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                   <Popover
                     open={tempoOpen}
                     origin="bottom right"
-                    className="right-0 bottom-full mb-2 w-max p-3"
+                    className="right-0 bottom-full -translate-y-2 w-max p-3"
                   >
                     <Stack justify="between" className="pb-2">
                       <Text as="span" variant="hint">
@@ -678,7 +678,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                   )}
                 </Toggle>
               </Stack>
-            </div>
+            </Stack>
           </motion.div>
         )}
       </div>

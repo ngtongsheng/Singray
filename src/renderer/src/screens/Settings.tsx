@@ -158,7 +158,7 @@ function LlmModelCombobox({
       <Popover
         open={open && filtered.length > 0}
         origin="top"
-        className="inset-x-0 top-full mt-1 max-h-48 overflow-y-auto py-1"
+        className="inset-x-0 top-full translate-y-1 max-h-48 overflow-y-auto py-1"
       >
         <div role="listbox">
           {filtered.map((model) => (
@@ -343,42 +343,44 @@ function Settings({ onBack }: Props): React.JSX.Element {
 
           <SettingsSection title={t('settings.pipeline')}>
             <Stack direction="column" gap={4}>
-              <div>
-                <Text variant="hint" className="mb-2 block">
+              <Stack direction="column" gap={2}>
+                <Text variant="hint" className="block">
                   {t('settings.setup.desc')}
                 </Text>
                 <PipelineInstaller />
-              </div>
+              </Stack>
               <Field label={t('settings.pythonExe')} hint={t('settings.pythonHelp')}>
-                <Stack gap={2}>
-                  <Input
-                    defaultValue={settings.pythonPath}
-                    onBlur={(e) => {
-                      if (e.target.value.trim() && e.target.value !== settings.pythonPath)
-                        patch({ pythonPath: e.target.value.trim() })
-                    }}
-                  />
-                  <Button
-                    size="md"
-                    onClick={() => pipelineTest.run()}
-                    disabled={pipelineTest.loading}
-                    className="shrink-0"
-                  >
-                    {pipelineTest.loading && <Loader2 className="size-4 animate-spin" />}
-                    {t('settings.testPipeline')}
-                  </Button>
+                <Stack direction="column" gap={2}>
+                  <Stack gap={2}>
+                    <Input
+                      defaultValue={settings.pythonPath}
+                      onBlur={(e) => {
+                        if (e.target.value.trim() && e.target.value !== settings.pythonPath)
+                          patch({ pythonPath: e.target.value.trim() })
+                      }}
+                    />
+                    <Button
+                      size="md"
+                      onClick={() => pipelineTest.run()}
+                      disabled={pipelineTest.loading}
+                      className="shrink-0"
+                    >
+                      {pipelineTest.loading && <Loader2 className="size-4 animate-spin" />}
+                      {t('settings.testPipeline')}
+                    </Button>
+                  </Stack>
+                  {!pipelineTest.loading && !pipelineTest.error && pipelineTest.data && (
+                    <span className="flex items-center gap-1.5 text-success text-xs">
+                      <CheckCircle2 className="size-3.5" /> {pipelineTest.data}
+                    </span>
+                  )}
+                  {!pipelineTest.loading && pipelineTest.error && (
+                    <Text variant="error" className="flex items-center gap-1.5">
+                      <XCircle className="size-3.5" /> {stripIpcError(pipelineTest.error)}
+                    </Text>
+                  )}
                 </Stack>
               </Field>
-              {!pipelineTest.loading && !pipelineTest.error && pipelineTest.data && (
-                <span className="-mt-2 flex items-center gap-1.5 text-success text-xs">
-                  <CheckCircle2 className="size-3.5" /> {pipelineTest.data}
-                </span>
-              )}
-              {!pipelineTest.loading && pipelineTest.error && (
-                <Text variant="error" className="-mt-2 flex items-center gap-1.5">
-                  <XCircle className="size-3.5" /> {stripIpcError(pipelineTest.error)}
-                </Text>
-              )}
               <Field label={t('settings.separationModel')} hint={t('settings.separationModelHelp')}>
                 <SeparationModelSelect
                   value={settings.separationModel || '6_HP-Karaoke-UVR.pth'}
@@ -497,48 +499,47 @@ function Settings({ onBack }: Props): React.JSX.Element {
                       which === 'monitor' ? t('settings.monitorDevice') : t('settings.streamDevice')
                     }
                   >
-                    <Stack gap={2} className="w-full">
-                      <Select
-                        value={known ? value : ''}
-                        disabled={settings.audioOutputMode === 'single'}
-                        onChange={(v) =>
-                          patch(
-                            which === 'monitor' ? { monitorDeviceId: v } : { streamDeviceId: v }
-                          )
-                        }
-                        options={[
-                          { value: '', label: t('settings.systemDefault') },
-                          ...outputs.map((d) => ({
-                            value: d.deviceId,
-                            label: d.label || t('settings.outputN', { id: d.deviceId.slice(0, 8) })
-                          }))
-                        ]}
-                        className="flex-1"
-                      />
-                      <Button
-                        size="md"
-                        onClick={() => testTone(which)}
-                        disabled={toneBusy !== null || settings.audioOutputMode === 'single'}
-                        title={
-                          which === 'monitor'
-                            ? t('settings.toneTipMonitor')
-                            : t('settings.toneTipStream')
-                        }
-                        className="shrink-0"
-                      >
-                        {toneBusy === which ? (
-                          <Loader2 className="size-4 animate-spin" />
-                        ) : (
-                          <Volume2 className="size-4" strokeWidth={1.5} />
-                        )}
-                        {t('settings.test')}
-                      </Button>
+                    <Stack direction="column" gap={1} className="w-full">
+                      <Stack gap={2}>
+                        <Select
+                          value={known ? value : ''}
+                          disabled={settings.audioOutputMode === 'single'}
+                          onChange={(v) =>
+                            patch(
+                              which === 'monitor' ? { monitorDeviceId: v } : { streamDeviceId: v }
+                            )
+                          }
+                          options={[
+                            { value: '', label: t('settings.systemDefault') },
+                            ...outputs.map((d) => ({
+                              value: d.deviceId,
+                              label:
+                                d.label || t('settings.outputN', { id: d.deviceId.slice(0, 8) })
+                            }))
+                          ]}
+                          className="flex-1"
+                        />
+                        <Button
+                          size="md"
+                          onClick={() => testTone(which)}
+                          disabled={toneBusy !== null || settings.audioOutputMode === 'single'}
+                          title={
+                            which === 'monitor'
+                              ? t('settings.toneTipMonitor')
+                              : t('settings.toneTipStream')
+                          }
+                          className="shrink-0"
+                        >
+                          {toneBusy === which ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <Volume2 className="size-4" strokeWidth={1.5} />
+                          )}
+                          {t('settings.test')}
+                        </Button>
+                      </Stack>
+                      {!known && <Text variant="error">{t('settings.deviceMissing')}</Text>}
                     </Stack>
-                    {!known && (
-                      <Text variant="error" className="mt-1 block">
-                        {t('settings.deviceMissing')}
-                      </Text>
-                    )}
                   </Field>
                 )
               })}

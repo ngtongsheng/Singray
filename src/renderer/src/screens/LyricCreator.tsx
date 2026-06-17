@@ -249,7 +249,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
       <Stack direction="column" gap={0} className="absolute inset-0 pt-19">
         {/* Row 2: Action buttons (text step only) */}
         {creatorStep === 'text' && (
-          <div className="border-border border-b px-6 py-2">
+          <Stack direction="column" gap={1} className="border-border border-b px-6 py-2">
             <Stack gap={2}>
               <input
                 ref={fileRef}
@@ -310,14 +310,14 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
               </Button>
             </Stack>
             {(alignError || lrcError) && (
-              <div className="mt-1">
+              <>
                 {alignError && (
                   <Text variant="error">{t('creator.alignFailed', { message: alignError })}</Text>
                 )}
                 {lrcError && <Text variant="error">{lrcError}</Text>}
-              </div>
+              </>
             )}
-          </div>
+          </Stack>
         )}
 
         {/* Row 3 + 4: Content area (textarea + hint, or TimingStep) */}

@@ -42,7 +42,7 @@ function SongDetailsDialog({ song, onClose, onArtistClick }: Props): React.JSX.E
   )
 
   return (
-    <Dialog label={t('details.title')} width="w-[420px]" onClose={onClose}>
+    <Dialog label={t('details.title')} width="md" onClose={onClose}>
       <Stack direction="column" gap={6}>
         <Stack direction="column" gap={4}>
           <div>

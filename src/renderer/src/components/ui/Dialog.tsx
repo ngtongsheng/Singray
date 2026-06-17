@@ -4,12 +4,22 @@ import { useEffect } from 'react'
 import { useMotionPresets } from '../../lib/motionPresets'
 import { cx } from './cx'
 
+export type DialogWidth = 'sm' | 'md' | 'lg' | 'xl' | '2xl'
+
+const WIDTH: Record<DialogWidth, string> = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl'
+}
+
 interface DialogProps {
   label: string
   /** alertdialog role for confirms. */
   alert?: boolean
-  /** Panel width, e.g. 'w-[420px]'. */
-  width: string
+  /** Panel max-width tier (Tailwind's max-w-* scale, no arbitrary px). */
+  width: DialogWidth
   onClose: () => void
   children: ReactNode
 }
@@ -43,7 +53,10 @@ function Dialog({ label, alert, width, onClose, children }: DialogProps): React.
         role={alert ? 'alertdialog' : 'dialog'}
         aria-modal="true"
         aria-label={label}
-        className={cx('rounded-card border border-border bg-surface-2 p-6 shadow-raised', width)}
+        className={cx(
+          'w-full rounded-card border border-border bg-surface-2 p-6 shadow-raised',
+          WIDTH[width]
+        )}
       >
         {children}
       </motion.div>

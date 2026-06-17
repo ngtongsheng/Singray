@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "start": "electron-vite preview",
-    "check": "biome check . && npm run typecheck",
+    "check": "biome check . && npm run typecheck && node scripts/check-design.mjs",
     "check:fix": "biome check --write .",
     "check:py": "pipeline\\.venv\\Scripts\\ruff check pipeline && pipeline\\.venv\\Scripts\\ruff format --check pipeline",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",

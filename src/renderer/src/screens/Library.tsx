@@ -214,62 +214,66 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
 
       <Container>
         {section === 'songs' && (
-          <Stack gap={2} className="py-3">
-            {artistFilter !== null && (
-              <Chip
-                active
-                onClick={() => setArtistFilter(null)}
-                title={t('library.clearArtistFilter')}
-              >
-                {t('library.artistFilter', { name: artistFilter || t('common.unknown') })}
-                <X className="size-3.5" strokeWidth={1.5} />
+          <Stack gap={2} justify="between" className="py-3">
+            <Stack gap={2} wrap>
+              {artistFilter !== null && (
+                <Chip
+                  active
+                  onClick={() => setArtistFilter(null)}
+                  title={t('library.clearArtistFilter')}
+                >
+                  {t('library.artistFilter', { name: artistFilter || t('common.unknown') })}
+                  <X className="size-3.5" strokeWidth={1.5} />
+                </Chip>
+              )}
+              {languages.map((lang) => (
+                <Chip
+                  key={lang}
+                  active={language === lang}
+                  onClick={() => setLanguage(language === lang ? null : lang)}
+                >
+                  {langLabel(lang)}
+                </Chip>
+              ))}
+              <Chip active={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
+                <Heart className="size-3.5" strokeWidth={1.5} /> {t('library.favorites')}
               </Chip>
-            )}
-            {languages.map((lang) => (
-              <Chip
-                key={lang}
-                active={language === lang}
-                onClick={() => setLanguage(language === lang ? null : lang)}
-              >
-                {langLabel(lang)}
+              <Chip active={needsLyricsOnly} onClick={() => setNeedsLyricsOnly(!needsLyricsOnly)}>
+                <Type className="size-3.5" strokeWidth={1.5} /> {t('library.needsLyrics')}
               </Chip>
-            ))}
-            <Chip active={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
-              <Heart className="size-3.5" strokeWidth={1.5} /> {t('library.favorites')}
-            </Chip>
-            <Chip active={needsLyricsOnly} onClick={() => setNeedsLyricsOnly(!needsLyricsOnly)}>
-              <Type className="size-3.5" strokeWidth={1.5} /> {t('library.needsLyrics')}
-            </Chip>
-            <Segmented
-              className="ml-auto app-no-drag"
-              value={view}
-              onChange={setViewMode}
-              options={[
-                {
-                  value: 'grid',
-                  label: <LayoutGrid className="size-4" strokeWidth={1.5} />,
-                  title: t('library.viewGrid')
-                },
-                {
-                  value: 'list',
-                  label: <List className="size-4" strokeWidth={1.5} />,
-                  title: t('library.viewList')
-                }
-              ]}
-            />
-            <div className="app-no-drag">
-              <Select
-                uiSize="sm"
-                value={sort}
-                onChange={setSort}
-                title={t('library.sort')}
+            </Stack>
+            <Stack gap={2}>
+              <Segmented
+                className="app-no-drag"
+                value={view}
+                onChange={setViewMode}
                 options={[
-                  { value: 'added', label: t('library.sortAdded') },
-                  { value: 'mostSung', label: t('library.sortMostSung') },
-                  { value: 'recentSung', label: t('library.sortRecentSung') }
+                  {
+                    value: 'grid',
+                    label: <LayoutGrid className="size-4" strokeWidth={1.5} />,
+                    title: t('library.viewGrid')
+                  },
+                  {
+                    value: 'list',
+                    label: <List className="size-4" strokeWidth={1.5} />,
+                    title: t('library.viewList')
+                  }
                 ]}
               />
-            </div>
+              <div className="app-no-drag">
+                <Select
+                  uiSize="sm"
+                  value={sort}
+                  onChange={setSort}
+                  title={t('library.sort')}
+                  options={[
+                    { value: 'added', label: t('library.sortAdded') },
+                    { value: 'mostSung', label: t('library.sortMostSung') },
+                    { value: 'recentSung', label: t('library.sortRecentSung') }
+                  ]}
+                />
+              </div>
+            </Stack>
           </Stack>
         )}
 
@@ -362,7 +366,7 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
                 )}
               </Stack>
               <div
-                className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
+                className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300" // design-allow: width isn't in Tailwind's transition-property presets
                 style={{ width: `${job.progress * 100}%` }}
               />
             </div>

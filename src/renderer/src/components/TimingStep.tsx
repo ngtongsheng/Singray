@@ -133,7 +133,7 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
           <Stack
             direction="column"
             gap={1}
-            className="min-h-0 flex-1 overflow-y-auto pl-6 pr-[14px] pb-4"
+            className="min-h-0 flex-1 overflow-y-auto pl-6 pr-[14px] pb-4" // design-allow: scrollbar-gutter compensation, see Container.tsx
           >
             {lyrics.lines.map((line, li) =>
               line.units.length === 0 ? (
@@ -173,7 +173,7 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
       {/* Progress strip (below shortcuts; height-matched, text bottom-aligned) */}{' '}
       <div className="relative h-8 border-border border-t bg-surface px-6">
         <div
-          className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
+          className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300" // design-allow: width isn't in Tailwind's transition-property presets
           style={{ width: `${progressPct}%` }}
         />
         <Stack gap={2} align="center" className="h-full text-xs">

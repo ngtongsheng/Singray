@@ -110,8 +110,8 @@ function Select<T extends string>({
         open={open}
         origin="top"
         className={cx(
-          'top-full mt-1 max-h-60 overflow-y-auto py-1',
-          uiSize === 'md' ? 'inset-x-0' : 'right-0 min-w-[10rem]'
+          'top-full translate-y-1 max-h-60 overflow-y-auto py-1',
+          uiSize === 'md' ? 'inset-x-0' : 'right-0 min-w-40'
         )}
       >
         <div role="listbox">

@@ -95,7 +95,7 @@ const SongCard = memo(function SongCard({
             song={song}
             onDelete={onDelete}
             origin="top left"
-            className="top-full left-0 mt-1 w-40 overflow-hidden py-1"
+            className="top-full left-0 translate-y-1 w-40 overflow-hidden py-1"
             trigger={(open, toggle) => (
               <IconButton
                 variant="bare"

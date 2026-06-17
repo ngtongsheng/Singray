@@ -106,7 +106,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
   }
 
   return (
-    <Dialog label={t('import.title')} width="w-[640px]" onClose={onClose}>
+    <Dialog label={t('import.title')} width="2xl" onClose={onClose}>
       <Stack direction="column" gap={6}>
         <Stack direction="column" gap={4}>
           <Text as="h2" variant="title">
@@ -125,31 +125,29 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
           {mode === 'youtube' ? (
             <>
               <Field label={t('import.searchLabel')}>
-                <Stack gap={2}>
-                  <Input
-                    ref={searchRef}
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && runSearch()}
-                    placeholder={t('import.searchPlaceholder')}
-                    trailing={
-                      search.loading && <Loader2 className="size-4 animate-spin text-text-dim" />
-                    }
-                  />
-                  <IconButton
-                    size="md"
-                    aria-label={t('import.searchLabel')}
-                    onClick={runSearch}
-                    disabled={!query.trim() || search.loading}
-                  >
-                    <Search className="size-4" />
-                  </IconButton>
+                <Stack direction="column" gap={1}>
+                  <Stack gap={2}>
+                    <Input
+                      ref={searchRef}
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && runSearch()}
+                      placeholder={t('import.searchPlaceholder')}
+                      trailing={
+                        search.loading && <Loader2 className="size-4 animate-spin text-text-dim" />
+                      }
+                    />
+                    <IconButton
+                      size="md"
+                      aria-label={t('import.searchLabel')}
+                      onClick={runSearch}
+                      disabled={!query.trim() || search.loading}
+                    >
+                      <Search className="size-4" />
+                    </IconButton>
+                  </Stack>
+                  {search.error && <Text variant="error">{stripIpcError(search.error)}</Text>}
                 </Stack>
-                {search.error && (
-                  <Text variant="error" className="mt-1">
-                    {stripIpcError(search.error)}
-                  </Text>
-                )}
               </Field>
 
               {search.data && (
@@ -190,19 +188,17 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
               )}
 
               <Field label={t('import.urlLabel')}>
-                <Input
-                  value={probe.url}
-                  onChange={(e) => probe.setUrl(e.target.value)}
-                  placeholder="https://www.youtube.com/watch?v=…"
-                  trailing={
-                    probe.probing && <Loader2 className="size-4 animate-spin text-text-dim" />
-                  }
-                />
-                {probe.probeError && (
-                  <Text variant="error" className="mt-1">
-                    {probe.probeError}
-                  </Text>
-                )}
+                <Stack direction="column" gap={1}>
+                  <Input
+                    value={probe.url}
+                    onChange={(e) => probe.setUrl(e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=…"
+                    trailing={
+                      probe.probing && <Loader2 className="size-4 animate-spin text-text-dim" />
+                    }
+                  />
+                  {probe.probeError && <Text variant="error">{probe.probeError}</Text>}
+                </Stack>
               </Field>
             </>
           ) : (
@@ -237,7 +233,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
 
           {probe.probed && (
             <Stack gap={4}>
-              <div className="w-56 shrink-0">
+              <Stack direction="column" gap={2} className="w-56 shrink-0">
                 <div className="aspect-video overflow-hidden rounded-card bg-surface">
                   {probe.probed.thumbnailUrl && (
                     <img
@@ -247,10 +243,10 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                     />
                   )}
                 </div>
-                <Text variant="hint" className="mt-2 line-clamp-2">
+                <Text variant="hint" className="line-clamp-2">
                   {probe.probed.title}
                 </Text>
-              </div>
+              </Stack>
               <Stack direction="column" gap={3} className="flex-1">
                 <Field label={t('common.title')}>
                   <Input value={probe.title} onChange={(e) => probe.setTitle(e.target.value)} />

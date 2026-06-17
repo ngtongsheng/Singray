@@ -39,7 +39,7 @@ function Segmented<T extends string>({
           title={opt.title}
           onClick={() => onChange(opt.value)}
           className={cx(
-            'flex h-full items-center justify-center gap-1.5 rounded-[6px] px-2.5 text-sm font-medium transition-colors',
+            'flex h-full items-center justify-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors',
             opt.value === value ? 'bg-accent/15 text-accent' : 'text-text-dim hover:text-text'
           )}
         >

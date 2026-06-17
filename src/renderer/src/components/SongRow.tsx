@@ -39,7 +39,7 @@ const SongRow = memo(function SongRow({
         openable ? 'cursor-pointer' : ''
       }`}
     >
-      <div className="relative aspect-video w-24 shrink-0 overflow-hidden rounded-control bg-surface-2">
+      <div className="relative flex aspect-video w-24 shrink-0 items-center justify-center overflow-hidden rounded-control bg-surface-2">
         {song.ready && (
           <img
             src={window.singray.audio.thumbUrl(song.id)}
@@ -48,14 +48,9 @@ const SongRow = memo(function SongRow({
             draggable={false}
           />
         )}
-        {importing && (
-          <Loader2 className="absolute inset-0 m-auto size-4 animate-spin text-text-dim" />
-        )}
+        {importing && <Loader2 className="size-4 animate-spin text-text-dim" />}
         {failed && (
-          <span
-            className="absolute inset-0 m-auto flex size-4 items-center justify-center"
-            title={song.error ?? t('card.importInterrupted')}
-          >
+          <span title={song.error ?? t('card.importInterrupted')}>
             <AlertTriangle className="size-4 text-danger" />
           </span>
         )}
@@ -103,7 +98,7 @@ const SongRow = memo(function SongRow({
         song={song}
         onDelete={onDelete}
         origin="top right"
-        className="top-full right-0 mt-1 w-40 overflow-hidden py-1"
+        className="top-full right-0 translate-y-1 w-40 overflow-hidden py-1"
         trigger={(_open, toggle) => (
           <IconButton
             variant="bare"

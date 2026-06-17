@@ -175,7 +175,7 @@ function LyricRenderer({ lyrics, clock, onSeek, showGradient = true }: Props): R
       <div
         ref={colRef}
         className={`absolute inset-x-0 top-0 mx-auto px-8 font-lyric transition-transform duration-300 ease-out will-change-transform ${
-          cjk ? 'max-w-[28ch] text-5xl' : 'max-w-[60ch] text-5xl'
+          cjk ? 'max-w-[28ch] text-5xl' : 'max-w-[60ch] text-5xl' // design-allow: ch-based width tracks glyph count, no token fits
         }`}
       >
         {lyrics.lines.map((line, li) =>

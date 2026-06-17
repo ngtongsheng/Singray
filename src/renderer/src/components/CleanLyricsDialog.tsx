@@ -21,22 +21,26 @@ function CleanLyricsDialog({ original, cleaned, onApply, onClose }: Props): Reac
   const majorRemoval = before.length > 0 && removed / before.length > 0.4
 
   return (
-    <Dialog label={t('clean.title')} width="w-[520px]" onClose={onClose}>
+    <Dialog label={t('clean.title')} width="lg" onClose={onClose}>
       <Stack direction="column" gap={5}>
-        <div>
-          <Text as="h2" variant="title" className="mb-1">
-            {t('clean.title')}
-          </Text>
-          <p
-            className={`mb-4 text-xs ${majorRemoval ? 'font-semibold text-danger' : 'text-text-dim'}`}
+        <Stack direction="column" gap={4}>
+          <Stack direction="column" gap={1}>
+            <Text as="h2" variant="title">
+              {t('clean.title')}
+            </Text>
+            <p
+              className={`text-xs ${majorRemoval ? 'font-semibold text-danger' : 'text-text-dim'}`}
+            >
+              {majorRemoval
+                ? t('clean.majorRemoval', { count: removed, total: before.length })
+                : removed > 0
+                  ? t('clean.removed', { count: removed })
+                  : t('clean.noChanges')}
+            </p>
+          </Stack>
+          <div
+            className="h-[55vh] overflow-y-auto whitespace-pre-wrap rounded-card border border-border bg-surface p-3 font-lyric text-sm leading-6" /* design-allow: 55vh tracks viewport height, no token fits */
           >
-            {majorRemoval
-              ? t('clean.majorRemoval', { count: removed, total: before.length })
-              : removed > 0
-                ? t('clean.removed', { count: removed })
-                : t('clean.noChanges')}
-          </p>
-          <div className="h-[55vh] overflow-y-auto whitespace-pre-wrap rounded-card border border-border bg-surface p-3 font-lyric text-sm leading-6">
             {diff.map((op, i) => (
               <div
                 // biome-ignore lint/suspicious/noArrayIndexKey: static preview snapshot
@@ -53,7 +57,7 @@ function CleanLyricsDialog({ original, cleaned, onApply, onClose }: Props): Reac
               </div>
             ))}
           </div>
-        </div>
+        </Stack>
         <DialogFooter gap={2}>
           <Button onClick={onClose}>{t('common.cancel')}</Button>
           <Button variant="primary" onClick={onApply}>

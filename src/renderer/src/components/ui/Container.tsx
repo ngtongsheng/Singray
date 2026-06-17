@@ -38,7 +38,7 @@ function Container({
 }: ContainerProps): React.JSX.Element {
   return (
     <div
-      className={cx('absolute inset-0 overflow-y-auto pl-6 pr-[14px] pt-19', PB[pb], className)}
+      className={cx('absolute inset-0 overflow-y-auto pl-6 pr-[14px] pt-19', PB[pb], className)} // design-allow: scrollbar-gutter compensation (comment above)
       {...rest}
     >
       {maxWidth ? <div className={MAX_WIDTH[maxWidth]}>{children}</div> : children}

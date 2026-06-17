@@ -39,15 +39,17 @@ function LrclibFinderDialog({ query, onPick, onClose }: Props): React.JSX.Elemen
   }, [query])
 
   return (
-    <Dialog label={t('finder.title')} width="w-[460px]" onClose={onClose}>
+    <Dialog label={t('finder.title')} width="md" onClose={onClose}>
       <Stack direction="column" gap={5}>
-        <div>
-          <Text as="h2" variant="title" className="mb-1">
-            {t('finder.title')}
-          </Text>
-          <Text variant="hint" className="mb-4">
-            {t('finder.subtitle', { title: query.title, artist: query.artist })}
-          </Text>
+        <Stack direction="column" gap={4}>
+          <Stack direction="column" gap={1}>
+            <Text as="h2" variant="title">
+              {t('finder.title')}
+            </Text>
+            <Text variant="hint">
+              {t('finder.subtitle', { title: query.title, artist: query.artist })}
+            </Text>
+          </Stack>
 
           {hits === null && !error && (
             <Stack justify="center" gap={2} className="py-10 text-text-dim text-sm">
@@ -60,7 +62,9 @@ function LrclibFinderDialog({ query, onPick, onClose }: Props): React.JSX.Elemen
           )}
 
           {hits !== null && hits.length > 0 && (
-            <ul className="max-h-[50vh] space-y-1 overflow-y-auto">
+            <ul
+              className="flex max-h-[50vh] flex-col gap-1 overflow-y-auto" /* design-allow: 50vh tracks viewport height, no token fits */
+            >
               {hits.map((h) => (
                 <li key={h.id}>
                   <Button
@@ -79,7 +83,7 @@ function LrclibFinderDialog({ query, onPick, onClose }: Props): React.JSX.Elemen
                       </Text>
                     </span>
                     <span
-                      className={`shrink-0 rounded-control px-1.5 py-0.5 text-[10px] ${
+                      className={`shrink-0 rounded-control px-1.5 py-0.5 text-xs ${
                         h.syncedLyrics
                           ? 'bg-accent/15 text-accent-soft'
                           : 'border border-border text-text-dim'
@@ -92,7 +96,7 @@ function LrclibFinderDialog({ query, onPick, onClose }: Props): React.JSX.Elemen
               ))}
             </ul>
           )}
-        </div>
+        </Stack>
 
         <DialogFooter>
           <Button onClick={onClose}>{t('common.cancel')}</Button>
