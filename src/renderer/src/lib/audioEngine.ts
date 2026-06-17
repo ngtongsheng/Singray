@@ -1,3 +1,5 @@
+import { computePeaks } from './computePeaks'
+
 // Audio engine (SPEC §9). Single mode: one AudioContext, two buffer sources
 // (instrumental + vocals) started sample-synced, per-stem gain nodes, master
 // clock derived from AudioContext.currentTime. Dual mode (§9.2/§9.3): a second
@@ -313,28 +315,8 @@ export class AudioEngine {
    *  waveform source. Buffers are already decoded, so this is a pure CPU pass; cached. */
   peaks(perSec = 50): Float32Array {
     if (this.peaksCache) return this.peaksCache
-    const n = Math.max(1, Math.ceil(this.duration * perSec))
-    const data = new Float32Array(n)
-    for (const buf of [this.instrBuf, this.vocalBuf]) {
-      const step = buf.sampleRate / perSec
-      for (let ch = 0; ch < buf.numberOfChannels; ch++) {
-        const samples = buf.getChannelData(ch)
-        for (let i = 0; i < n; i++) {
-          const end = Math.min(Math.floor((i + 1) * step), samples.length)
-          let m = data[i] ?? 0
-          for (let j = Math.floor(i * step); j < end; j++) {
-            const v = Math.abs(samples[j] ?? 0)
-            if (v > m) m = v
-          }
-          data[i] = m
-        }
-      }
-    }
-    let max = 0
-    for (const v of data) if (v > max) max = v
-    if (max > 0) for (let i = 0; i < n; i++) data[i] = (data[i] ?? 0) / max
-    this.peaksCache = data
-    return data
+    this.peaksCache = computePeaks([this.instrBuf, this.vocalBuf], this.duration, perSec)
+    return this.peaksCache
   }
 
   /** Analyser tapped off the monitor mix (both stem gains), for stage visuals (R1.4).

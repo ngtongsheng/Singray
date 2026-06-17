@@ -1,14 +1,14 @@
-import { type ChildProcess, spawn } from 'node:child_process'
+import type { ChildProcess } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { createInterface } from 'node:readline'
 import { BrowserWindow } from 'electron'
 import type { ImportProgress, ImportRequest, ImportStage, SongMeta } from '../shared/types'
 import { notifyLibraryChanged } from './library'
 import { pipelineScript } from './pipeline'
 import { effectivePythonPath, pipelineSpawnOptions } from './pipelineEnv'
 import { getSettings } from './settings'
+import { lastStderrLine, spawnLines } from './spawnLines'
 
 interface Job {
   jobId: string
@@ -108,12 +108,30 @@ function pump(): void {
   run(job)
 }
 
+async function failJob(job: Job, dir: string, message: string): Promise<void> {
+  await writeFile(
+    join(dir, 'error.json'),
+    JSON.stringify({ message, at: new Date().toISOString() }, null, 2),
+    'utf-8'
+  ).catch(() => {})
+  sendProgress(job, 'error', 0, message)
+  notifyLibraryChanged()
+}
+
+function releaseSlot(): void {
+  active = null
+  activeProc = null
+  pump()
+}
+
 function run(job: Job): void {
   const dir = songDir(job.songId)
   const source = job.filePath ? ['--file', job.filePath] : ['--url', job.url]
   const settings = getSettings()
   const model = settings.separationModel || '6_HP-Karaoke-UVR.pth'
-  const proc = spawn(
+  let lastError = ''
+
+  spawnLines(
     effectivePythonPath(),
     [
       pipelineScript(),
@@ -126,56 +144,52 @@ function run(job: Job): void {
       '--format',
       settings.stemFormat
     ],
-    pipelineSpawnOptions()
-  )
-  activeProc = proc
-  let lastError = ''
-  let stderrTail = ''
-
-  const rl = createInterface({ input: proc.stdout })
-  rl.on('line', (line) => {
-    let msg: {
-      stage: string
-      progress?: number
-      message?: string
-      durationSec?: number
-    }
-    try {
-      msg = JSON.parse(line)
-    } catch {
-      return // non-JSON noise, ignore
-    }
-    if (msg.stage === 'done') {
-      void finalizeDone(job, msg.durationSec ?? 0)
-    } else if (msg.stage === 'error') {
-      lastError = msg.message ?? 'import failed'
-    } else {
-      sendProgress(job, msg.stage as ImportStage, msg.progress ?? 0)
-    }
-  })
-
-  proc.stderr?.on('data', (d: Buffer) => {
-    stderrTail = (stderrTail + d.toString()).slice(-2000)
-  })
-
-  proc.on('close', (code) => {
-    void (async () => {
-      if (code !== 0) {
-        const message =
-          lastError || stderrTail.trim().split('\n').pop() || `pipeline exited ${code}`
-        await writeFile(
-          join(dir, 'error.json'),
-          JSON.stringify({ message, at: new Date().toISOString() }, null, 2),
-          'utf-8'
-        ).catch(() => {})
-        sendProgress(job, 'error', 0, message)
-        notifyLibraryChanged()
+    {
+      env: pipelineSpawnOptions().env,
+      onProc: (p) => {
+        activeProc = p
+      },
+      onLine: (line) => {
+        let msg: {
+          stage: string
+          progress?: number
+          message?: string
+          durationSec?: number
+        }
+        try {
+          msg = JSON.parse(line)
+        } catch {
+          return // non-JSON noise, ignore
+        }
+        if (msg.stage === 'done') {
+          void finalizeDone(job, msg.durationSec ?? 0)
+        } else if (msg.stage === 'error') {
+          lastError = msg.message ?? 'import failed'
+        } else {
+          sendProgress(job, msg.stage as ImportStage, msg.progress ?? 0)
+        }
       }
-      active = null
-      activeProc = null
-      pump()
-    })()
-  })
+    }
+  ).then(
+    ({ code, stderrTail }) => {
+      void (async () => {
+        if (code !== 0) {
+          await failJob(
+            job,
+            dir,
+            lastError || lastStderrLine(stderrTail) || `pipeline exited ${code}`
+          )
+        }
+        releaseSlot()
+      })()
+    },
+    (err) => {
+      void (async () => {
+        await failJob(job, dir, (err as Error).message || 'pipeline failed to start')
+        releaseSlot()
+      })()
+    }
+  )
 }
 
 async function finalizeDone(job: Job, durationSec: number): Promise<void> {

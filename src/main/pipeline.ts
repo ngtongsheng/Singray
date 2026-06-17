@@ -1,12 +1,11 @@
-import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { createInterface } from 'node:readline'
 import { app } from 'electron'
 import type { AlignToken, ProbeResult, SearchResult } from '../shared/types'
 import { songDir } from './library'
 import { effectivePythonPath, pipelineEnvDir, pipelineSpawnOptions } from './pipelineEnv'
+import { lastStderrLine, spawnLines } from './spawnLines'
 
 export function pipelineScript(): string {
   return join(app.getAppPath(), 'pipeline', 'pipeline.py')
@@ -23,44 +22,32 @@ export function probeFile(path: string): Promise<ProbeResult> {
 }
 
 function runProbe(args: string[]): Promise<ProbeResult> {
-  return new Promise((resolve, reject) => {
-    const proc = spawn(effectivePythonPath(), [pipelineScript(), ...args], pipelineSpawnOptions())
-    let stdout = ''
-    let stderr = ''
-    proc.stdout.on('data', (d: Buffer) => {
-      stdout += d.toString()
-    })
-    proc.stderr.on('data', (d: Buffer) => {
-      stderr += d.toString()
-    })
-    proc.on('error', reject)
-    proc.on('close', (code) => {
-      const lastLine = stdout.trim().split('\n').pop() ?? ''
-      try {
-        const parsed = JSON.parse(lastLine) as ProbeResult & { message?: string }
-        if (code === 0) resolve(parsed)
-        else reject(new Error(parsed.message ?? stderr))
-      } catch {
-        reject(new Error(stderr.trim() || `probe exited with code ${code}`))
-      }
-    })
+  let lastLine = ''
+  return spawnLines(effectivePythonPath(), [pipelineScript(), ...args], {
+    env: pipelineSpawnOptions().env,
+    onLine: (line) => {
+      if (line.trim()) lastLine = line
+    }
+  }).then(({ code, stderrTail }) => {
+    let parsed: (ProbeResult & { message?: string }) | undefined
+    try {
+      parsed = JSON.parse(lastLine)
+    } catch {
+      // non-JSON output — fall through to the stderr-based error below
+    }
+    if (code === 0 && parsed) return parsed
+    if (parsed?.message) throw new Error(parsed.message)
+    throw new Error(lastStderrLine(stderrTail) || `probe exited with code ${code}`)
   })
 }
 
 /** Runs `pipeline.py search --query <q>`, collects the JSON-lines hits. */
 export function searchYoutube(query: string): Promise<SearchResult[]> {
-  return new Promise((resolve, reject) => {
-    const proc = spawn(
-      effectivePythonPath(),
-      [pipelineScript(), 'search', '--query', query],
-      pipelineSpawnOptions()
-    )
-    const results: SearchResult[] = []
-    let lastError = ''
-    let stderrTail = ''
-
-    const rl = createInterface({ input: proc.stdout })
-    rl.on('line', (line) => {
+  const results: SearchResult[] = []
+  let lastError = ''
+  return spawnLines(effectivePythonPath(), [pipelineScript(), 'search', '--query', query], {
+    env: pipelineSpawnOptions().env,
+    onLine: (line) => {
       let msg: (SearchResult & { stage?: string; message?: string }) | null
       try {
         msg = JSON.parse(line)
@@ -69,20 +56,10 @@ export function searchYoutube(query: string): Promise<SearchResult[]> {
       }
       if (msg?.stage === 'error') lastError = msg.message ?? 'search failed'
       else if (msg?.url) results.push(msg)
-    })
-    proc.stderr?.on('data', (d: Buffer) => {
-      stderrTail = (stderrTail + d.toString()).slice(-2000)
-    })
-    proc.on('error', reject)
-    proc.on('close', (code) => {
-      if (code === 0 && !lastError) resolve(results)
-      else
-        reject(
-          new Error(
-            lastError || stderrTail.trim().split('\n').pop() || `search exited with code ${code}`
-          )
-        )
-    })
+    }
+  }).then(({ code, stderrTail }) => {
+    if (code === 0 && !lastError) return results
+    throw new Error(lastError || lastStderrLine(stderrTail) || `search exited with code ${code}`)
   })
 }
 
@@ -108,36 +85,28 @@ export async function listPipelineModels(force = false): Promise<string[]> {
     }
   }
 
-  const result = await new Promise<string[]>((resolve, reject) => {
-    const proc = spawn(
-      effectivePythonPath(),
-      [pipelineScript(), 'list-models'],
-      pipelineSpawnOptions()
-    )
-    let models: string[] | null = null
-    let stderrTail = ''
-    const rl = createInterface({ input: proc.stdout })
-    rl.on('line', (line) => {
-      try {
-        const msg = JSON.parse(line) as { stage: string; models?: string[]; message?: string }
-        if (msg.stage === 'done' && msg.models) models = msg.models
-      } catch {
-        // non-JSON noise, ignore
+  let models: string[] | null = null
+  const { code, stderrTail } = await spawnLines(
+    effectivePythonPath(),
+    [pipelineScript(), 'list-models'],
+    {
+      env: pipelineSpawnOptions().env,
+      onLine: (line) => {
+        try {
+          const msg = JSON.parse(line) as { stage: string; models?: string[]; message?: string }
+          if (msg.stage === 'done' && msg.models) models = msg.models
+        } catch {
+          // non-JSON noise, ignore
+        }
       }
-    })
-    proc.stderr?.on('data', (d: Buffer) => {
-      stderrTail = (stderrTail + d.toString()).slice(-2000)
-    })
-    proc.on('error', reject)
-    proc.on('close', (code) => {
-      if (code === 0 && models) resolve(models)
-      else reject(new Error(stderrTail.trim().split('\n').pop() || 'list-models failed'))
-    })
-  })
+    }
+  )
+  if (!(code === 0 && models)) throw new Error(lastStderrLine(stderrTail) || 'list-models failed')
+
   // Cache the result
   await mkdir(pipelineEnvDir(), { recursive: true })
-  await writeFile(modelCachePath(), JSON.stringify({ models: result }, null, 2), 'utf-8')
-  return result
+  await writeFile(modelCachePath(), JSON.stringify({ models }, null, 2), 'utf-8')
+  return models
 }
 
 /**
@@ -151,41 +120,27 @@ export async function alignLyrics(id: string, text: string): Promise<AlignToken[
   await writeFile(tmp, text, 'utf-8')
 
   try {
-    return await new Promise<AlignToken[]>((resolve, reject) => {
-      const proc = spawn(
-        effectivePythonPath(),
-        [pipelineScript(), 'align', '--song', dir, '--text', tmp],
-        pipelineSpawnOptions()
-      )
-      let tokens: AlignToken[] | null = null
-      let lastError = ''
-      let stderrTail = ''
-
-      const rl = createInterface({ input: proc.stdout })
-      rl.on('line', (line) => {
-        let msg: { stage: string; tokens?: AlignToken[]; message?: string }
-        try {
-          msg = JSON.parse(line)
-        } catch {
-          return // non-JSON noise, ignore
+    let tokens: AlignToken[] | null = null
+    let lastError = ''
+    const { code, stderrTail } = await spawnLines(
+      effectivePythonPath(),
+      [pipelineScript(), 'align', '--song', dir, '--text', tmp],
+      {
+        env: pipelineSpawnOptions().env,
+        onLine: (line) => {
+          let msg: { stage: string; tokens?: AlignToken[]; message?: string }
+          try {
+            msg = JSON.parse(line)
+          } catch {
+            return // non-JSON noise, ignore
+          }
+          if (msg.stage === 'done' && msg.tokens) tokens = msg.tokens
+          else if (msg.stage === 'error') lastError = msg.message ?? 'alignment failed'
         }
-        if (msg.stage === 'done' && msg.tokens) tokens = msg.tokens
-        else if (msg.stage === 'error') lastError = msg.message ?? 'alignment failed'
-      })
-      proc.stderr?.on('data', (d: Buffer) => {
-        stderrTail = (stderrTail + d.toString()).slice(-2000)
-      })
-      proc.on('error', reject)
-      proc.on('close', (code) => {
-        if (code === 0 && tokens) resolve(tokens)
-        else
-          reject(
-            new Error(
-              lastError || stderrTail.trim().split('\n').pop() || `align exited with code ${code}`
-            )
-          )
-      })
-    })
+      }
+    )
+    if (code === 0 && tokens) return tokens
+    throw new Error(lastError || lastStderrLine(stderrTail) || `align exited with code ${code}`)
   } finally {
     await rm(tmp, { force: true })
   }

@@ -23,6 +23,7 @@ import { Button, IconButton, Segmented, Stack, Text, useTabCycle } from '../comp
 import { inferEnds } from '../lib/inferEnds'
 import { type BuildResult, buildLyrics, lyricsToText } from '../lib/lyricsText'
 import { mergeAlignment } from '../lib/mergeAlignment'
+import { stripIpcError } from '../lib/stripIpcError'
 
 interface Props {
   song: SongListItem
@@ -100,9 +101,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
       setSaved(withEnds)
       setStep('timing')
     } catch (err) {
-      setAlignError(
-        (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
-      )
+      setAlignError(stripIpcError((err as Error).message))
     } finally {
       setAligning(false)
     }
@@ -162,9 +161,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
       const cleaned = await window.singray.llm.cleanLyrics({ text, language: song.language })
       setCleanPreview(cleaned)
     } catch (err) {
-      setLrcError(
-        (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
-      )
+      setLrcError(stripIpcError((err as Error).message))
     } finally {
       setCleaning(false)
     }
