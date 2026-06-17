@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ImportProgress, SongListItem } from '../../../shared/types'
+import ArtistLink from './ArtistLink'
 import { IconButton, Menu, MenuItem, Stack, Text } from './ui'
 
 interface Props {
@@ -66,17 +67,13 @@ function SongRow({ song, importing, onDelete, onSing, onArtistClick }: Props): R
         <Text variant="item" title={song.title}>
           {song.title}
         </Text>
-        <button
-          type="button"
+        <ArtistLink
+          artist={song.artist}
           onClick={(e) => {
             e.stopPropagation()
             onArtistClick(song.artist)
           }}
-          title={t('library.viewArtist', { name: song.artist })}
-          className="truncate text-text-dim text-xs hover:text-text hover:underline"
-        >
-          {song.artist}
-        </button>
+        />
       </div>
       {!song.hasLyrics && !failed && !importing && (
         <span className="shrink-0 rounded-control bg-surface-2 px-2 py-0.5 text-text-dim text-xs">

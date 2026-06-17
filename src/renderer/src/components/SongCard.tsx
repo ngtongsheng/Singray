@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ImportProgress, SongListItem } from '../../../shared/types'
+import ArtistLink from './ArtistLink'
 import { Button, IconButton, Menu, MenuItem, Text } from './ui'
 
 interface Props {
@@ -152,17 +153,14 @@ function SongCard({ song, importing, onDelete, onSing, onArtistClick }: Props): 
         <Text variant="item" title={song.title}>
           {song.title}
         </Text>
-        <button
-          type="button"
+        <ArtistLink
+          artist={song.artist}
           onClick={(e) => {
             e.stopPropagation()
             onArtistClick(song.artist)
           }}
-          title={t('library.viewArtist', { name: song.artist })}
-          className="min-w-0 max-w-full truncate text-text-dim text-xs hover:text-text hover:underline"
-        >
-          {song.artist}
-        </button>
+          className="min-w-0 max-w-full"
+        />
       </div>
     </div>
   )

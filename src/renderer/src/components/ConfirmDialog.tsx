@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Button, Dialog, Stack, Text } from './ui'
+import { Button, Dialog, DialogFooter, Stack, Text } from './ui'
 
 interface Props {
   title: string
@@ -32,14 +32,14 @@ function ConfirmDialog({
           </Text>
           <p className="mt-2 text-sm text-text-dim">{body}</p>
         </div>
-        <Stack justify="end" gap={3}>
+        <DialogFooter>
           <Button ref={cancelRef} size="md" onClick={onCancel}>
             Cancel
           </Button>
           <Button variant="danger" size="md" onClick={onConfirm}>
             {confirmLabel}
           </Button>
-        </Stack>
+        </DialogFooter>
       </Stack>
     </Dialog>
   )

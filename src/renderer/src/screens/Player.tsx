@@ -23,6 +23,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Lyrics, SongListItem } from '../../../shared/types'
+import ArtistLink from '../components/ArtistLink'
 import EditMetaDialog from '../components/EditMetaDialog'
 import LyricRenderer from '../components/LyricRenderer'
 import SongDetailsDialog from '../components/SongDetailsDialog'
@@ -188,8 +189,9 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
     singLogged.current = false
     let raf = 0
     const loop = (): void => {
-      setPosition(Math.round(engine.position * 4) / 4)
-      setPlaying(engine.playing)
+      const next = Math.round(engine.position * 4) / 4
+      setPosition((prev) => (prev === next ? prev : next))
+      setPlaying((prev) => (prev === engine.playing ? prev : engine.playing))
       if (!singLogged.current && engine.playedSeconds >= 0.6 * engine.duration) {
         singLogged.current = true
         window.singray.library.updateMeta(song.id, {
@@ -337,14 +339,11 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
               <Text as="h1" variant="subtitle" className="truncate">
                 {song.title}
               </Text>
-              <button
-                type="button"
+              <ArtistLink
+                artist={song.artist}
                 onClick={() => onArtistClick(song.artist)}
-                title={t('library.viewArtist', { name: song.artist })}
-                className="app-no-drag shrink-0 text-left text-text-dim text-xs hover:text-text hover:underline"
-              >
-                {song.artist}
-              </button>
+                className="app-no-drag shrink-0"
+              />
             </Stack>
           </Stack>
           {!error && (

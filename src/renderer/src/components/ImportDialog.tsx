@@ -11,7 +11,18 @@ import {
 import { useAsync } from '../hooks/useAsync'
 import { detectLanguage } from '../lib/detectLanguage'
 import { stripIpcError } from '../lib/stripIpcError'
-import { Button, Dialog, Field, IconButton, Input, Select, Stack, Tabs, Text } from './ui'
+import {
+  Button,
+  Dialog,
+  DialogFooter,
+  Field,
+  IconButton,
+  Input,
+  Select,
+  Stack,
+  Tabs,
+  Text
+} from './ui'
 import { cx } from './ui/cx'
 
 interface Props {
@@ -331,7 +342,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
           )}
         </Stack>
 
-        <Stack justify="end" gap={3}>
+        <DialogFooter>
           <Button size="md" onClick={onClose}>
             {t('common.cancel')}
           </Button>
@@ -343,7 +354,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
           >
             {t('import.add')}
           </Button>
-        </Stack>
+        </DialogFooter>
       </Stack>
     </Dialog>
   )

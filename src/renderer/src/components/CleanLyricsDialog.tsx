@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { diffLines } from '../lib/lineDiff'
-import { Button, Stack, Text } from './ui'
+import { Button, DialogFooter, Stack, Text } from './ui'
 import { cx } from './ui/cx'
 import Dialog from './ui/Dialog'
 
@@ -54,12 +54,12 @@ function CleanLyricsDialog({ original, cleaned, onApply, onClose }: Props): Reac
             ))}
           </div>
         </div>
-        <Stack justify="end" gap={2}>
+        <DialogFooter gap={2}>
           <Button onClick={onClose}>{t('common.cancel')}</Button>
           <Button variant="primary" onClick={onApply}>
             {t('clean.apply')}
           </Button>
-        </Stack>
+        </DialogFooter>
       </Stack>
     </Dialog>
   )

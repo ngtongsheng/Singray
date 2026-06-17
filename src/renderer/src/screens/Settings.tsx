@@ -22,6 +22,7 @@ import {
   Input,
   Popover,
   Select,
+  SettingsSection,
   Stack,
   Text,
   Toggle
@@ -314,8 +315,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
 
       <Container pb={6} maxWidth="xl">
         <Stack direction="column" gap={6}>
-          <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">{t('settings.interface')}</legend>
+          <SettingsSection title={t('settings.interface')}>
             <Field label={t('settings.uiLanguage')} hint={t('settings.uiLanguageHelp')}>
               <Select
                 value={settings.uiLanguage}
@@ -326,10 +326,9 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 ]}
               />
             </Field>
-          </fieldset>
+          </SettingsSection>
 
-          <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">{t('settings.library')}</legend>
+          <SettingsSection title={t('settings.library')}>
             <Field label={t('settings.libraryFolder')} hint={t('settings.libraryFolderHelp')}>
               <Input
                 defaultValue={settings.libraryDir}
@@ -339,10 +338,9 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 }}
               />
             </Field>
-          </fieldset>
+          </SettingsSection>
 
-          <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">{t('settings.languages')}</legend>
+          <SettingsSection title={t('settings.languages')}>
             <Stack direction="column" gap={2}>
               {settings.languages.map((l) => (
                 <Stack
@@ -397,10 +395,9 @@ function Settings({ onBack }: Props): React.JSX.Element {
               </Stack>
               <Text variant="hint">{t('settings.languagesHelp')}</Text>
             </Stack>
-          </fieldset>
+          </SettingsSection>
 
-          <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">{t('settings.pipeline')}</legend>
+          <SettingsSection title={t('settings.pipeline')}>
             <Stack direction="column" gap={4}>
               <div>
                 <Text variant="hint" className="mb-2 block">
@@ -455,10 +452,9 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 />
               </Field>
             </Stack>
-          </fieldset>
+          </SettingsSection>
 
-          <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">{t('settings.llm')}</legend>
+          <SettingsSection title={t('settings.llm')}>
             <Stack direction="column" gap={4}>
               <Field label={t('settings.llmBaseUrl')}>
                 <Input
@@ -530,10 +526,9 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 </Text>
               )}
             </Stack>
-          </fieldset>
+          </SettingsSection>
 
-          <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">{t('settings.audio')}</legend>
+          <SettingsSection title={t('settings.audio')}>
             <Stack direction="column" gap={4}>
               <Field label={t('settings.outputMode')} hint={t('settings.modeHelp')}>
                 <Select
@@ -647,7 +642,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 </Stack>
               </Field>
             </Stack>
-          </fieldset>
+          </SettingsSection>
         </Stack>
       </Container>
     </div>

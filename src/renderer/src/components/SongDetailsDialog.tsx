@@ -2,7 +2,8 @@ import { ExternalLink } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LanguageDef, SongListItem } from '../../../shared/types'
-import { Button, Dialog, Stack, Text } from './ui'
+import ArtistLink from './ArtistLink'
+import { Button, Dialog, DialogFooter, Stack, Text } from './ui'
 
 interface Props {
   song: SongListItem
@@ -51,17 +52,14 @@ function SongDetailsDialog({ song, onClose, onArtistClick }: Props): React.JSX.E
             <Text as="h2" variant="title" className="truncate">
               {song.title}
             </Text>
-            <button
-              type="button"
+            <ArtistLink
+              artist={song.artist}
               onClick={() => {
                 onArtistClick(song.artist)
                 onClose()
               }}
-              title={t('library.viewArtist', { name: song.artist })}
-              className="truncate text-left text-text-dim text-sm hover:text-text hover:underline"
-            >
-              {song.artist}
-            </button>
+              className="text-sm"
+            />
           </div>
 
           <Stack direction="column" gap={2}>
@@ -93,11 +91,11 @@ function SongDetailsDialog({ song, onClose, onArtistClick }: Props): React.JSX.E
           </Stack>
         </Stack>
 
-        <Stack justify="end">
+        <DialogFooter>
           <Button size="md" onClick={onClose}>
             {t('common.close')}
           </Button>
-        </Stack>
+        </DialogFooter>
       </Stack>
     </Dialog>
   )

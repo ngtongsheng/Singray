@@ -2,7 +2,7 @@ import { Loader2, Music } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LrclibHit, LrclibQuery } from '../../../shared/types'
-import { Button, Stack, Text } from './ui'
+import { Button, DialogFooter, Stack, Text } from './ui'
 import Dialog from './ui/Dialog'
 
 interface Props {
@@ -94,9 +94,9 @@ function LrclibFinderDialog({ query, onPick, onClose }: Props): React.JSX.Elemen
           )}
         </div>
 
-        <Stack justify="end">
+        <DialogFooter>
           <Button onClick={onClose}>{t('common.cancel')}</Button>
-        </Stack>
+        </DialogFooter>
       </Stack>
     </Dialog>
   )
