@@ -28,35 +28,11 @@ import {
   Toggle
 } from '../components/ui'
 import { useAsync } from '../hooks/useAsync'
+import { useAudioDevices } from '../hooks/useAudioDevices'
 import { useSettings } from '../hooks/useSettings'
+import { useTestTone } from '../hooks/useTestTone'
 import { availableLocales, i18n, localeName, resolveLocale } from '../lib/i18n'
 import { stripIpcError } from '../lib/stripIpcError'
-
-/** Play a short sine tone on a specific output device ('' = system default). */
-async function playTestTone(deviceId: string, freq: number): Promise<void> {
-  const ctx = new AudioContext()
-  try {
-    if (deviceId) {
-      await (ctx as AudioContext & { setSinkId(id: string): Promise<void> }).setSinkId(deviceId)
-    }
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.frequency.value = freq
-    gain.gain.setValueAtTime(0, ctx.currentTime)
-    gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.02)
-    gain.gain.setValueAtTime(0.25, ctx.currentTime + 0.8)
-    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1)
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.start()
-    osc.stop(ctx.currentTime + 1)
-    await new Promise<void>((resolve) => {
-      osc.onended = () => resolve()
-    })
-  } finally {
-    void ctx.close()
-  }
-}
 
 interface Props {
   onBack: () => void
@@ -222,10 +198,8 @@ function Settings({ onBack }: Props): React.JSX.Element {
     return t('settings.llmOk', { reply: r.reply, secs: (r.ms / 1000).toFixed(1) })
   })
   const llmModels = useAsync((url: string, key: string) => window.singray.llm.listModels(url, key))
-  const [outputs, setOutputs] = useState<MediaDeviceInfo[]>([])
-  const [inputs, setInputs] = useState<MediaDeviceInfo[]>([])
-  const [toneBusy, setToneBusy] = useState<'monitor' | 'stream' | null>(null)
-  const [toneError, setToneError] = useState<string | null>(null)
+  const { outputs, inputs } = useAudioDevices()
+  const { toneBusy, toneError, testTone } = useTestTone(settings)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -235,18 +209,6 @@ function Settings({ onBack }: Props): React.JSX.Element {
     return () => window.removeEventListener('keydown', onKey)
   }, [onBack])
 
-  useEffect(() => {
-    const load = (): void => {
-      navigator.mediaDevices.enumerateDevices().then((ds) => {
-        setOutputs(ds.filter((d) => d.kind === 'audiooutput'))
-        setInputs(ds.filter((d: MediaDeviceInfo) => d.kind === 'audioinput'))
-      })
-    }
-    load()
-    navigator.mediaDevices.addEventListener('devicechange', load)
-    return () => navigator.mediaDevices.removeEventListener('devicechange', load)
-  }, [])
-
   const llmBaseUrl = settings?.llmBaseUrl ?? ''
   const llmApiKey = settings?.llmApiKey ?? ''
   const { run: runLlmModels } = llmModels
@@ -254,23 +216,6 @@ function Settings({ onBack }: Props): React.JSX.Element {
     if (!llmBaseUrl) return
     void runLlmModels(llmBaseUrl, llmApiKey)
   }, [runLlmModels, llmBaseUrl, llmApiKey])
-
-  const testTone = async (which: 'monitor' | 'stream'): Promise<void> => {
-    if (!settings || toneBusy) return
-    setToneBusy(which)
-    setToneError(null)
-    try {
-      // Two pitches so both-at-once misrouting is obvious by ear.
-      await playTestTone(
-        which === 'monitor' ? settings.monitorDeviceId : settings.streamDeviceId,
-        which === 'monitor' ? 440 : 660
-      )
-    } catch (err) {
-      setToneError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setToneBusy(null)
-    }
-  }
 
   const [newCode, setNewCode] = useState('')
   const [newLabel, setNewLabel] = useState('')
