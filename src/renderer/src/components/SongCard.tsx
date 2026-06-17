@@ -1,4 +1,5 @@
 import { AlertTriangle, Heart, Loader2, MoreHorizontal, RotateCcw } from 'lucide-react'
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ImportProgress, ImportStage, SongListItem } from '../../../shared/types'
 import { useSongCardActions } from '../hooks/useSongCardActions'
@@ -56,7 +57,13 @@ function StatusBadge({
   return null
 }
 
-function SongCard({ song, importing, onDelete, onSing, onArtistClick }: Props): React.JSX.Element {
+const SongCard = memo(function SongCard({
+  song,
+  importing,
+  onDelete,
+  onSing,
+  onArtistClick
+}: Props): React.JSX.Element {
   const { t } = useTranslation()
   const { failed, openable, onActivate, onKeyActivate, toggleFavorite, retry } = useSongCardActions(
     { song, importing, onSing }
@@ -140,6 +147,6 @@ function SongCard({ song, importing, onDelete, onSing, onArtistClick }: Props): 
       </div>
     </div>
   )
-}
+})
 
 export default SongCard

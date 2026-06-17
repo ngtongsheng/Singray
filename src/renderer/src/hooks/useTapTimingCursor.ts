@@ -302,12 +302,14 @@ export function useTapTimingCursor({
   const done = cursor >= flatUnits.length
   const progressPct =
     flatUnits.length === 0 ? 0 : Math.round((stamps.length / flatUnits.length) * 100)
-  let flatIdx = 0
-  const lineStartIdx = lyrics.lines.map((l) => {
-    const s = flatIdx
-    flatIdx += l.units.length
-    return s
-  })
+  const lineStartIdx = useMemo(() => {
+    let flatIdx = 0
+    return lyrics.lines.map((l) => {
+      const s = flatIdx
+      flatIdx += l.units.length
+      return s
+    })
+  }, [lyrics])
 
   const registerLineRef = useCallback((li: number, el: HTMLButtonElement | null): void => {
     if (el) lineRefs.current.set(li, el)

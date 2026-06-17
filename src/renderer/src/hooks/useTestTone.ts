@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { Settings } from '../../../shared/types'
 import { setSink } from '../lib/sinkable'
 
@@ -37,21 +37,24 @@ export function useTestTone(settings: Settings | null): Result {
   const [toneBusy, setToneBusy] = useState<'monitor' | 'stream' | null>(null)
   const [toneError, setToneError] = useState<string | null>(null)
 
-  const testTone = async (which: 'monitor' | 'stream'): Promise<void> => {
-    if (!settings || toneBusy) return
-    setToneBusy(which)
-    setToneError(null)
-    try {
-      await playTestTone(
-        which === 'monitor' ? settings.monitorDeviceId : settings.streamDeviceId,
-        which === 'monitor' ? 440 : 660
-      )
-    } catch (err) {
-      setToneError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setToneBusy(null)
-    }
-  }
+  const testTone = useCallback(
+    async (which: 'monitor' | 'stream'): Promise<void> => {
+      if (!settings || toneBusy) return
+      setToneBusy(which)
+      setToneError(null)
+      try {
+        await playTestTone(
+          which === 'monitor' ? settings.monitorDeviceId : settings.streamDeviceId,
+          which === 'monitor' ? 440 : 660
+        )
+      } catch (err) {
+        setToneError(err instanceof Error ? err.message : String(err))
+      } finally {
+        setToneBusy(null)
+      }
+    },
+    [settings, toneBusy]
+  )
 
   return { toneBusy, toneError, testTone }
 }

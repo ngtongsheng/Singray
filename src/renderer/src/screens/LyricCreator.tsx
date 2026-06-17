@@ -10,7 +10,7 @@ import {
   Wand2
 } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { parseLrc } from '../../../shared/lrc'
 import type { LrclibHit, Lyrics, SongListItem } from '../../../shared/types'
@@ -66,8 +66,10 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
     })
   }, [song.id])
 
-  const hasTiming =
-    saved?.lines.some((l) => l.start !== null || l.units.some((u) => u.t !== null)) ?? false
+  const hasTiming = useMemo(
+    () => saved?.lines.some((l) => l.start !== null || l.units.some((u) => u.t !== null)) ?? false,
+    [saved]
+  )
 
   const save = async (result: BuildResult, landOn: CreatorStep): Promise<void> => {
     await window.singray.lyrics.save(song.id, result.lyrics)
@@ -178,6 +180,13 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
   }
 
   useTabCycle(CREATOR_STEPS, creatorStep, setCreatorStep)
+
+  // Stable reference so LrclibFinderDialog's fetch effect doesn't refire on unrelated
+  // LyricCreator re-renders (e.g. alignError/lrcError changes) while it's open.
+  const finderQuery = useMemo(
+    () => ({ title: song.title, artist: song.artist, durationSec: song.durationSec }),
+    [song.title, song.artist, song.durationSec]
+  )
 
   return (
     <div className="relative h-full">
@@ -358,7 +367,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
         )}
         {finderOpen && (
           <LrclibFinderDialog
-            query={{ title: song.title, artist: song.artist, durationSec: song.durationSec }}
+            query={finderQuery}
             onPick={onPickHit}
             onClose={() => setFinderOpen(false)}
           />

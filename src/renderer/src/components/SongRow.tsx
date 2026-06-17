@@ -1,4 +1,5 @@
 import { AlertTriangle, Heart, Loader2, MoreHorizontal, RotateCcw } from 'lucide-react'
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ImportProgress, SongListItem } from '../../../shared/types'
 import { useSongCardActions } from '../hooks/useSongCardActions'
@@ -15,7 +16,13 @@ interface Props {
 }
 
 /** Compact list row (HOME1): thumb, title/artist, favorite — list-view counterpart to SongCard. */
-function SongRow({ song, importing, onDelete, onSing, onArtistClick }: Props): React.JSX.Element {
+const SongRow = memo(function SongRow({
+  song,
+  importing,
+  onDelete,
+  onSing,
+  onArtistClick
+}: Props): React.JSX.Element {
   const { t } = useTranslation()
   const { failed, openable, onActivate, onKeyActivate, toggleFavorite, retry } = useSongCardActions(
     { song, importing, onSing }
@@ -110,6 +117,6 @@ function SongRow({ song, importing, onDelete, onSing, onArtistClick }: Props): R
       />
     </Stack>
   )
-}
+})
 
 export default SongRow

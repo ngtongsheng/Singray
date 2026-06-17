@@ -1,4 +1,5 @@
 import type { MouseEventHandler } from 'react'
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cx } from './ui/cx'
 
@@ -9,7 +10,11 @@ interface Props {
 }
 
 /** Artist name rendered as a hover-underline link button (title row, card, dialog). */
-function ArtistLink({ artist, onClick, className }: Props): React.JSX.Element {
+const ArtistLink = memo(function ArtistLink({
+  artist,
+  onClick,
+  className
+}: Props): React.JSX.Element {
   const { t } = useTranslation()
   return (
     <button
@@ -24,6 +29,6 @@ function ArtistLink({ artist, onClick, className }: Props): React.JSX.Element {
       {artist}
     </button>
   )
-}
+})
 
 export default ArtistLink

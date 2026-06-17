@@ -1,9 +1,10 @@
 import { FolderOpen, Loader2, Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { type LanguageDef, MEDIA_EXTENSIONS, type SearchResult } from '../../../shared/types'
+import { MEDIA_EXTENSIONS, type SearchResult } from '../../../shared/types'
 import { useAsync } from '../hooks/useAsync'
 import { useMediaProbe } from '../hooks/useMediaProbe'
+import { useSettings } from '../hooks/useSettings'
 import { stripIpcError } from '../lib/stripIpcError'
 import {
   Button,
@@ -34,7 +35,8 @@ function formatDuration(sec: number): string {
 
 function ImportDialog({ onClose }: Props): React.JSX.Element {
   const { t } = useTranslation()
-  const [languages, setLanguages] = useState<LanguageDef[]>([])
+  const { settings } = useSettings()
+  const languages = settings?.languages ?? []
   const probe = useMediaProbe(languages)
   const [submitting, setSubmitting] = useState(false)
   const [query, setQuery] = useState('')
@@ -45,7 +47,6 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
 
   useEffect(() => {
     searchRef.current?.focus()
-    window.singray.settings.get().then((s) => setLanguages(s.languages))
   }, [])
 
   const runSearch = (): void => {

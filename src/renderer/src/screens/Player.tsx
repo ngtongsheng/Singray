@@ -20,7 +20,7 @@ import {
   Volume2
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useCallback, useEffect, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SongListItem } from '../../../shared/types'
 import ArtistLink from '../components/ArtistLink'
@@ -45,9 +45,9 @@ import {
 } from '../components/ui'
 import { type MicBootstrapState, useAudioEngine } from '../hooks/useAudioEngine'
 import { useAutoHideBar } from '../hooks/useAutoHideBar'
-import { usePlaybackClock } from '../hooks/usePlaybackClock'
+import { usePlaybackClock, usePlaybackPosition } from '../hooks/usePlaybackClock'
 import { useSettings } from '../hooks/useSettings'
-import type { MicFxPreset } from '../lib/audioEngine'
+import type { AudioEngine, MicFxPreset } from '../lib/audioEngine'
 
 interface Props {
   song: SongListItem
@@ -62,6 +62,35 @@ function fmt(s: number): string {
   const m = Math.floor(s / 60)
   return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 }
+
+/**
+ * Timecode + seek slider, isolated from Player so the quarter-second position
+ * tick only re-renders this subtree, not the whole control bar.
+ */
+const SeekBar = memo(function SeekBar({
+  engine,
+  seekTip
+}: {
+  engine: AudioEngine
+  seekTip: string
+}): React.JSX.Element {
+  const position = usePlaybackPosition(engine)
+  return (
+    <>
+      <span className="text-sm text-text-dim tabular-nums">{fmt(position)}</span>
+      <Slider
+        min={0}
+        max={engine.duration}
+        step={0.25}
+        value={position}
+        onChange={(e) => engine.seek(Number(e.target.value))}
+        title={seekTip}
+        className="h-11 flex-1"
+      />
+      <span className="text-sm text-text-dim tabular-nums">{fmt(engine.duration)}</span>
+    </>
+  )
+})
 
 /**
  * Karaoke player (SPEC §7): blurred-art stage, lyric renderer on the engine clock,
@@ -80,8 +109,6 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [showWaveform, setShowWaveform] = useState(false)
   const [showBars, setShowBars] = useState(false)
-  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
-  const [peaks, setPeaks] = useState<Float32Array | null>(null)
   const [windowHidden, setWindowHidden] = useState(document.hidden)
   const [micActive, setMicActive] = useState(false)
   const [micMonitor, setMicMonitor] = useState(true)
@@ -123,7 +150,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
     setRecording(false)
   }, [song.id, settings !== null])
 
-  const { position, playing } = usePlaybackClock(engine, song)
+  const playing = usePlaybackClock(engine, song)
   const { barVisible, poke } = useAutoHideBar(pinned)
 
   const togglePin = useCallback(() => {
@@ -150,10 +177,14 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
 
   // Visual sources are per-engine (analyser dies with its context, peaks come
   // from the decoded buffers) and only built for the active mode.
-  useEffect(() => {
-    setAnalyser(engine && showBars ? engine.createMonitorAnalyser() : null)
-    setPeaks(engine && showWaveform ? engine.peaks() : null)
-  }, [engine, showBars, showWaveform])
+  const analyser = useMemo(
+    () => (engine && showBars ? engine.createMonitorAnalyser() : null),
+    [engine, showBars]
+  )
+  const peaks = useMemo(
+    () => (engine && showWaveform ? engine.peaks() : null),
+    [engine, showWaveform]
+  )
 
   // Ken Burns pauses while the window is hidden.
   useEffect(() => {
@@ -413,17 +444,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                     <Play className="size-5 translate-x-0.5" strokeWidth={1.5} />
                   )}
                 </IconButton>
-                <span className="text-sm text-text-dim tabular-nums">{fmt(position)}</span>
-                <Slider
-                  min={0}
-                  max={engine.duration}
-                  step={0.25}
-                  value={position}
-                  onChange={(e) => engine.seek(Number(e.target.value))}
-                  title={t('player.seekTip')}
-                  className="h-11 flex-1"
-                />
-                <span className="text-sm text-text-dim tabular-nums">{fmt(engine.duration)}</span>
+                <SeekBar engine={engine} seekTip={t('player.seekTip')} />
 
                 <span className="flex items-center gap-2 text-text-dim">
                   <Volume2 className="size-4" strokeWidth={1.5} />

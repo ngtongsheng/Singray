@@ -10,7 +10,7 @@ import {
   X
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   ImportStage,
@@ -100,10 +100,10 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
     void window.singray.settings.set({ libraryView: v })
   }
 
-  const onArtistClick = (artist: string): void => {
+  const onArtistClick = useCallback((artist: string): void => {
     setArtistFilter(artist.trim())
     setSection('songs')
-  }
+  }, [])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -144,7 +144,9 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
   }, [songs, query, language, favoritesOnly, needsLyricsOnly, artistFilter, sort])
 
   // ART1: every distinct artist with a song count, "" groups songs with no artist set.
+  // Only the artists section needs this, so skip the sort/count pass otherwise.
   const artists = useMemo(() => {
+    if (section !== 'artists') return []
     const counts = new Map<string, number>()
     for (const s of songs) {
       const name = s.artist.trim()
@@ -153,13 +155,22 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
     return [...counts.entries()]
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => (a.name || '￿').localeCompare(b.name || '￿', undefined, { numeric: true }))
-  }, [songs])
+  }, [songs, section])
 
   const confirmDelete = async (): Promise<void> => {
     if (!pendingDelete) return
     await window.singray.library.delete(pendingDelete.id)
     setPendingDelete(null)
   }
+
+  const importStrip = useMemo(() => {
+    if (imports.size === 0) return null
+    const activeJob = [...imports.values()].find((p) => p.stage !== 'queued')
+    const job = activeJob ?? [...imports.values()][0]
+    if (!job) return null
+    const title = songs.find((s) => s.id === job.songId)?.title ?? job.songId
+    return { job, title, moreCount: imports.size - 1 }
+  }, [imports, songs])
 
   return (
     <div className="relative h-full">
@@ -333,12 +344,9 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
         )}
       </Container>
 
-      {imports.size > 0 &&
+      {importStrip &&
         (() => {
-          const activeJob = [...imports.values()].find((p) => p.stage !== 'queued')
-          const job = activeJob ?? [...imports.values()][0]
-          if (!job) return null
-          const title = songs.find((s) => s.id === job.songId)?.title ?? job.songId
+          const { job, title, moreCount } = importStrip
           const stripKey = STRIP_KEY[job.stage]
           return (
             <div className="absolute inset-x-0 bottom-0 z-20 border-border border-t bg-surface px-6 py-1.5">
@@ -347,9 +355,9 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
                   {stripKey ? t(stripKey) : job.stage} · {title}
                 </span>
                 <span className="font-medium text-accent">{Math.round(job.progress * 100)}%</span>
-                {imports.size > 1 && (
+                {moreCount > 0 && (
                   <span className="text-text-dim">
-                    {t('library.moreQueued', { count: imports.size - 1 })}
+                    {t('library.moreQueued', { count: moreCount })}
                   </span>
                 )}
               </Stack>

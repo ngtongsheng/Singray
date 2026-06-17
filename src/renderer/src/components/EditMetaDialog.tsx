@@ -1,7 +1,8 @@
 import { Loader2, Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Language, LanguageDef, SongListItem } from '../../../shared/types'
+import type { Language, SongListItem } from '../../../shared/types'
+import { useSettings } from '../hooks/useSettings'
 import { Button, Dialog, Field, Input, Select, Stack, Text } from './ui'
 
 interface Props {
@@ -14,7 +15,8 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
   const [title, setTitle] = useState(song.title)
   const [artist, setArtist] = useState(song.artist)
   const [language, setLanguage] = useState<Language>(song.language)
-  const [languages, setLanguages] = useState<LanguageDef[]>([])
+  const { settings } = useSettings()
+  const languages = settings?.languages ?? []
   const [saving, setSaving] = useState(false)
   const [cleaning, setCleaning] = useState(false)
   const [cleanError, setCleanError] = useState<string | null>(null)
@@ -23,7 +25,6 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
 
   useEffect(() => {
     titleRef.current?.focus()
-    window.singray.settings.get().then((s) => setLanguages(s.languages))
   }, [])
 
   // The song's current language stays selectable even if it was removed from Settings.

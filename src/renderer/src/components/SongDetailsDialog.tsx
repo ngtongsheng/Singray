@@ -1,7 +1,7 @@
 import { ExternalLink } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { LanguageDef, SongListItem } from '../../../shared/types'
+import type { SongListItem } from '../../../shared/types'
+import { useSettings } from '../hooks/useSettings'
 import ArtistLink from './ArtistLink'
 import { Button, Dialog, DialogFooter, Stack, Text } from './ui'
 
@@ -20,11 +20,8 @@ function fmtDuration(sec: number): string {
 /** SNG1: read-only song metadata + sing history, opened from the player's overflow menu. */
 function SongDetailsDialog({ song, onClose, onArtistClick }: Props): React.JSX.Element {
   const { t, i18n } = useTranslation()
-  const [languages, setLanguages] = useState<LanguageDef[]>([])
-
-  useEffect(() => {
-    window.singray.settings.get().then((s) => setLanguages(s.languages))
-  }, [])
+  const { settings } = useSettings()
+  const languages = settings?.languages ?? []
 
   const languageLabel =
     languages.find((l) => l.code === song.language)?.label ?? (song.language || t('common.unknown'))
