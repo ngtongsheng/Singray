@@ -1,3 +1,8 @@
+import { computePeaks } from './computePeaks'
+import type { MicFxPreset } from './micFxGraph'
+import { buildFxGraph } from './micFxGraph'
+import { setSink } from './sinkable'
+
 // Audio engine (SPEC §9). Single mode: one AudioContext, two buffer sources
 // (instrumental + vocals) started sample-synced, per-stem gain nodes, master
 // clock derived from AudioContext.currentTime. Dual mode (§9.2/§9.3): a second
@@ -36,15 +41,17 @@ const PITCH_MIN = -6
 const PITCH_MAX = 6
 /** AudioWorklet module path — relative to index.html (public/ is served verbatim). */
 const WORKLET_URL = 'worklets/soundtouch-processor.js'
+/** Mic monitor-leg headroom (~+12dB) — getUserMedia capture is unboosted (no AGC), so the
+ *  raw signal needs gain to be audible over speakers at the slider's unity max. Record/stream
+ *  legs stay unboosted so captured takes don't clip. */
+const MIC_MONITOR_BOOST = 4
+
+export type { MicFxPreset } from './micFxGraph'
 
 export interface AudioRouting {
   mode: 'single' | 'dual'
   monitorDeviceId: string
   streamDeviceId: string
-}
-
-interface SinkableContext extends AudioContext {
-  setSinkId(id: string): Promise<void>
 }
 
 /** State echo from the worklet (see soundtouch-processor.js). */
@@ -55,6 +62,10 @@ export interface WorkletState {
   pitch: number
   bypass: boolean
   latencyFrames: number
+}
+
+function isWorkletState(x: unknown): x is WorkletState {
+  return typeof x === 'object' && x !== null && (x as { type?: unknown }).type === 'state'
 }
 
 let pingSeq = 0
@@ -79,6 +90,12 @@ export class AudioEngine {
   private gainInstr: GainNode
   private gainVocal: GainNode
   private gainInstrStream: GainNode | null = null
+  private recordDest: MediaStreamAudioDestinationNode | null = null
+  private mediaRecorder: MediaRecorder | null = null
+  private recordedChunks: Blob[] = []
+  private _recording = false
+  /** Fired with the captured Blob when a mid-dispose recording is force-flushed (§14.8). */
+  onRecordingFlushed: ((blob: Blob) => void) | null = null
   private stInstr: AudioWorkletNode
   private stVocal: AudioWorkletNode
   private stInstrStream: AudioWorkletNode | null = null
@@ -131,6 +148,14 @@ export class AudioEngine {
     this.gainVocal = ctx.createGain()
     this.gainInstr.connect(ctx.destination)
     this.gainVocal.connect(ctx.destination)
+    // Recording tap (R3.REC1): lives on the monitor context so recording works
+    // in single mode (no mixer / earphone user) too. Captures instrumental +
+    // mic (record leg, added pre monitor-toggle in enableMic), never the guide
+    // vocal. It is a MediaStreamAudioDestinationNode, not wired to any speaker,
+    // so it never leaks audio. The dual-mode stream device is a separate
+    // broadcast feed (see below), not the recording source.
+    this.recordDest = ctx.createMediaStreamDestination()
+    this.gainInstr.connect(this.recordDest)
     // Per-stem SoundTouch worklets sit between source and gain; they idle in
     // true bypass until pitch/tempo leaves neutral (§9.4). Persistent across
     // source rebuilds — only sources are torn down.
@@ -139,6 +164,8 @@ export class AudioEngine {
     this.stInstr.connect(this.gainInstr)
     this.stVocal.connect(this.gainVocal)
     if (streamCtx) {
+      // Dual mode broadcast feed only: instrumental + mic mirrored to the
+      // distinct stream device (virtual cable / OBS). Not tapped for recording.
       this.gainInstrStream = streamCtx.createGain()
       this.gainInstrStream.connect(streamCtx.destination)
       this.stInstrStream = AudioEngine.createWorklet(streamCtx)
@@ -158,23 +185,31 @@ export class AudioEngine {
    *  Dual mode opens the stream context here; a failing stream sink degrades to
    *  single mode with `routingWarning` set rather than blocking playback. */
   static async load(songId: string, routing?: AudioRouting): Promise<AudioEngine> {
-    const ctx = new AudioContext()
+    const ctx = new AudioContext({ latencyHint: 'interactive' })
     let streamCtx: AudioContext | null = null
     let warning: string | null = null
     try {
       if (routing?.mode === 'dual') {
-        if (routing.monitorDeviceId) {
-          await (ctx as SinkableContext).setSinkId(routing.monitorDeviceId)
-        }
-        streamCtx = new AudioContext()
-        try {
-          if (routing.streamDeviceId) {
-            await (streamCtx as SinkableContext).setSinkId(routing.streamDeviceId)
+        await setSink(ctx, routing.monitorDeviceId)
+        // A second audible context is only meaningful when the stream device is
+        // a real, distinct sink. Empty (= system default) or same-as-monitor
+        // would just dump the mic onto the listener's own output — the
+        // monitor-toggle-can't-silence-it leak. Degrade to single in that case;
+        // recording still works (tap is on the monitor context).
+        const distinctStream =
+          routing.streamDeviceId !== '' && routing.streamDeviceId !== routing.monitorDeviceId
+        if (distinctStream) {
+          streamCtx = new AudioContext({ latencyHint: 'interactive' })
+          try {
+            await setSink(streamCtx, routing.streamDeviceId)
+          } catch (err) {
+            void streamCtx.close()
+            streamCtx = null
+            warning = `Stream output unavailable (${err instanceof Error ? err.message : String(err)}) — playing on monitor only.`
           }
-        } catch (err) {
-          void streamCtx.close()
-          streamCtx = null
-          warning = `Stream output unavailable (${err instanceof Error ? err.message : String(err)}) — playing on monitor only.`
+        } else {
+          warning =
+            'No distinct stream device set — broadcasting to monitor only. Recording to file still works.'
         }
       }
       const [instrBuf, vocalBuf] = await Promise.all(
@@ -207,6 +242,15 @@ export class AudioEngine {
 
   get dual(): boolean {
     return this.streamCtx !== null
+  }
+
+  /** Recording (R3.REC1) taps the monitor context, so it works in single mode too. */
+  get canRecord(): boolean {
+    return this.recordDest !== null
+  }
+
+  get recording(): boolean {
+    return this._recording
   }
 
   /** Authoritative playback position in seconds (master clock = monitor context, SPEC §7.3/§9.3.1).
@@ -291,28 +335,8 @@ export class AudioEngine {
    *  waveform source. Buffers are already decoded, so this is a pure CPU pass; cached. */
   peaks(perSec = 50): Float32Array {
     if (this.peaksCache) return this.peaksCache
-    const n = Math.max(1, Math.ceil(this.duration * perSec))
-    const data = new Float32Array(n)
-    for (const buf of [this.instrBuf, this.vocalBuf]) {
-      const step = buf.sampleRate / perSec
-      for (let ch = 0; ch < buf.numberOfChannels; ch++) {
-        const samples = buf.getChannelData(ch)
-        for (let i = 0; i < n; i++) {
-          const end = Math.min(Math.floor((i + 1) * step), samples.length)
-          let m = data[i] ?? 0
-          for (let j = Math.floor(i * step); j < end; j++) {
-            const v = Math.abs(samples[j] ?? 0)
-            if (v > m) m = v
-          }
-          data[i] = m
-        }
-      }
-    }
-    let max = 0
-    for (const v of data) if (v > max) max = v
-    if (max > 0) for (let i = 0; i < n; i++) data[i] = (data[i] ?? 0) / max
-    this.peaksCache = data
-    return data
+    this.peaksCache = computePeaks([this.instrBuf, this.vocalBuf], this.duration, perSec)
+    return this.peaksCache
   }
 
   /** Analyser tapped off the monitor mix (both stem gains), for stage visuals (R1.4).
@@ -407,10 +431,10 @@ export class AudioEngine {
           new Promise<WorkletState>((resolve) => {
             const id = ++pingSeq
             const onMsg = (e: MessageEvent): void => {
-              const state = e.data as WorkletState
+              const state = e.data
               // Match on id: stale unsolicited states (id null) queue up on a
               // not-yet-started port and would otherwise resolve the ping early.
-              if (state.type === 'state' && state.id === id) {
+              if (isWorkletState(state) && state.id === id) {
                 node.port.removeEventListener('message', onMsg)
                 resolve(state)
               }
@@ -423,14 +447,259 @@ export class AudioEngine {
     )
   }
 
+  // ─── Mic graph (R3.MIC1-3) ───────────────────────────────────────────────
+  // One MediaStream (getUserMedia), one MediaStreamAudioSourceNode per context.
+  // Bypasses SoundTouch; survives play/pause/seek/tempo rebuilds.
+  // MIC2: on the monitor context one FX chain (micFxOut) fans out to two legs —
+  // gainMicMon (toggle + volume → speakers) and gainMicRec (volume only →
+  // recordDest), so muting the monitor never drops the mic from the recording.
+  // gainMicStr is the dual-mode broadcast leg (volume only → stream device).
+  // MIC3: dry/wet FX crossfade inserted between src and micFxOut/gainMicStr.
+  private micStream: MediaStream | null = null
+  private srcMicMon: MediaStreamAudioSourceNode | null = null
+  private srcMicStr: MediaStreamAudioSourceNode | null = null
+  private micFxOut: GainNode | null = null
+  private gainMicMon: GainNode | null = null
+  private gainMicRec: GainNode | null = null
+  private gainMicStr: GainNode | null = null
+  private fxNodesMon: AudioNode[] = []
+  private fxNodesStr: AudioNode[] = []
+  private _micMonitor = true
+  private _micVolume = 1
+  private _micFxPreset: MicFxPreset = 'off'
+  private _micFxAmount = 0.3
+  /** Non-fatal mic problem (permission denied, no device). */
+  micWarning: string | null = null
+
+  get micEnabled(): boolean {
+    return this.micStream !== null
+  }
+  get micMonitor(): boolean {
+    return this._micMonitor
+  }
+  get micVolume(): number {
+    return this._micVolume
+  }
+  get micFxPreset(): MicFxPreset {
+    return this._micFxPreset
+  }
+  get micFxAmount(): number {
+    return this._micFxAmount
+  }
+
+  /** Disconnect and clear all FX nodes for one context leg. */
+  private teardownFxLeg(nodes: AudioNode[]): void {
+    for (const n of nodes) {
+      try {
+        n.disconnect()
+      } catch {
+        /* already disconnected */
+      }
+    }
+  }
+
+  /** Rebuild mic FX graph for both active context legs (used by setMicFx). */
+  private rewireMicFx(): void {
+    if (this.srcMicMon && this.micFxOut) {
+      try {
+        this.srcMicMon.disconnect()
+      } catch {
+        /* ok */
+      }
+      this.teardownFxLeg(this.fxNodesMon)
+      this.fxNodesMon = buildFxGraph(
+        this.ctx,
+        this.srcMicMon,
+        this.micFxOut,
+        this._micFxPreset,
+        this._micFxAmount
+      ).fxNodes
+    }
+    if (this.srcMicStr && this.gainMicStr && this.streamCtx) {
+      try {
+        this.srcMicStr.disconnect()
+      } catch {
+        /* ok */
+      }
+      this.teardownFxLeg(this.fxNodesStr)
+      this.fxNodesStr = buildFxGraph(
+        this.streamCtx,
+        this.srcMicStr,
+        this.gainMicStr,
+        this._micFxPreset,
+        this._micFxAmount
+      ).fxNodes
+    }
+  }
+
+  async enableMic(deviceId?: string): Promise<void> {
+    this.disableMic()
+    this.micWarning = null
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          ...(deviceId ? { deviceId } : {})
+        }
+      })
+      this.micStream = stream
+      const trackRate = stream.getAudioTracks()[0]?.getSettings().sampleRate
+      if (trackRate && trackRate !== this.ctx.sampleRate) {
+        console.warn(
+          `Mic capture rate (${trackRate}Hz) differs from AudioContext rate (${this.ctx.sampleRate}Hz) — ` +
+            'OS is resampling, which adds monitor latency. Match Windows Sound > device properties > ' +
+            "Advanced > Default Format to the mic's native rate to avoid this."
+        )
+      }
+
+      // Monitor context: one FX chain (→ micFxOut) fanning out to the monitor
+      // leg (toggle-gated → speakers) and the record leg (always on → recordDest).
+      this.micFxOut = this.ctx.createGain()
+      this.gainMicMon = this.ctx.createGain()
+      this.gainMicMon.gain.value = this._micMonitor ? this._micVolume * MIC_MONITOR_BOOST : 0
+      this.micFxOut.connect(this.gainMicMon)
+      this.gainMicMon.connect(this.ctx.destination)
+      this.gainMicRec = this.ctx.createGain()
+      this.gainMicRec.gain.value = this._micVolume
+      this.micFxOut.connect(this.gainMicRec)
+      if (this.recordDest) this.gainMicRec.connect(this.recordDest)
+      this.srcMicMon = this.ctx.createMediaStreamSource(stream)
+      this.fxNodesMon = buildFxGraph(
+        this.ctx,
+        this.srcMicMon,
+        this.micFxOut,
+        this._micFxPreset,
+        this._micFxAmount
+      ).fxNodes
+
+      // Stream leg: dual-mode broadcast feed to the distinct stream device only.
+      if (this.streamCtx) {
+        this.gainMicStr = this.streamCtx.createGain()
+        this.gainMicStr.gain.value = this._micVolume
+        this.gainMicStr.connect(this.streamCtx.destination)
+        this.srcMicStr = this.streamCtx.createMediaStreamSource(stream)
+        this.fxNodesStr = buildFxGraph(
+          this.streamCtx,
+          this.srcMicStr,
+          this.gainMicStr,
+          this._micFxPreset,
+          this._micFxAmount
+        ).fxNodes
+      }
+    } catch (err) {
+      this.micWarning = `Mic unavailable: ${err instanceof Error ? err.message : String(err)}`
+    }
+  }
+
+  /** Mute/unmute the monitor leg only. In single mode (no stream context) this fully silences the mic. */
+  setMicMonitor(on: boolean): void {
+    this._micMonitor = on
+    if (this.gainMicMon) this.ramp(this.gainMicMon, on ? this._micVolume * MIC_MONITOR_BOOST : 0)
+  }
+
+  /** Set mic volume on all legs, click-free ramp. Monitor leg only ramped when monitor is on;
+   *  record and broadcast legs always track volume so the take is captured at full level. */
+  setMicVolume(v: number): void {
+    this._micVolume = Math.min(Math.max(v, 0), 1)
+    if (this.gainMicMon && this._micMonitor)
+      this.ramp(this.gainMicMon, this._micVolume * MIC_MONITOR_BOOST)
+    if (this.gainMicRec) this.ramp(this.gainMicRec, this._micVolume)
+    if (this.gainMicStr) this.ramp(this.gainMicStr, this._micVolume, this.streamCtx)
+  }
+
+  /** Switch FX preset and/or amount. Rebuilds the FX chain if mic is active. */
+  setMicFx(preset: MicFxPreset, amount: number): void {
+    this._micFxPreset = preset
+    this._micFxAmount = Math.min(Math.max(amount, 0), 1)
+    if (this.micEnabled) this.rewireMicFx()
+  }
+
+  disableMic(): void {
+    if (this.micStream) {
+      for (const track of this.micStream.getTracks()) track.stop()
+      this.micStream = null
+    }
+    try {
+      this.srcMicMon?.disconnect()
+    } catch {
+      /* ok */
+    }
+    try {
+      this.srcMicStr?.disconnect()
+    } catch {
+      /* ok */
+    }
+    this.teardownFxLeg(this.fxNodesMon)
+    this.teardownFxLeg(this.fxNodesStr)
+    for (const node of [this.micFxOut, this.gainMicMon, this.gainMicRec, this.gainMicStr]) {
+      try {
+        node?.disconnect()
+      } catch {
+        /* ok */
+      }
+    }
+    this.srcMicMon = null
+    this.srcMicStr = null
+    this.micFxOut = null
+    this.gainMicMon = null
+    this.gainMicRec = null
+    this.gainMicStr = null
+    this.fxNodesMon = []
+    this.fxNodesStr = []
+  }
+
+  /** Starts capturing the monitor bus (instrumental + mic record leg + FX, no guide vocal). */
+  startRecording(): void {
+    if (!this.recordDest || this._recording) return
+    const mr = new MediaRecorder(this.recordDest.stream, { mimeType: 'audio/webm;codecs=opus' })
+    this.recordedChunks = []
+    mr.ondataavailable = (e) => {
+      if (e.data.size > 0) this.recordedChunks.push(e.data)
+    }
+    mr.start()
+    this.mediaRecorder = mr
+    this._recording = true
+  }
+
+  /** Stops recording and resolves the captured take, or null if nothing was recording. */
+  stopRecording(): Promise<Blob | null> {
+    const mr = this.mediaRecorder
+    if (!mr || !this._recording) return Promise.resolve(null)
+    return new Promise((resolve) => {
+      mr.onstop = () => {
+        this._recording = false
+        this.mediaRecorder = null
+        const blob = new Blob(this.recordedChunks, { type: mr.mimeType })
+        this.recordedChunks = []
+        resolve(blob)
+      }
+      mr.stop()
+    })
+  }
+
   /** Tear down everything; the engine is unusable afterwards. */
   dispose(): void {
     if (this.latencyTimer !== null) window.clearTimeout(this.latencyTimer)
     this.stopDriftWatchdog()
     this.stopSources()
+    this.disableMic()
     this._playing = false
-    void this.ctx.close()
-    void this.streamCtx?.close()
+    const closeContexts = (): void => {
+      void this.ctx.close()
+      void this.streamCtx?.close()
+    }
+    // §14.8: flush a mid-record exit before tearing down the monitor context —
+    // closing it immediately would cut MediaRecorder's stream off before it can flush.
+    if (this._recording) {
+      void this.stopRecording().then((blob) => {
+        if (blob) this.onRecordingFlushed?.(blob)
+        closeContexts()
+      })
+    } else {
+      closeContexts()
+    }
   }
 
   /** Estimate stream-vs-monitor playhead difference (ms) at a common wall instant. */
@@ -560,5 +829,62 @@ export class AudioEngine {
     node.gain.cancelScheduledValues(now)
     node.gain.setValueAtTime(node.gain.value, now)
     node.gain.linearRampToValueAtTime(target, now + RAMP)
+  }
+}
+
+/** PCM16 WAV container around a decoded AudioBuffer's interleaved channel data. */
+function encodeWavPcm16(buf: AudioBuffer): Blob {
+  const numCh = buf.numberOfChannels
+  const bytesPerSample = 2
+  const blockAlign = numCh * bytesPerSample
+  const dataSize = buf.length * blockAlign
+  const out = new ArrayBuffer(44 + dataSize)
+  const view = new DataView(out)
+  let offset = 0
+  const writeStr = (s: string): void => {
+    for (let i = 0; i < s.length; i++) view.setUint8(offset++, s.charCodeAt(i))
+  }
+  writeStr('RIFF')
+  view.setUint32(offset, 36 + dataSize, true)
+  offset += 4
+  writeStr('WAVE')
+  writeStr('fmt ')
+  view.setUint32(offset, 16, true)
+  offset += 4
+  view.setUint16(offset, 1, true) // PCM
+  offset += 2
+  view.setUint16(offset, numCh, true)
+  offset += 2
+  view.setUint32(offset, buf.sampleRate, true)
+  offset += 4
+  view.setUint32(offset, buf.sampleRate * blockAlign, true)
+  offset += 4
+  view.setUint16(offset, blockAlign, true)
+  offset += 2
+  view.setUint16(offset, 16, true)
+  offset += 2
+  writeStr('data')
+  view.setUint32(offset, dataSize, true)
+  offset += 4
+  const channels = Array.from({ length: numCh }, (_, ch) => buf.getChannelData(ch))
+  for (let i = 0; i < buf.length; i++) {
+    for (const data of channels) {
+      const s = Math.max(-1, Math.min(1, data[i] ?? 0))
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true)
+      offset += 2
+    }
+  }
+  return new Blob([out], { type: 'audio/wav' })
+}
+
+/** R3.SET4/REC1: `recordingFormat: 'wav'` decodes the recorded webm/opus take and
+ *  re-encodes it as PCM16 WAV (no native MediaRecorder WAV support). */
+export async function encodeRecordingAsWav(blob: Blob): Promise<Blob> {
+  const ctx = new AudioContext()
+  try {
+    const buf = await ctx.decodeAudioData(await blob.arrayBuffer())
+    return encodeWavPcm16(buf)
+  } finally {
+    await ctx.close()
   }
 }

@@ -1,7 +1,8 @@
 import { Loader2, Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Language, LanguageDef, SongListItem } from '../../../shared/types'
+import type { Language, SongListItem } from '../../../shared/types'
+import { useSettings } from '../hooks/useSettings'
 import { Button, Dialog, Field, Input, Select, Stack, Text } from './ui'
 
 interface Props {
@@ -14,7 +15,8 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
   const [title, setTitle] = useState(song.title)
   const [artist, setArtist] = useState(song.artist)
   const [language, setLanguage] = useState<Language>(song.language)
-  const [languages, setLanguages] = useState<LanguageDef[]>([])
+  const { settings } = useSettings()
+  const languages = settings?.languages ?? []
   const [saving, setSaving] = useState(false)
   const [cleaning, setCleaning] = useState(false)
   const [cleanError, setCleanError] = useState<string | null>(null)
@@ -23,7 +25,6 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
 
   useEffect(() => {
     titleRef.current?.focus()
-    window.singray.settings.get().then((s) => setLanguages(s.languages))
   }, [])
 
   // The song's current language stays selectable even if it was removed from Settings.
@@ -85,14 +86,14 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
   }
 
   return (
-    <Dialog label={t('editMeta.aria')} width="w-[420px]" onClose={onClose}>
+    <Dialog label={t('editMeta.aria')} width="md" onClose={onClose}>
       <Stack direction="column" gap={6}>
-        <div>
+        <Stack direction="column" gap={4}>
           <Text as="h2" variant="title">
             {t('editMeta.title')}
           </Text>
 
-          <Stack direction="column" gap={3} className="mt-4">
+          <Stack direction="column" gap={3}>
             <Field label={t('common.title')}>
               <Input ref={titleRef} value={title} onChange={(e) => setTitle(e.target.value)} />
             </Field>
@@ -102,26 +103,30 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
             <Field label={t('common.language')}>
               <Select
                 value={language}
-                onChange={(v) => setLanguage(v as Language)}
+                onChange={setLanguage}
                 options={options.map((l) => ({ value: l.code, label: l.label }))}
               />
             </Field>
           </Stack>
 
           {(cleanError || preview) && (
-            <div className="mt-3">
+            <Stack direction="column" gap={2}>
               {cleanError && <Text variant="error">{cleanError}</Text>}
               {preview &&
                 (previewIsNoop ? (
                   <Text variant="hint">{t('editMeta.noChanges')}</Text>
                 ) : (
-                  <div className="rounded-card border border-border bg-surface p-3">
+                  <Stack
+                    direction="column"
+                    gap={2}
+                    className="rounded-card border border-border bg-surface p-3"
+                  >
                     <Text variant="hint">{t('editMeta.preview')}</Text>
-                    <p className="mt-1 text-sm">
+                    <p className="text-sm">
                       {preview.title}
                       {preview.artist && <span className="text-text-dim"> · {preview.artist}</span>}
                     </p>
-                    <Stack gap={2} className="mt-2">
+                    <Stack gap={2}>
                       <Button variant="primary" size="sm" onClick={applyPreview}>
                         {t('editMeta.apply')}
                       </Button>
@@ -129,11 +134,11 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
                         {t('editMeta.dismiss')}
                       </Button>
                     </Stack>
-                  </div>
+                  </Stack>
                 ))}
-            </div>
+            </Stack>
           )}
-        </div>
+        </Stack>
 
         <Stack justify="between" align="center" gap={3}>
           <Button

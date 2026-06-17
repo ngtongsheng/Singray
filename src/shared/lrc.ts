@@ -19,6 +19,9 @@ const PER_UNIT_SEC = 0.4
 /** Gap between a line's last unit and the next line that earns a break marker. */
 const MIN_BREAK_GAP = 5
 
+/** A timing anchor: unit index → absolute seconds (LRC word/line timestamp). */
+type Anchor = readonly [unitIndex: number, seconds: number]
+
 function toSeconds(min: string, sec: string, frac: string | undefined): number {
   const f = frac ? Number(frac.padEnd(3, '0').slice(0, 3)) / 1000 : 0
   return Number(min) * 60 + Number(sec) + f
@@ -28,16 +31,16 @@ interface Entry {
   start: number
   text: string
   units: LyricUnit[]
-  /** [unitIndex, absoluteSeconds] anchors; always begins with [0, start]. */
-  anchors: Array<[number, number]>
+  /** Anchors; always begins with [0, start]. */
+  anchors: Anchor[]
 }
 
 /** Pull `<ts>` word markers out of a line body → plain text + (unitIndex, time) anchors. */
-function splitWords(body: string): { plain: string; words: Array<[number, number]> } {
+function splitWords(body: string): { plain: string; words: Anchor[] } {
   WORD_TS.lastIndex = 0
   let plain = ''
   let last = 0
-  const words: Array<[number, number]> = []
+  const words: Anchor[] = []
   let m: RegExpExecArray | null
   // biome-ignore lint/suspicious/noAssignInExpressions: standard global-regex exec loop
   while ((m = WORD_TS.exec(body)) !== null) {
@@ -51,7 +54,7 @@ function splitWords(body: string): { plain: string; words: Array<[number, number
 }
 
 /** Fill `t` for every unit by linear interpolation between anchors; mark interpolated ones estimated. */
-function fillTimes(units: LyricUnit[], anchors: Array<[number, number]>, lineEnd: number): void {
+function fillTimes(units: LyricUnit[], anchors: Anchor[], lineEnd: number): void {
   if (units.length === 0) return
   const byIdx = new Map<number, number>() // later anchor at the same index wins
   for (const [idx, t] of anchors) if (idx >= 0 && idx < units.length) byIdx.set(idx, t)
@@ -59,8 +62,8 @@ function fillTimes(units: LyricUnit[], anchors: Array<[number, number]>, lineEnd
   if (pts.length === 0) pts.push([0, anchors[0]?.[1] ?? 0])
   pts.push([units.length, Math.max(lineEnd, (pts[pts.length - 1]?.[1] ?? 0) + 0.1)])
   for (let k = 0; k < pts.length - 1; k++) {
-    const [ai, at] = pts[k] as [number, number]
-    const [bi, bt] = pts[k + 1] as [number, number]
+    const [ai, at] = pts[k] as Anchor
+    const [bi, bt] = pts[k + 1] as Anchor
     for (let u = ai; u < bi; u++) {
       const unit = units[u]
       if (!unit) continue
@@ -99,7 +102,7 @@ export function parseLrc(content: string, language: Language): Lyrics {
     const text = plain.replace(WORD_TS, '').trim()
     for (const start of starts) {
       const units = text === '' ? [] : tokenizeLine(text)
-      const anchors: Array<[number, number]> = [[0, start]]
+      const anchors: Anchor[] = [[0, start]]
       for (const [idx, t] of words) anchors.push([idx, t])
       entries.push({ start, text, units, anchors })
     }
@@ -122,7 +125,7 @@ export function parseLrc(content: string, language: Language): Lyrics {
       return
     }
     const nextStart = entries[i + 1]?.start
-    const lastAnchor = e.anchors[e.anchors.length - 1] as [number, number]
+    const lastAnchor = e.anchors[e.anchors.length - 1] as Anchor
     const natural = lastAnchor[1] + (e.units.length - lastAnchor[0]) * PER_UNIT_SEC
     const lineEnd = nextStart === undefined ? natural : Math.min(nextStart, natural)
     fillTimes(e.units, e.anchors, lineEnd)

@@ -34,10 +34,11 @@ const popover = {
 
 const none = {}
 
-interface MotionPresets {
-  dialogScrim: typeof dialogScrim | typeof none
-  dialogPanel: typeof dialogPanel | typeof none
-  popover: typeof popover | typeof none
+const PRESETS = { dialogScrim, dialogPanel, popover }
+
+/** Each key keeps its own preset's exact shape; `none` is the reduced-motion fallback for all. */
+type MotionPresets = {
+  [K in keyof typeof PRESETS]: (typeof PRESETS)[K] | typeof none
 }
 
 /**
@@ -59,7 +60,5 @@ export function usePrefersReducedMotion(): boolean {
 
 export function useMotionPresets(): MotionPresets {
   const reduced = usePrefersReducedMotion()
-  return reduced
-    ? { dialogScrim: none, dialogPanel: none, popover: none }
-    : { dialogScrim, dialogPanel, popover }
+  return reduced ? { dialogScrim: none, dialogPanel: none, popover: none } : PRESETS
 }

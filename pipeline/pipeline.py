@@ -470,11 +470,23 @@ def cmd_align(args: argparse.Namespace) -> int:
 
 
 def cmd_list_models(args: argparse.Namespace) -> int:
-    """List available separation models from audio-separator's registry.
+    """List available separation models from registry + local MODELS_DIR.
 
+    Scans the on-disk models directory for any downloaded model files, then
+    augments with audio-separator's registry list (if reachable). Merges and
+    deduplicates so manually-added and registry models both appear.
     Emits {"stage": "done", "models": ["name1.pth", "name2.onnx", ...]}.
-    Falls back to DEFAULT_MODEL when the CLI tool is unreachable.
+    Falls back to DEFAULT_MODEL when no models are found.
     """
+    models: set[str] = set()
+
+    # Scan the local models directory for downloaded / manually-added model files
+    if MODELS_DIR.exists():
+        for f in MODELS_DIR.iterdir():
+            if f.suffix.lower() in (".pth", ".onnx", ".ckpt"):
+                models.add(f.name)
+
+    # Augment with registry models (best-effort — registry may be unreachable)
     try:
         proc = subprocess.run(
             [sys.executable, "-m", "audio_separator", "--list_models"]
@@ -484,21 +496,19 @@ def cmd_list_models(args: argparse.Namespace) -> int:
             text=True,
             timeout=30,
         )
+        for line in (proc.stdout or "").split("\n"):
+            line = line.strip()
+            for ext in (".pth", ".onnx", ".ckpt"):
+                if ext in line:
+                    parts = line.split()
+                    if parts and parts[0]:
+                        models.add(parts[0])
+                    break
     except Exception:
-        emit({"stage": "done", "models": [DEFAULT_MODEL]})
-        return 0
+        pass  # Registry failure is non-fatal — local models still included
 
-    models: list[str] = []
-    for line in (proc.stdout or "").split("\n"):
-        line = line.strip()
-        for ext in (".pth", ".onnx", ".ckpt"):
-            if ext in line:
-                parts = line.split()
-                if parts and parts[0] not in models:
-                    models.append(parts[0])
-                break
-    models = models or [DEFAULT_MODEL]
-    emit({"stage": "done", "models": models})
+    result = sorted(models) if models else [DEFAULT_MODEL]
+    emit({"stage": "done", "models": result})
     return 0
 
 

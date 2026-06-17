@@ -1,4 +1,4 @@
-import { type ChildProcess, spawn } from 'node:child_process'
+import type { ChildProcess } from 'node:child_process'
 import { createWriteStream, existsSync } from 'node:fs'
 import { chmod, copyFile, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -16,6 +16,7 @@ import {
   venvDir
 } from './pipelineEnv'
 import { getSettings } from './settings'
+import { lastStderrLine, spawnLines } from './spawnLines'
 
 // Pinned to match pipeline/setup.ps1 (SPEC §2.1). The +cu128 tag is load-bearing
 // on GPU machines — a bare ==2.8.0 is "satisfied" by a CPU build.
@@ -178,28 +179,26 @@ function run(
   opts: { env?: NodeJS.ProcessEnv; onLine?: (line: string) => void } = {}
 ): Promise<void> {
   throwIfCancelled()
-  return new Promise((resolve, reject) => {
-    const proc = spawn(exe, args, { windowsHide: true, env: opts.env ?? process.env })
-    liveProcs.add(proc)
-    let tail = ''
-    proc.stdout?.on('data', (d: Buffer) => {
-      const s = d.toString()
-      if (opts.onLine) for (const line of s.split('\n')) if (line.trim()) opts.onLine(line)
-    })
-    proc.stderr?.on('data', (d: Buffer) => {
-      tail = (tail + d.toString()).slice(-2000)
-    })
-    proc.on('error', (err) => {
-      liveProcs.delete(proc)
-      reject(err)
-    })
-    proc.on('close', (code) => {
-      liveProcs.delete(proc)
-      if (code === 0) resolve()
-      else if (cancelled) reject(new Error('Install cancelled'))
-      else reject(new Error(tail.trim().split('\n').pop() || `${exe} exited with code ${code}`))
-    })
-  })
+  let proc: ChildProcess | undefined
+  return spawnLines(exe, args, {
+    env: opts.env ?? process.env,
+    onLine: opts.onLine,
+    onProc: (p) => {
+      proc = p
+      liveProcs.add(p)
+    }
+  }).then(
+    ({ code, stderrTail }) => {
+      if (proc) liveProcs.delete(proc)
+      if (code === 0) return
+      if (cancelled) throw new Error('Install cancelled')
+      throw new Error(lastStderrLine(stderrTail) || `${exe} exited with code ${code}`)
+    },
+    (err) => {
+      if (proc) liveProcs.delete(proc)
+      throw err
+    }
+  )
 }
 
 /** nvidia-smi present → install CUDA wheels. */

@@ -4,15 +4,15 @@ import { useEffect, useRef, useState } from 'react'
 import { cx } from './cx'
 import Popover from './Popover'
 
-export interface SelectOption {
-  value: string
+export interface SelectOption<T extends string> {
+  value: T
   label: ReactNode
 }
 
-interface SelectProps {
-  value: string
-  onChange: (value: string) => void
-  options: readonly SelectOption[]
+interface SelectProps<T extends string> {
+  value: T
+  onChange: (value: T) => void
+  options: readonly SelectOption<T>[]
   /** md = full-width form field; sm = compact inline control. */
   uiSize?: 'sm' | 'md'
   disabled?: boolean
@@ -22,7 +22,7 @@ interface SelectProps {
 }
 
 /** Custom popover-based select (UI1): no native dropdown chrome, full keyboard nav. */
-function Select({
+function Select<T extends string>({
   value,
   onChange,
   options,
@@ -31,7 +31,7 @@ function Select({
   className,
   title,
   'aria-label': ariaLabel
-}: SelectProps): React.JSX.Element {
+}: SelectProps<T>): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const [highlight, setHighlight] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -59,7 +59,7 @@ function Select({
     }
   }, [open, options, value])
 
-  const select = (opt: SelectOption | undefined): void => {
+  const select = (opt: SelectOption<T> | undefined): void => {
     if (!opt) return
     onChange(opt.value)
     setOpen(false)
@@ -110,8 +110,8 @@ function Select({
         open={open}
         origin="top"
         className={cx(
-          'top-full mt-1 max-h-60 overflow-y-auto py-1',
-          uiSize === 'md' ? 'inset-x-0' : 'right-0 min-w-[10rem]'
+          'top-full translate-y-1 max-h-60 overflow-y-auto py-1',
+          uiSize === 'md' ? 'inset-x-0' : 'right-0 min-w-40'
         )}
       >
         <div role="listbox">

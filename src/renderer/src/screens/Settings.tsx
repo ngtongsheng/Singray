@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  Check,
   CheckCircle2,
   Loader2,
   Plus,
@@ -8,51 +9,35 @@ import {
   X,
   XCircle
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Settings as SettingsModel } from '../../../shared/types'
 import PipelineInstaller from '../components/PipelineInstaller'
 import Titlebar from '../components/Titlebar'
-import { Button, Container, Field, IconButton, Input, Select, Stack, Text } from '../components/ui'
+import {
+  Button,
+  Container,
+  Field,
+  IconButton,
+  Input,
+  Popover,
+  Select,
+  SettingsSection,
+  Stack,
+  Text,
+  Toggle
+} from '../components/ui'
+import { useAsync } from '../hooks/useAsync'
+import { useAudioDevices } from '../hooks/useAudioDevices'
+import { useSettings } from '../hooks/useSettings'
+import { useTestTone } from '../hooks/useTestTone'
 import { availableLocales, i18n, localeName, resolveLocale } from '../lib/i18n'
-
-/** Play a short sine tone on a specific output device ('' = system default). */
-async function playTestTone(deviceId: string, freq: number): Promise<void> {
-  const ctx = new AudioContext()
-  try {
-    if (deviceId) {
-      await (ctx as AudioContext & { setSinkId(id: string): Promise<void> }).setSinkId(deviceId)
-    }
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.frequency.value = freq
-    gain.gain.setValueAtTime(0, ctx.currentTime)
-    gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.02)
-    gain.gain.setValueAtTime(0.25, ctx.currentTime + 0.8)
-    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1)
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.start()
-    osc.stop(ctx.currentTime + 1)
-    await new Promise<void>((resolve) => {
-      osc.onended = () => resolve()
-    })
-  } finally {
-    void ctx.close()
-  }
-}
+import { stripIpcError } from '../lib/stripIpcError'
 
 interface Props {
   onBack: () => void
 }
 
 const TEST_URL = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
-
-type TestState =
-  | { kind: 'idle' }
-  | { kind: 'running' }
-  | { kind: 'ok'; detail: string }
-  | { kind: 'fail'; detail: string }
 
 /** Dropdown listing available UVR separation models, with a refresh button. */
 function SeparationModelSelect({
@@ -63,29 +48,20 @@ function SeparationModelSelect({
   onChange: (v: string) => void
 }): React.JSX.Element {
   const { t } = useTranslation()
-  const [models, setModels] = useState<string[] | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  const load = useCallback(async (force = false): Promise<void> => {
-    setLoading(true)
-    try {
-      const list = await window.singray.pipeline.listModels(force)
-      setModels(list)
-    } catch {
-      setModels((prev) => prev ?? ['6_HP-Karaoke-UVR.pth'])
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const req = useAsync((force: boolean) => window.singray.pipeline.listModels(force))
+  const { run } = req
+  const loading = req.loading
+  // Preserve last good list across a failed refresh; fall back only if we never loaded.
+  const models = req.data ?? (req.error ? ['6_HP-Karaoke-UVR.pth'] : null)
 
   useEffect(() => {
-    load()
-  }, [load])
+    void run(false)
+  }, [run])
 
   const valid = models?.includes(value) ?? false
 
   return (
-    <Stack gap={2}>
+    <Stack gap={2} className="w-full">
       <Select
         value={valid ? value : ''}
         onChange={onChange}
@@ -102,12 +78,11 @@ function SeparationModelSelect({
         className="flex-1"
       />
       <IconButton
-        variant="ghost"
+        variant="secondary"
         size="sm"
-        onClick={() => load(true)}
+        onClick={() => run(true)}
         disabled={loading}
         title={t('settings.modelRefresh')}
-        className="shrink-0 text-text-dim hover:text-text"
       >
         <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={1.5} />
       </IconButton>
@@ -115,17 +90,117 @@ function SeparationModelSelect({
   )
 }
 
-function Settings({ onBack }: Props): React.JSX.Element {
-  const { t } = useTranslation()
-  const [settings, setSettings] = useState<SettingsModel | null>(null)
-  const [test, setTest] = useState<TestState>({ kind: 'idle' })
-  const [llmTest, setLlmTest] = useState<TestState>({ kind: 'idle' })
-  const [outputs, setOutputs] = useState<MediaDeviceInfo[]>([])
-  const [toneBusy, setToneBusy] = useState<'monitor' | 'stream' | null>(null)
-  const [toneError, setToneError] = useState<string | null>(null)
+/** Editable combobox for the LLM model field: type freely or pick from the fetched list. */
+function LlmModelCombobox({
+  value,
+  onChange,
+  models
+}: {
+  value: string
+  onChange: (v: string) => void
+  models: string[]
+}): React.JSX.Element {
+  const [inputVal, setInputVal] = useState(value)
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => setInputVal(value), [value])
+
+  const filtered = inputVal.trim()
+    ? models.filter((m) => m.toLowerCase().includes(inputVal.toLowerCase()))
+    : models
+
+  const commit = (v: string): void => {
+    const trimmed = v.trim()
+    if (trimmed !== value) onChange(trimmed)
+    setOpen(false)
+  }
+
+  const pick = (model: string): void => {
+    setInputVal(model)
+    if (model !== value) onChange(model)
+    setOpen(false)
+  }
 
   useEffect(() => {
-    window.singray.settings.get().then(setSettings)
+    if (!open) return
+    const onDown = (e: MouseEvent): void => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    window.addEventListener('mousedown', onDown)
+    return () => window.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  return (
+    <div ref={rootRef} className="relative flex-1">
+      <Input
+        value={inputVal}
+        onChange={(e) => {
+          setInputVal(e.target.value)
+          setOpen(true)
+        }}
+        onFocus={() => {
+          if (models.length) setOpen(true)
+        }}
+        onBlur={(e) => {
+          const v = e.target.value
+          setTimeout(() => commit(v), 150)
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') setOpen(false)
+          if (e.key === 'Enter') {
+            commit(inputVal)
+            ;(e.target as HTMLInputElement).blur()
+          }
+        }}
+        placeholder="gemma4:12b-it-qat"
+      />
+      <Popover
+        open={open && filtered.length > 0}
+        origin="top"
+        className="inset-x-0 top-full translate-y-1 max-h-48 overflow-y-auto py-1"
+      >
+        <div role="listbox">
+          {filtered.map((model) => (
+            <button
+              key={model}
+              type="button"
+              role="option"
+              aria-selected={model === value}
+              onMouseDown={(e) => {
+                e.preventDefault()
+                pick(model)
+              }}
+              className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm hover:bg-surface-2${model === value ? ' text-accent' : ''}`}
+            >
+              <span className="truncate">{model}</span>
+              {model === value && <Check className="size-3.5 shrink-0" strokeWidth={2} />}
+            </button>
+          ))}
+        </div>
+      </Popover>
+    </div>
+  )
+}
+
+function Settings({ onBack }: Props): React.JSX.Element {
+  const { t } = useTranslation()
+  const { settings, patch } = useSettings()
+  const pipelineTest = useAsync(async () => {
+    const started = Date.now()
+    const result = await window.singray.import.probe(TEST_URL)
+    const secs = ((Date.now() - started) / 1000).toFixed(1)
+    return t('settings.probedIn', { title: result.title, secs })
+  })
+  const llmTest = useAsync(async () => {
+    const r = await window.singray.llm.test()
+    return t('settings.llmOk', { reply: r.reply, secs: (r.ms / 1000).toFixed(1) })
+  })
+  const llmModels = useAsync((url: string, key: string) => window.singray.llm.listModels(url, key))
+  const { outputs, inputs } = useAudioDevices()
+  const { toneBusy, toneError, testTone } = useTestTone(settings)
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onBack()
     }
@@ -133,37 +208,13 @@ function Settings({ onBack }: Props): React.JSX.Element {
     return () => window.removeEventListener('keydown', onKey)
   }, [onBack])
 
+  const llmBaseUrl = settings?.llmBaseUrl ?? ''
+  const llmApiKey = settings?.llmApiKey ?? ''
+  const { run: runLlmModels } = llmModels
   useEffect(() => {
-    const load = (): void => {
-      navigator.mediaDevices
-        .enumerateDevices()
-        .then((ds) => setOutputs(ds.filter((d) => d.kind === 'audiooutput')))
-    }
-    load()
-    navigator.mediaDevices.addEventListener('devicechange', load)
-    return () => navigator.mediaDevices.removeEventListener('devicechange', load)
-  }, [])
-
-  const testTone = async (which: 'monitor' | 'stream'): Promise<void> => {
-    if (!settings || toneBusy) return
-    setToneBusy(which)
-    setToneError(null)
-    try {
-      // Two pitches so both-at-once misrouting is obvious by ear.
-      await playTestTone(
-        which === 'monitor' ? settings.monitorDeviceId : settings.streamDeviceId,
-        which === 'monitor' ? 440 : 660
-      )
-    } catch (err) {
-      setToneError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setToneBusy(null)
-    }
-  }
-
-  const patch = async (p: Partial<SettingsModel>): Promise<void> => {
-    setSettings(await window.singray.settings.set(p))
-  }
+    if (!llmBaseUrl) return
+    void runLlmModels(llmBaseUrl, llmApiKey)
+  }, [runLlmModels, llmBaseUrl, llmApiKey])
 
   const [newCode, setNewCode] = useState('')
   const [newLabel, setNewLabel] = useState('')
@@ -182,37 +233,6 @@ function Settings({ onBack }: Props): React.JSX.Element {
   const removeLanguage = (code: string): void => {
     if (!settings) return
     void patch({ languages: settings.languages.filter((l) => l.code !== code) })
-  }
-
-  const testPipeline = async (): Promise<void> => {
-    setTest({ kind: 'running' })
-    const started = Date.now()
-    try {
-      const result = await window.singray.import.probe(TEST_URL)
-      const secs = ((Date.now() - started) / 1000).toFixed(1)
-      setTest({ kind: 'ok', detail: t('settings.probedIn', { title: result.title, secs }) })
-    } catch (err) {
-      setTest({
-        kind: 'fail',
-        detail: (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
-      })
-    }
-  }
-
-  const testLlm = async (): Promise<void> => {
-    setLlmTest({ kind: 'running' })
-    try {
-      const r = await window.singray.llm.test()
-      setLlmTest({
-        kind: 'ok',
-        detail: t('settings.llmOk', { reply: r.reply, secs: (r.ms / 1000).toFixed(1) })
-      })
-    } catch (err) {
-      setLlmTest({
-        kind: 'fail',
-        detail: (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
-      })
-    }
   }
 
   const setUiLanguage = (v: string): void => {
@@ -239,8 +259,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
 
       <Container pb={6} maxWidth="xl">
         <Stack direction="column" gap={6}>
-          <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">{t('settings.interface')}</legend>
+          <SettingsSection title={t('settings.interface')}>
             <Field label={t('settings.uiLanguage')} hint={t('settings.uiLanguageHelp')}>
               <Select
                 value={settings.uiLanguage}
@@ -251,10 +270,9 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 ]}
               />
             </Field>
-          </fieldset>
+          </SettingsSection>
 
-          <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">{t('settings.library')}</legend>
+          <SettingsSection title={t('settings.library')}>
             <Field label={t('settings.libraryFolder')} hint={t('settings.libraryFolderHelp')}>
               <Input
                 defaultValue={settings.libraryDir}
@@ -264,10 +282,9 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 }}
               />
             </Field>
-          </fieldset>
+          </SettingsSection>
 
-          <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">{t('settings.languages')}</legend>
+          <SettingsSection title={t('settings.languages')}>
             <Stack direction="column" gap={2}>
               {settings.languages.map((l) => (
                 <Stack
@@ -322,47 +339,48 @@ function Settings({ onBack }: Props): React.JSX.Element {
               </Stack>
               <Text variant="hint">{t('settings.languagesHelp')}</Text>
             </Stack>
-          </fieldset>
+          </SettingsSection>
 
-          <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">{t('settings.pipeline')}</legend>
+          <SettingsSection title={t('settings.pipeline')}>
             <Stack direction="column" gap={4}>
-              <div>
-                <Text variant="hint" className="mb-2 block">
+              <Stack direction="column" gap={2}>
+                <Text variant="hint" className="block">
                   {t('settings.setup.desc')}
                 </Text>
                 <PipelineInstaller />
-              </div>
+              </Stack>
               <Field label={t('settings.pythonExe')} hint={t('settings.pythonHelp')}>
-                <Stack gap={2}>
-                  <Input
-                    defaultValue={settings.pythonPath}
-                    onBlur={(e) => {
-                      if (e.target.value.trim() && e.target.value !== settings.pythonPath)
-                        patch({ pythonPath: e.target.value.trim() })
-                    }}
-                  />
-                  <Button
-                    size="md"
-                    onClick={testPipeline}
-                    disabled={test.kind === 'running'}
-                    className="shrink-0"
-                  >
-                    {test.kind === 'running' && <Loader2 className="size-4 animate-spin" />}
-                    {t('settings.testPipeline')}
-                  </Button>
+                <Stack direction="column" gap={2}>
+                  <Stack gap={2}>
+                    <Input
+                      defaultValue={settings.pythonPath}
+                      onBlur={(e) => {
+                        if (e.target.value.trim() && e.target.value !== settings.pythonPath)
+                          patch({ pythonPath: e.target.value.trim() })
+                      }}
+                    />
+                    <Button
+                      size="md"
+                      onClick={() => pipelineTest.run()}
+                      disabled={pipelineTest.loading}
+                      className="shrink-0"
+                    >
+                      {pipelineTest.loading && <Loader2 className="size-4 animate-spin" />}
+                      {t('settings.testPipeline')}
+                    </Button>
+                  </Stack>
+                  {!pipelineTest.loading && !pipelineTest.error && pipelineTest.data && (
+                    <span className="flex items-center gap-1.5 text-success text-xs">
+                      <CheckCircle2 className="size-3.5" /> {pipelineTest.data}
+                    </span>
+                  )}
+                  {!pipelineTest.loading && pipelineTest.error && (
+                    <Text variant="error" className="flex items-center gap-1.5">
+                      <XCircle className="size-3.5" /> {stripIpcError(pipelineTest.error)}
+                    </Text>
+                  )}
                 </Stack>
               </Field>
-              {test.kind === 'ok' && (
-                <span className="-mt-2 flex items-center gap-1.5 text-success text-xs">
-                  <CheckCircle2 className="size-3.5" /> {test.detail}
-                </span>
-              )}
-              {test.kind === 'fail' && (
-                <Text variant="error" className="-mt-2 flex items-center gap-1.5">
-                  <XCircle className="size-3.5" /> {test.detail}
-                </Text>
-              )}
               <Field label={t('settings.separationModel')} hint={t('settings.separationModelHelp')}>
                 <SeparationModelSelect
                   value={settings.separationModel || '6_HP-Karaoke-UVR.pth'}
@@ -372,7 +390,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
               <Field label={t('settings.stemFormat')} hint={t('settings.stemFormatHelp')}>
                 <Select
                   value={settings.stemFormat}
-                  onChange={(v) => patch({ stemFormat: v as SettingsModel['stemFormat'] })}
+                  onChange={(v) => patch({ stemFormat: v })}
                   options={[
                     { value: 'flac', label: t('settings.stemFlac') },
                     { value: 'm4a', label: t('settings.stemM4a') }
@@ -380,10 +398,9 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 />
               </Field>
             </Stack>
-          </fieldset>
+          </SettingsSection>
 
-          <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">{t('settings.llm')}</legend>
+          <SettingsSection title={t('settings.llm')}>
             <Stack direction="column" gap={4}>
               <Field label={t('settings.llmBaseUrl')}>
                 <Input
@@ -396,25 +413,41 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 />
               </Field>
               <Field label={t('settings.llmModel')}>
-                <Stack gap={2}>
-                  <Input
-                    defaultValue={settings.llmModel}
-                    placeholder="gemma4:12b-it-qat"
-                    onBlur={(e) => {
-                      if (e.target.value.trim() !== settings.llmModel)
-                        patch({ llmModel: e.target.value.trim() })
-                    }}
-                  />
-                  <Button
-                    size="md"
-                    onClick={testLlm}
-                    disabled={llmTest.kind === 'running'}
-                    title={t('settings.llmTestTip')}
-                    className="shrink-0"
-                  >
-                    {llmTest.kind === 'running' && <Loader2 className="size-4 animate-spin" />}
-                    {t('settings.test')}
-                  </Button>
+                <Stack direction="column" gap={1.5}>
+                  <Stack gap={2}>
+                    <LlmModelCombobox
+                      value={settings.llmModel}
+                      onChange={(v) => patch({ llmModel: v })}
+                      models={llmModels.data ?? []}
+                    />
+                    <IconButton
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void llmModels.run(settings.llmBaseUrl, settings.llmApiKey)}
+                      disabled={llmModels.loading}
+                      title={t('settings.modelRefresh')}
+                    >
+                      <RefreshCw
+                        className={`size-4 ${llmModels.loading ? 'animate-spin' : ''}`}
+                        strokeWidth={1.5}
+                      />
+                    </IconButton>
+                    <Button
+                      size="md"
+                      onClick={() => llmTest.run()}
+                      disabled={llmTest.loading}
+                      title={t('settings.llmTestTip')}
+                      className="shrink-0"
+                    >
+                      {llmTest.loading && <Loader2 className="size-4 animate-spin" />}
+                      {t('settings.test')}
+                    </Button>
+                  </Stack>
+                  {!llmModels.loading && llmModels.error && (
+                    <Text variant="error" className="flex items-center gap-1.5">
+                      <XCircle className="size-3.5" /> {t('settings.llmModelsError')}
+                    </Text>
+                  )}
                 </Stack>
               </Field>
               <Field label={t('settings.llmApiKey')}>
@@ -428,32 +461,30 @@ function Settings({ onBack }: Props): React.JSX.Element {
                 />
               </Field>
               <Text variant="hint">{t('settings.llmHelp')}</Text>
-              {llmTest.kind === 'ok' && (
+              {!llmTest.loading && !llmTest.error && llmTest.data && (
                 <span className="flex items-center gap-1.5 text-success text-xs">
-                  <CheckCircle2 className="size-3.5" /> {llmTest.detail}
+                  <CheckCircle2 className="size-3.5" /> {llmTest.data}
                 </span>
               )}
-              {llmTest.kind === 'fail' && (
+              {!llmTest.loading && llmTest.error && (
                 <Text variant="error" className="flex items-center gap-1.5">
-                  <XCircle className="size-3.5" /> {llmTest.detail}
+                  <XCircle className="size-3.5" /> {stripIpcError(llmTest.error)}
                 </Text>
               )}
             </Stack>
-          </fieldset>
+          </SettingsSection>
 
-          <fieldset className="rounded-card border border-border p-4">
-            <legend className="px-1 font-medium text-sm">{t('settings.audio')}</legend>
+          <SettingsSection title={t('settings.audio')}>
             <Stack direction="column" gap={4}>
               <Field label={t('settings.outputMode')} hint={t('settings.modeHelp')}>
                 <Select
                   value={settings.audioOutputMode}
-                  onChange={(v) =>
-                    patch({ audioOutputMode: v as SettingsModel['audioOutputMode'] })
-                  }
+                  onChange={(v) => patch({ audioOutputMode: v })}
                   options={[
                     { value: 'single', label: t('settings.modeSingle') },
                     { value: 'dual', label: t('settings.modeDual') }
                   ]}
+                  className="w-full"
                 />
               </Field>
 
@@ -468,58 +499,91 @@ function Settings({ onBack }: Props): React.JSX.Element {
                       which === 'monitor' ? t('settings.monitorDevice') : t('settings.streamDevice')
                     }
                   >
-                    <Stack gap={2}>
-                      <Select
-                        value={known ? value : ''}
-                        disabled={settings.audioOutputMode === 'single'}
-                        onChange={(v) =>
-                          patch(
-                            which === 'monitor' ? { monitorDeviceId: v } : { streamDeviceId: v }
-                          )
-                        }
-                        options={[
-                          { value: '', label: t('settings.systemDefault') },
-                          ...outputs.map((d) => ({
-                            value: d.deviceId,
-                            label: d.label || t('settings.outputN', { id: d.deviceId.slice(0, 8) })
-                          }))
-                        ]}
-                        className="flex-1"
-                      />
-                      <Button
-                        size="md"
-                        onClick={() => testTone(which)}
-                        disabled={toneBusy !== null || settings.audioOutputMode === 'single'}
-                        title={
-                          which === 'monitor'
-                            ? t('settings.toneTipMonitor')
-                            : t('settings.toneTipStream')
-                        }
-                        className="shrink-0"
-                      >
-                        {toneBusy === which ? (
-                          <Loader2 className="size-4 animate-spin" />
-                        ) : (
-                          <Volume2 className="size-4" strokeWidth={1.5} />
-                        )}
-                        {t('settings.test')}
-                      </Button>
+                    <Stack direction="column" gap={1} className="w-full">
+                      <Stack gap={2}>
+                        <Select
+                          value={known ? value : ''}
+                          disabled={settings.audioOutputMode === 'single'}
+                          onChange={(v) =>
+                            patch(
+                              which === 'monitor' ? { monitorDeviceId: v } : { streamDeviceId: v }
+                            )
+                          }
+                          options={[
+                            { value: '', label: t('settings.systemDefault') },
+                            ...outputs.map((d) => ({
+                              value: d.deviceId,
+                              label:
+                                d.label || t('settings.outputN', { id: d.deviceId.slice(0, 8) })
+                            }))
+                          ]}
+                          className="flex-1"
+                        />
+                        <Button
+                          size="md"
+                          onClick={() => testTone(which)}
+                          disabled={toneBusy !== null || settings.audioOutputMode === 'single'}
+                          title={
+                            which === 'monitor'
+                              ? t('settings.toneTipMonitor')
+                              : t('settings.toneTipStream')
+                          }
+                          className="shrink-0"
+                        >
+                          {toneBusy === which ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <Volume2 className="size-4" strokeWidth={1.5} />
+                          )}
+                          {t('settings.test')}
+                        </Button>
+                      </Stack>
+                      {!known && <Text variant="error">{t('settings.deviceMissing')}</Text>}
                     </Stack>
-                    {!known && (
-                      <Text variant="error" className="mt-1 block">
-                        {t('settings.deviceMissing')}
-                      </Text>
-                    )}
                   </Field>
                 )
               })}
+              <Field label={t('settings.recordingFormat')} hint={t('settings.recordingFormatHelp')}>
+                <Select
+                  value={settings.recordingFormat}
+                  onChange={(v) => patch({ recordingFormat: v })}
+                  options={[
+                    { value: 'webm', label: t('settings.recordingWebm') },
+                    { value: 'wav', label: t('settings.recordingWav') }
+                  ]}
+                  className="w-full"
+                />
+              </Field>
               {toneError && (
                 <Text variant="error" className="flex items-center gap-1.5">
                   <XCircle className="size-3.5" /> {toneError}
                 </Text>
               )}
+              <Field label={t('settings.micDevice')} hint={t('settings.micDeviceHelp')}>
+                <Stack direction="column" gap={2}>
+                  <Select
+                    value={settings.micDeviceId}
+                    onChange={(v) => patch({ micDeviceId: v })}
+                    options={[
+                      { value: '', label: t('settings.systemDefault') },
+                      ...inputs.map((d) => ({
+                        value: d.deviceId,
+                        label: d.label || t('settings.inputN', { id: d.deviceId.slice(0, 8) })
+                      }))
+                    ]}
+                    className="w-full"
+                  />
+                  <Toggle
+                    pressed={settings.micEnabled}
+                    onClick={() => patch({ micEnabled: !settings.micEnabled })}
+                    title={t('settings.micEnableHelp')}
+                  >
+                    {t('settings.micEnable')}
+                  </Toggle>
+                </Stack>
+              </Field>
             </Stack>
-          </fieldset>
+          </SettingsSection>
         </Stack>
       </Container>
     </div>

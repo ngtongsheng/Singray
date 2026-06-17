@@ -10,9 +10,15 @@ import {
   X
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Language, LanguageDef, Settings, SongListItem } from '../../../shared/types'
+import type {
+  ImportStage,
+  Language,
+  LanguageDef,
+  Settings,
+  SongListItem
+} from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ImportDialog from '../components/ImportDialog'
 import SongCard from '../components/SongCard'
@@ -28,13 +34,14 @@ import {
   Segmented,
   Select,
   Stack,
+  StatusStrip,
   Text
 } from '../components/ui'
 import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
 import { usePrefersReducedMotion } from '../lib/motionPresets'
 
-const STRIP_KEY: Record<string, string> = {
+const STRIP_KEY: Partial<Record<ImportStage, string>> = {
   queued: 'stage.queued',
   download: 'stage.download',
   separate: 'stage.separateLong',
@@ -94,10 +101,10 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
     void window.singray.settings.set({ libraryView: v })
   }
 
-  const onArtistClick = (artist: string): void => {
+  const onArtistClick = useCallback((artist: string): void => {
     setArtistFilter(artist.trim())
     setSection('songs')
-  }
+  }, [])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -138,7 +145,9 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
   }, [songs, query, language, favoritesOnly, needsLyricsOnly, artistFilter, sort])
 
   // ART1: every distinct artist with a song count, "" groups songs with no artist set.
+  // Only the artists section needs this, so skip the sort/count pass otherwise.
   const artists = useMemo(() => {
+    if (section !== 'artists') return []
     const counts = new Map<string, number>()
     for (const s of songs) {
       const name = s.artist.trim()
@@ -147,13 +156,22 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
     return [...counts.entries()]
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => (a.name || '￿').localeCompare(b.name || '￿', undefined, { numeric: true }))
-  }, [songs])
+  }, [songs, section])
 
   const confirmDelete = async (): Promise<void> => {
     if (!pendingDelete) return
     await window.singray.library.delete(pendingDelete.id)
     setPendingDelete(null)
   }
+
+  const importStrip = useMemo(() => {
+    if (imports.size === 0) return null
+    const activeJob = [...imports.values()].find((p) => p.stage !== 'queued')
+    const job = activeJob ?? [...imports.values()][0]
+    if (!job) return null
+    const title = songs.find((s) => s.id === job.songId)?.title ?? job.songId
+    return { job, title, moreCount: imports.size - 1 }
+  }, [imports, songs])
 
   return (
     <div className="relative h-full">
@@ -181,40 +199,6 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
             />
           </Stack>
           <Stack gap={3}>
-            {section === 'songs' && (
-              <>
-                <Segmented
-                  className="app-no-drag"
-                  value={view}
-                  onChange={setViewMode}
-                  options={[
-                    {
-                      value: 'grid',
-                      label: <LayoutGrid className="size-4" strokeWidth={1.5} />,
-                      title: t('library.viewGrid')
-                    },
-                    {
-                      value: 'list',
-                      label: <List className="size-4" strokeWidth={1.5} />,
-                      title: t('library.viewList')
-                    }
-                  ]}
-                />
-                <div className="app-no-drag">
-                  <Select
-                    uiSize="sm"
-                    value={sort}
-                    onChange={(v) => setSort(v as SortMode)}
-                    title={t('library.sort')}
-                    options={[
-                      { value: 'added', label: t('library.sortAdded') },
-                      { value: 'mostSung', label: t('library.sortMostSung') },
-                      { value: 'recentSung', label: t('library.sortRecentSung') }
-                    ]}
-                  />
-                </div>
-              </>
-            )}
             <Button variant="primary" onClick={() => setShowImport(true)} className="app-no-drag">
               <Plus className="size-4" strokeWidth={2} /> {t('library.addSong')}
             </Button>
@@ -231,32 +215,66 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
 
       <Container>
         {section === 'songs' && (
-          <Stack gap={2} className="py-3">
-            {artistFilter !== null && (
-              <Chip
-                active
-                onClick={() => setArtistFilter(null)}
-                title={t('library.clearArtistFilter')}
-              >
-                {t('library.artistFilter', { name: artistFilter || t('common.unknown') })}
-                <X className="size-3.5" strokeWidth={1.5} />
+          <Stack gap={2} justify="between" className="py-3">
+            <Stack gap={2} wrap>
+              {artistFilter !== null && (
+                <Chip
+                  active
+                  onClick={() => setArtistFilter(null)}
+                  title={t('library.clearArtistFilter')}
+                >
+                  {t('library.artistFilter', { name: artistFilter || t('common.unknown') })}
+                  <X className="size-3.5" strokeWidth={1.5} />
+                </Chip>
+              )}
+              {languages.map((lang) => (
+                <Chip
+                  key={lang}
+                  active={language === lang}
+                  onClick={() => setLanguage(language === lang ? null : lang)}
+                >
+                  {langLabel(lang)}
+                </Chip>
+              ))}
+              <Chip active={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
+                <Heart className="size-3.5" strokeWidth={1.5} /> {t('library.favorites')}
               </Chip>
-            )}
-            {languages.map((lang) => (
-              <Chip
-                key={lang}
-                active={language === lang}
-                onClick={() => setLanguage(language === lang ? null : lang)}
-              >
-                {langLabel(lang)}
+              <Chip active={needsLyricsOnly} onClick={() => setNeedsLyricsOnly(!needsLyricsOnly)}>
+                <Type className="size-3.5" strokeWidth={1.5} /> {t('library.needsLyrics')}
               </Chip>
-            ))}
-            <Chip active={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
-              <Heart className="size-3.5" strokeWidth={1.5} /> {t('library.favorites')}
-            </Chip>
-            <Chip active={needsLyricsOnly} onClick={() => setNeedsLyricsOnly(!needsLyricsOnly)}>
-              <Type className="size-3.5" strokeWidth={1.5} /> {t('library.needsLyrics')}
-            </Chip>
+            </Stack>
+            <Stack gap={2}>
+              <Segmented
+                className="app-no-drag"
+                value={view}
+                onChange={setViewMode}
+                options={[
+                  {
+                    value: 'grid',
+                    label: <LayoutGrid className="size-4" strokeWidth={1.5} />,
+                    title: t('library.viewGrid')
+                  },
+                  {
+                    value: 'list',
+                    label: <List className="size-4" strokeWidth={1.5} />,
+                    title: t('library.viewList')
+                  }
+                ]}
+              />
+              <div className="app-no-drag">
+                <Select
+                  uiSize="sm"
+                  value={sort}
+                  onChange={setSort}
+                  title={t('library.sort')}
+                  options={[
+                    { value: 'added', label: t('library.sortAdded') },
+                    { value: 'mostSung', label: t('library.sortMostSung') },
+                    { value: 'recentSung', label: t('library.sortRecentSung') }
+                  ]}
+                />
+              </div>
+            </Stack>
           </Stack>
         )}
 
@@ -269,7 +287,7 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
             </Button>
           </Stack>
         ) : section === 'artists' ? (
-          <Stack direction="column" gap={2} className="pb-12">
+          <Stack direction="column" gap={2} className="pt-3 pb-12">
             {artists.map(({ name, count }) => (
               <button
                 key={name}
@@ -331,30 +349,22 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
         )}
       </Container>
 
-      {imports.size > 0 &&
+      {importStrip &&
         (() => {
-          const activeJob = [...imports.values()].find((p) => p.stage !== 'queued')
-          const job = activeJob ?? [...imports.values()][0]
-          if (!job) return null
-          const title = songs.find((s) => s.id === job.songId)?.title ?? job.songId
+          const { job, title, moreCount } = importStrip
+          const stripKey = STRIP_KEY[job.stage]
           return (
-            <div className="absolute inset-x-0 bottom-0 z-20 border-border border-t bg-surface px-6 py-1.5">
-              <Stack gap={2} className="text-xs">
+            <StatusStrip pinned progress={job.progress}>
+              <span className="text-text-dim">
+                {stripKey ? t(stripKey) : job.stage} · {title}
+              </span>
+              <span className="font-medium text-accent">{Math.round(job.progress * 100)}%</span>
+              {moreCount > 0 && (
                 <span className="text-text-dim">
-                  {STRIP_KEY[job.stage] ? t(STRIP_KEY[job.stage] as string) : job.stage} · {title}
+                  {t('library.moreQueued', { count: moreCount })}
                 </span>
-                <span className="font-medium text-accent">{Math.round(job.progress * 100)}%</span>
-                {imports.size > 1 && (
-                  <span className="text-text-dim">
-                    {t('library.moreQueued', { count: imports.size - 1 })}
-                  </span>
-                )}
-              </Stack>
-              <div
-                className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300"
-                style={{ width: `${job.progress * 100}%` }}
-              />
-            </div>
+              )}
+            </StatusStrip>
           )
         })()}
 

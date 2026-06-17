@@ -1,15 +1,23 @@
 import { FolderOpen, Loader2, Search } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { MEDIA_EXTENSIONS, type SearchResult } from '../../../shared/types'
+import { useAsync } from '../hooks/useAsync'
+import { useMediaProbe } from '../hooks/useMediaProbe'
+import { useSettings } from '../hooks/useSettings'
+import { stripIpcError } from '../lib/stripIpcError'
 import {
-  type Language,
-  type LanguageDef,
-  MEDIA_EXTENSIONS,
-  type ProbeResult,
-  type SearchResult
-} from '../../../shared/types'
-import { detectLanguage } from '../lib/detectLanguage'
-import { Button, Dialog, Field, IconButton, Input, Select, Stack, Tabs, Text } from './ui'
+  Button,
+  Dialog,
+  DialogFooter,
+  Field,
+  IconButton,
+  Input,
+  Select,
+  Stack,
+  Tabs,
+  Text
+} from './ui'
 import { cx } from './ui/cx'
 
 interface Props {
@@ -27,88 +35,34 @@ function formatDuration(sec: number): string {
 
 function ImportDialog({ onClose }: Props): React.JSX.Element {
   const { t } = useTranslation()
-  const [url, setUrl] = useState('')
-  const [filePath, setFilePath] = useState<string | null>(null)
-  const [probing, setProbing] = useState(false)
-  const [probeError, setProbeError] = useState<string | null>(null)
-  const [probed, setProbed] = useState<ProbeResult | null>(null)
-  const [title, setTitle] = useState('')
-  const [artist, setArtist] = useState('')
-  const [language, setLanguage] = useState<Language>('unknown')
-  const [languages, setLanguages] = useState<LanguageDef[]>([])
+  const { settings } = useSettings()
+  const languages = settings?.languages ?? []
+  const probe = useMediaProbe(languages)
   const [submitting, setSubmitting] = useState(false)
   const [query, setQuery] = useState('')
-  const [searching, setSearching] = useState(false)
-  const [searchError, setSearchError] = useState<string | null>(null)
-  const [results, setResults] = useState<SearchResult[] | null>(null)
+  const search = useAsync((q: string) => window.singray.import.search(q), { resetOnRun: true })
   const [mode, setMode] = useState<SourceMode>('youtube')
   const [dragOver, setDragOver] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
-  const probeSeq = useRef(0)
 
   useEffect(() => {
     searchRef.current?.focus()
-    window.singray.settings.get().then((s) => setLanguages(s.languages))
   }, [])
 
-  const runSearch = async (): Promise<void> => {
+  const runSearch = (): void => {
     const q = query.trim()
-    if (!q || searching) return
-    setSearching(true)
-    setSearchError(null)
-    setResults(null)
-    try {
-      setResults(await window.singray.import.search(q))
-    } catch (err) {
-      setSearchError(
-        (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
-      )
-    } finally {
-      setSearching(false)
-    }
+    if (!q || search.loading) return
+    void search.run(q)
   }
 
   const pickResult = (r: SearchResult): void => {
-    setResults(null)
-    setSearchError(null)
-    setUrl(r.url)
+    search.reset()
+    probe.setUrl(r.url)
   }
 
-  /** Shared prefill: probe result → form, with LLM enrichment (heuristic fallback in main). */
-  const prefill = useCallback(
-    async (result: ProbeResult, seq: number): Promise<void> => {
-      if (seq !== probeSeq.current) return
-      setProbed(result)
-      const detected = detectLanguage(result.title, languages)
-      if (detected) setLanguage(detected)
-      const enriched = await window.singray.llm.enrichProbe(result)
-      if (seq !== probeSeq.current) return
-      setTitle(enriched.title)
-      setArtist(enriched.artist)
-    },
-    [languages]
-  )
-
-  /** Shared local-file flow (R3.7 picker, ADD2 drop): probe the file → same prefill flow. */
   const loadFile = async (path: string): Promise<void> => {
-    setUrl('')
-    setResults(null)
-    setSearchError(null)
-    setProbeError(null)
-    setFilePath(path)
-    const seq = ++probeSeq.current
-    setProbing(true)
-    try {
-      await prefill(await window.singray.import.probeFile(path), seq)
-    } catch (err) {
-      if (seq !== probeSeq.current) return
-      setProbed(null)
-      setProbeError(
-        (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
-      )
-    } finally {
-      if (seq === probeSeq.current) setProbing(false)
-    }
+    search.reset()
+    await probe.loadFile(path)
   }
 
   const pickFile = async (): Promise<void> => {
@@ -125,54 +79,25 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
     const path = window.singray.import.getPathForFile(file)
     const ext = path.split('.').pop()?.toLowerCase() ?? ''
     if (!(MEDIA_EXTENSIONS as readonly string[]).includes(ext)) {
-      setFilePath(null)
-      setProbed(null)
-      setProbeError(t('import.unsupportedFile'))
+      probe.setFilePath(null)
+      probe.setProbed(null)
+      probe.setProbeError(t('import.unsupportedFile'))
       return
     }
     void loadFile(path)
   }
 
-  useEffect(() => {
-    const trimmed = url.trim()
-    if (!/^https?:\/\/\S+$/.test(trimmed)) {
-      if (!filePath) {
-        setProbed(null)
-        setProbeError(null)
-      }
-      return
-    }
-    setFilePath(null) // a typed URL takes precedence over a previously picked file
-    const seq = ++probeSeq.current
-    setProbing(true)
-    setProbeError(null)
-    const timer = setTimeout(() => {
-      window.singray.import
-        .probe(trimmed)
-        .then((result) => prefill(result, seq))
-        .catch((err: Error) => {
-          if (seq !== probeSeq.current) return
-          setProbed(null)
-          setProbeError(err.message.replace(/^Error invoking remote method '[^']+': Error: /, ''))
-        })
-        .finally(() => {
-          if (seq === probeSeq.current) setProbing(false)
-        })
-    }, 400)
-    return () => clearTimeout(timer)
-  }, [url, filePath, prefill])
-
   const submit = async (): Promise<void> => {
-    if (!probed || !title.trim()) return
+    if (!probe.probed || !probe.title.trim()) return
     setSubmitting(true)
     try {
       await window.singray.import.start({
-        url: filePath ? '' : url.trim(),
-        title: title.trim(),
-        artist: artist.trim(),
-        language,
-        youtubeTitle: probed.title,
-        ...(filePath ? { filePath } : {})
+        url: probe.filePath ? '' : probe.url.trim(),
+        title: probe.title.trim(),
+        artist: probe.artist.trim(),
+        language: probe.language,
+        youtubeTitle: probe.probed.title,
+        ...(probe.filePath ? { filePath: probe.filePath } : {})
       })
       onClose()
     } finally {
@@ -181,7 +106,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
   }
 
   return (
-    <Dialog label={t('import.title')} width="w-[640px]" onClose={onClose}>
+    <Dialog label={t('import.title')} width="2xl" onClose={onClose}>
       <Stack direction="column" gap={6}>
         <Stack direction="column" gap={4}>
           <Text as="h2" variant="title">
@@ -200,40 +125,39 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
           {mode === 'youtube' ? (
             <>
               <Field label={t('import.searchLabel')}>
-                <Stack gap={2}>
-                  <Input
-                    ref={searchRef}
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && runSearch()}
-                    placeholder={t('import.searchPlaceholder')}
-                    trailing={
-                      searching && <Loader2 className="size-4 animate-spin text-text-dim" />
-                    }
-                  />
-                  <IconButton
-                    aria-label={t('import.searchLabel')}
-                    onClick={runSearch}
-                    disabled={!query.trim() || searching}
-                  >
-                    <Search className="size-4" />
-                  </IconButton>
+                <Stack direction="column" gap={1}>
+                  <Stack gap={2}>
+                    <Input
+                      ref={searchRef}
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && runSearch()}
+                      placeholder={t('import.searchPlaceholder')}
+                      trailing={
+                        search.loading && <Loader2 className="size-4 animate-spin text-text-dim" />
+                      }
+                    />
+                    <IconButton
+                      size="md"
+                      aria-label={t('import.searchLabel')}
+                      onClick={runSearch}
+                      disabled={!query.trim() || search.loading}
+                    >
+                      <Search className="size-4" />
+                    </IconButton>
+                  </Stack>
+                  {search.error && <Text variant="error">{stripIpcError(search.error)}</Text>}
                 </Stack>
-                {searchError && (
-                  <Text variant="error" className="mt-1">
-                    {searchError}
-                  </Text>
-                )}
               </Field>
 
-              {results && (
+              {search.data && (
                 <ul className="max-h-64 divide-y divide-border overflow-y-auto rounded-card border border-border">
-                  {results.length === 0 && (
+                  {search.data.length === 0 && (
                     <li className="px-3 py-4 text-center">
                       <Text variant="hint">{t('import.noResults')}</Text>
                     </li>
                   )}
-                  {results.map((r) => (
+                  {search.data.map((r) => (
                     <li key={r.url}>
                       <Button
                         variant="bare"
@@ -264,17 +188,17 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
               )}
 
               <Field label={t('import.urlLabel')}>
-                <Input
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://www.youtube.com/watch?v=…"
-                  trailing={probing && <Loader2 className="size-4 animate-spin text-text-dim" />}
-                />
-                {probeError && (
-                  <Text variant="error" className="mt-1">
-                    {probeError}
-                  </Text>
-                )}
+                <Stack direction="column" gap={1}>
+                  <Input
+                    value={probe.url}
+                    onChange={(e) => probe.setUrl(e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=…"
+                    trailing={
+                      probe.probing && <Loader2 className="size-4 animate-spin text-text-dim" />
+                    }
+                  />
+                  {probe.probeError && <Text variant="error">{probe.probeError}</Text>}
+                </Stack>
               </Field>
             </>
           ) : (
@@ -297,39 +221,43 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                 <FolderOpen className="size-4" strokeWidth={1.5} /> {t('import.fromFile')}
               </Button>
               <Text variant="hint">{t('import.dropHint')}</Text>
-              {filePath && (
+              {probe.filePath && (
                 <Text as="span" variant="hint" className="min-w-0 truncate">
-                  {filePath.split(/[\\/]/).pop()}
+                  {probe.filePath.split(/[\\/]/).pop()}
                 </Text>
               )}
-              {probeError && <Text variant="error">{probeError}</Text>}
-              {probing && <Loader2 className="size-4 animate-spin text-text-dim" />}
+              {probe.probeError && <Text variant="error">{probe.probeError}</Text>}
+              {probe.probing && <Loader2 className="size-4 animate-spin text-text-dim" />}
             </Stack>
           )}
 
-          {probed && (
+          {probe.probed && (
             <Stack gap={4}>
-              <div className="w-56 shrink-0">
+              <Stack direction="column" gap={2} className="w-56 shrink-0">
                 <div className="aspect-video overflow-hidden rounded-card bg-surface">
-                  {probed.thumbnailUrl && (
-                    <img src={probed.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                  {probe.probed.thumbnailUrl && (
+                    <img
+                      src={probe.probed.thumbnailUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
                   )}
                 </div>
-                <Text variant="hint" className="mt-2 line-clamp-2">
-                  {probed.title}
+                <Text variant="hint" className="line-clamp-2">
+                  {probe.probed.title}
                 </Text>
-              </div>
+              </Stack>
               <Stack direction="column" gap={3} className="flex-1">
                 <Field label={t('common.title')}>
-                  <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                  <Input value={probe.title} onChange={(e) => probe.setTitle(e.target.value)} />
                 </Field>
                 <Field label={t('common.artist')}>
-                  <Input value={artist} onChange={(e) => setArtist(e.target.value)} />
+                  <Input value={probe.artist} onChange={(e) => probe.setArtist(e.target.value)} />
                 </Field>
                 <Field label={t('common.language')}>
                   <Select
-                    value={language}
-                    onChange={(v) => setLanguage(v as Language)}
+                    value={probe.language}
+                    onChange={probe.setLanguage}
                     options={[
                       ...languages.map((l) => ({ value: l.code, label: l.label })),
                       ...(languages.some((l) => l.code === 'unknown')
@@ -343,7 +271,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
           )}
         </Stack>
 
-        <Stack justify="end" gap={3}>
+        <DialogFooter>
           <Button size="md" onClick={onClose}>
             {t('common.cancel')}
           </Button>
@@ -351,11 +279,11 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
             variant="primary"
             size="md"
             onClick={submit}
-            disabled={!probed || !title.trim() || submitting}
+            disabled={!probe.probed || !probe.title.trim() || submitting}
           >
             {t('import.add')}
           </Button>
-        </Stack>
+        </DialogFooter>
       </Stack>
     </Dialog>
   )

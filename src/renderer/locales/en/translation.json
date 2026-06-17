@@ -119,7 +119,9 @@
     "keyDownTip": "Key down ([)",
     "keyUpTip": "Key up (])",
     "key": "Key {{value}}",
+    "keyLabel": "Key",
     "tempo": "Tempo",
+    "tuneTip": "Tempo, key & effects",
     "pinTip": "Pin bar (always visible)",
     "unpinTip": "Unpin bar (auto-hide)",
     "stageVisualTip": "{{mode}} — click to switch",
@@ -127,7 +129,26 @@
       "off": "Stage visual: off",
       "waveform": "Stage visual: waveform",
       "bars": "Stage visual: bars"
-    }
+    },
+    "micVolTip": "Mic volume",
+    "micMonitorOn": "Monitor on",
+    "micMonitorOff": "Monitor off",
+    "micMonitorTip": "Mute/unmute mic on your speakers — recording still captures the mic",
+    "micLatencyHint": "Software monitor may lag — prefer hardware monitoring (e.g. AG06)",
+    "micFxLabel": "FX",
+    "micFxAmountTip": "Wet/dry amount",
+    "micWarning": "Mic: {{message}}",
+    "micPreset": {
+      "off": "FX off",
+      "room": "Room",
+      "hall": "Hall",
+      "echo": "Echo",
+      "karaoke": "Karaoke"
+    },
+    "record": "Record",
+    "recording": "Recording…",
+    "recordStartTip": "Start recording (instrumental + mic, no guide vocal)",
+    "recordStopTip": "Stop recording and save"
   },
   "details": {
     "title": "Song details",
@@ -136,9 +157,7 @@
     "sungCount": "Sung",
     "sungCount_value_one": "{{count}} time",
     "sungCount_value_other": "{{count}} times",
-    "source": "Source",
-    "history": "Sing history",
-    "noHistory": "Not sung yet"
+    "source": "Source"
   },
   "creator": {
     "subtitle": "{{artist}} · Lyrics",
@@ -253,6 +272,7 @@
     "llmApiKey": "API key (optional)",
     "llmTestTip": "Send a tiny prompt to check URL, model and key",
     "llmOk": "Replied \"{{reply}}\" in {{secs}}s",
+    "llmModelsError": "Could not load model list — type a model name manually",
     "llmHelp": "Used for metadata cleanup and lyric tools. Works with Ollama (default URL) or any OpenAI-compatible endpoint.",
     "audio": "Audio routing",
     "outputMode": "Output mode",
@@ -266,6 +286,16 @@
     "test": "Test",
     "toneTipMonitor": "Play a test tone on the monitor device",
     "toneTipStream": "Play a test tone on the stream device",
-    "deviceMissing": "Saved device not found — pick again (falls back to system default)."
+    "deviceMissing": "Saved device not found — pick again (falls back to system default).",
+    "recordingFormat": "Recording format",
+    "recordingFormatHelp": "Container for recorded karaoke sessions. webm = smaller; wav = uncompressed, universal.",
+    "recordingWebm": "WebM (default)",
+    "recordingWav": "WAV (uncompressed)",
+    "micInput": "Mic input",
+    "micDevice": "Mic device",
+    "micDeviceHelp": "Microphone for self-monitoring and recording. Saved here; activated per song in the player.",
+    "micEnable": "Enable mic in player",
+    "micEnableHelp": "When on, the mic graph starts automatically when you open a song. Disable to skip getUserMedia permission prompt.",
+    "inputN": "Input {{id}}"
   }
 }

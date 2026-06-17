@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
-import type { Settings } from '../shared/types'
+import { isMicFxPreset, type Settings } from '../shared/types'
 
 function defaults(): Settings {
   return {
@@ -11,7 +11,8 @@ function defaults(): Settings {
     streamDeviceId: '',
     audioOutputMode: 'single',
     playerBarPinned: true,
-    stageVisual: 'off',
+    showWaveform: false,
+    showBars: false,
     stemFormat: 'flac',
     libraryView: 'grid',
     languages: [
@@ -22,7 +23,14 @@ function defaults(): Settings {
     llmBaseUrl: 'http://localhost:11434/v1',
     llmModel: '',
     llmApiKey: '',
-    separationModel: '6_HP-Karaoke-UVR.pth'
+    separationModel: '6_HP-Karaoke-UVR.pth',
+    recordingFormat: 'webm',
+    micDeviceId: '',
+    micEnabled: false,
+    micMonitor: true,
+    micVolume: 1,
+    micFxPreset: 'off',
+    micFxAmount: 0.3
   }
 }
 
@@ -39,6 +47,9 @@ export function getSettings(): Settings {
     stored = JSON.parse(readFileSync(settingsPath(), 'utf-8')) as Partial<Settings>
   } catch {
     // missing or corrupt file → defaults
+  }
+  if (stored.micFxPreset !== undefined && !isMicFxPreset(stored.micFxPreset)) {
+    delete stored.micFxPreset
   }
   cache = { ...defaults(), ...stored }
   return cache

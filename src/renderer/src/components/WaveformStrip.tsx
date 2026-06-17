@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { computePeaks } from '../lib/computePeaks'
+import { cssColor } from '../lib/cssColor'
 import { Button } from './ui'
 
 interface Props {
@@ -19,10 +21,6 @@ interface Peaks {
 /** Fixed-rate peak buckets, independent of canvas width; mapped to pixels at draw time. */
 const PEAKS_PER_SEC = 100
 const HEIGHT = 64
-
-function cssColor(name: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
-}
 
 function sizeCanvas(canvas: HTMLCanvasElement, w: number, dpr: number): CanvasRenderingContext2D {
   canvas.width = Math.round(w * dpr)
@@ -58,24 +56,7 @@ function WaveformStrip({ songId, audioRef, stamps, onSeek }: Props): React.JSX.E
       const ctx = new AudioContext()
       try {
         const audio = await ctx.decodeAudioData(raw)
-        const n = Math.max(1, Math.ceil(audio.duration * PEAKS_PER_SEC))
-        const data = new Float32Array(n)
-        const step = audio.sampleRate / PEAKS_PER_SEC
-        for (let ch = 0; ch < audio.numberOfChannels; ch++) {
-          const samples = audio.getChannelData(ch)
-          for (let i = 0; i < n; i++) {
-            const end = Math.min(Math.floor((i + 1) * step), samples.length)
-            let m = data[i] ?? 0
-            for (let j = Math.floor(i * step); j < end; j++) {
-              const v = Math.abs(samples[j] ?? 0)
-              if (v > m) m = v
-            }
-            data[i] = m
-          }
-        }
-        let max = 0
-        for (const v of data) if (v > max) max = v
-        if (max > 0) for (let i = 0; i < n; i++) data[i] = (data[i] ?? 0) / max
+        const data = computePeaks([audio], audio.duration, PEAKS_PER_SEC)
         if (!cancelled) setPeaks({ data, duration: audio.duration })
       } finally {
         void ctx.close()

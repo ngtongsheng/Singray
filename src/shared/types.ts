@@ -90,8 +90,10 @@ export interface Settings {
   audioOutputMode: 'single' | 'dual'
   /** Player control bar: pinned (always visible) vs auto-hide after inactivity. */
   playerBarPinned: boolean
-  /** Stage visual: whole-song waveform with playhead, live analyser bars, or none. */
-  stageVisual: 'off' | 'waveform' | 'bars'
+  /** Top-strip waveform visualization (whole-song peaks + playhead). */
+  showWaveform: boolean
+  /** Bottom bars visualization (live analyser). */
+  showBars: boolean
   /** Stem encode format for new imports (R3.8): flac = lossless (default), m4a = AAC 256k. */
   stemFormat: 'flac' | 'm4a'
   /** Library Songs view layout (HOME1): grid of cards vs compact rows. */
@@ -108,6 +110,28 @@ export interface Settings {
   llmApiKey: string
   /** UVR separation model filename for new imports (e.g. "6_HP-Karaoke-UVR.pth"). */
   separationModel: string
+  /** Container format for R3.REC1 MediaRecorder sessions. */
+  recordingFormat: 'webm' | 'wav'
+  /** R3.MIC4: audioinput device, '' = system default. */
+  micDeviceId: string
+  /** R3.MIC4: build mic graph when player loads. */
+  micEnabled: boolean
+  /** R3.MIC2: monitor leg audible (false = AG06 hardware-monitor case). */
+  micMonitor: boolean
+  /** R3.MIC2: mic gain 0..1, both legs. */
+  micVolume: number
+  /** R3.MIC3: FX preset. */
+  micFxPreset: MicFxPreset
+  /** R3.MIC3: wet/dry 0..1. */
+  micFxAmount: number
+}
+
+export const MIC_FX_PRESETS = ['off', 'room', 'hall', 'echo', 'karaoke'] as const
+export type MicFxPreset = (typeof MIC_FX_PRESETS)[number]
+
+/** Validates a persisted/IPC value against the MicFxPreset union before use. */
+export function isMicFxPreset(x: unknown): x is MicFxPreset {
+  return typeof x === 'string' && (MIC_FX_PRESETS as readonly string[]).includes(x)
 }
 
 /** Cleaned title/artist from metadata enrichment (R3.2). */
@@ -143,16 +167,48 @@ export interface SearchResult {
   url: string
 }
 
-export type ImportStage = 'queued' | 'download' | 'separate' | 'convert' | 'done' | 'error'
+export const IMPORT_STAGES = ['queued', 'download', 'separate', 'convert', 'done', 'error'] as const
+export type ImportStage = (typeof IMPORT_STAGES)[number]
 
-export interface ImportProgress {
-  jobId: string
-  songId: string
-  stage: ImportStage
+function isImportStage(x: unknown): x is ImportStage {
+  return typeof x === 'string' && (IMPORT_STAGES as readonly string[]).includes(x)
+}
+
+/**
+ * Branded ids for the import queue (R3.7): both are plain strings on the wire,
+ * but the brand stops `jobId`/`songId` — same primitive type, easy to swap at a
+ * call site — from being passed to each other's parameter by accident. Cast
+ * once where each is minted (importQueue.ts); everywhere else they flow
+ * through ordinary string-typed reads (a branded string is still a string).
+ */
+export type SongId = string & { readonly __brand: 'SongId' }
+export type JobId = string & { readonly __brand: 'JobId' }
+
+interface ImportProgressBase {
+  jobId: JobId
+  songId: SongId
   /** 0..1 within the current stage. */
   progress: number
-  /** Present when stage = "error". */
-  message?: string
+}
+
+/** Stage carries an error message only when stage = "error" (R3.7 progress events). */
+export type ImportProgress =
+  | (ImportProgressBase & { stage: Exclude<ImportStage, 'error'> })
+  | (ImportProgressBase & { stage: 'error'; message: string })
+
+/** One JSON line from `pipeline.py` for the download/separate/convert stages (SPEC §6.2). */
+export type ImportPipelineLine =
+  | { stage: Exclude<ImportStage, 'done' | 'error'>; progress: number }
+  | { stage: 'done'; durationSec?: number }
+  | { stage: 'error'; message: string }
+
+/** Validates one parsed JSON line against the pipeline's stage protocol before use. */
+export function isImportPipelineLine(x: unknown): x is ImportPipelineLine {
+  if (typeof x !== 'object' || x === null || !('stage' in x)) return false
+  const { stage } = x as { stage: unknown }
+  if (!isImportStage(stage)) return false
+  if (stage === 'error') return typeof (x as { message?: unknown }).message === 'string'
+  return true
 }
 
 export interface ImportRequest {
@@ -217,14 +273,16 @@ export interface PipelineStatus {
 /** One step of the bootstrapper install (R4.3). */
 export type InstallStep = 'uv' | 'venv' | 'torch' | 'deps' | 'ffmpeg' | 'verify'
 
-/** Progress event streamed from the bootstrapper to the install UI (R4.3). */
-export interface InstallEvent {
-  step: InstallStep
-  status: 'start' | 'progress' | 'done' | 'error'
-  /** 0..1 within the step, when known (downloads). */
-  pct?: number
-  message?: string
-}
+/**
+ * Progress event streamed from the bootstrapper to the install UI (R4.3).
+ * `start`/`error` always carry a message; `progress` carries pct and/or a log line;
+ * `done` carries an optional note (e.g. "Already installed").
+ */
+export type InstallEvent =
+  | { step: InstallStep; status: 'start'; message: string }
+  | { step: InstallStep; status: 'progress'; pct?: number; message?: string }
+  | { step: InstallStep; status: 'done'; message?: string }
+  | { step: InstallStep; status: 'error'; message: string }
 
 /** Renderer-facing API exposed by the preload bridge. */
 export interface SingrayApi {
@@ -275,6 +333,8 @@ export interface SingrayApi {
   llm: {
     /** Round-trips a tiny prompt through the configured endpoint; rejects with a readable message. */
     test(): Promise<LlmTestResult>
+    /** Lists available models from the configured OpenAI-compat /v1/models endpoint; rejects readably. */
+    listModels(baseUrl: string, apiKey: string): Promise<string[]>
     /** Cleans probe metadata for import prefill; falls back to the heuristic parser, never rejects. */
     enrichProbe(probe: ProbeResult): Promise<EnrichResult>
     /** "Clean up with AI" on an existing song; rejects with a readable message. */
@@ -286,6 +346,10 @@ export interface SingrayApi {
     url(id: string, track: AudioTrack): string
     thumbUrl(id: string): string
   }
+  recordings: {
+    /** Saves a performance recording (R3.REC1) under the song's recordings/ folder; resolves the saved path. */
+    save(songId: string, bytes: ArrayBuffer, ext: string): Promise<string>
+  }
   window: {
     /** Custom titlebar controls (NAV1): replace the native min/max/close. */
     minimize(): void
@@ -293,6 +357,63 @@ export interface SingrayApi {
     close(): void
     isMaximized(): Promise<boolean>
     onMaximizedChange(cb: (maximized: boolean) => void): () => void
+    /** Open a URL in the system default browser (R3.SNG4). */
+    openExternal(url: string): void
   }
   onLibraryChanged(cb: () => void): () => void
 }
+
+/**
+ * Single source of truth for `ipcMain.handle`/`ipcRenderer.invoke` channel signatures
+ * (SPEC §8). Both `src/preload/index.ts` and `src/main/ipc.ts` type their wrappers against
+ * this map, so a channel/arg/result mismatch between the two ends is a compile error
+ * instead of a silent runtime one.
+ */
+// biome-ignore lint/suspicious/noConfusingVoidType: named alias for "no result", referenced (not redeclared) at each IpcMap entry below
+type NoResult = void
+
+export interface IpcMap {
+  'settings:get': { args: []; result: Settings }
+  'settings:set': { args: [patch: Partial<Settings>]; result: Settings }
+
+  'library:list': { args: []; result: SongListItem[] }
+  'library:delete': { args: [id: string]; result: NoResult }
+  'library:updateMeta': { args: [id: string, patch: Partial<SongMeta>]; result: SongMeta }
+  'library:openFolder': { args: [id: string]; result: NoResult }
+
+  'lyrics:get': { args: [id: string]; result: Lyrics | null }
+  'lyrics:save': { args: [id: string, lyrics: Lyrics]; result: NoResult }
+  'lyrics:align': { args: [id: string, text: string]; result: AlignToken[] }
+  'lyrics:findLyrics': { args: [query: LrclibQuery]; result: LrclibHit[] }
+
+  'llm:test': { args: []; result: LlmTestResult }
+  'llm:listModels': { args: [baseUrl: string, apiKey: string]; result: string[] }
+  'llm:enrichProbe': { args: [probe: ProbeResult]; result: EnrichResult }
+  'llm:cleanMeta': {
+    args: [input: { title: string; artist: string; youtubeTitle: string }]
+    result: EnrichResult
+  }
+  'llm:cleanLyrics': { args: [input: { text: string; language: string }]; result: string }
+
+  'import:probe': { args: [url: string]; result: ProbeResult }
+  'import:probeFile': { args: [path: string]; result: ProbeResult }
+  'import:pickFile': { args: []; result: string | null }
+  'import:search': { args: [query: string]; result: SearchResult[] }
+  'import:start': { args: [req: ImportRequest]; result: string }
+  'import:retry': { args: [id: string]; result: NoResult }
+
+  'pipeline:listModels': { args: [force?: boolean]; result: string[] }
+  'pipeline:status': { args: []; result: PipelineStatus }
+  'pipeline:install': { args: []; result: NoResult }
+  'pipeline:cancelInstall': { args: []; result: NoResult }
+
+  'window:minimize': { args: []; result: NoResult }
+  'window:toggleMaximize': { args: []; result: NoResult }
+  'window:close': { args: []; result: NoResult }
+  'window:isMaximized': { args: []; result: boolean }
+  'window:openExternal': { args: [url: string]; result: NoResult }
+
+  'recordings:save': { args: [songId: string, bytes: ArrayBuffer, ext: string]; result: string }
+}
+
+export type IpcChannel = keyof IpcMap

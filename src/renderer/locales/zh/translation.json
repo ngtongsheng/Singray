@@ -117,7 +117,9 @@
     "keyDownTip": "降调（[）",
     "keyUpTip": "升调（]）",
     "key": "调 {{value}}",
+    "keyLabel": "调",
     "tempo": "速度",
+    "tuneTip": "速度、调高与效果",
     "pinTip": "固定控制栏（始终显示）",
     "unpinTip": "取消固定（自动隐藏）",
     "stageVisualTip": "{{mode}} — 点击切换",
@@ -125,7 +127,26 @@
       "off": "舞台视觉：关",
       "waveform": "舞台视觉：波形",
       "bars": "舞台视觉：频谱"
-    }
+    },
+    "micVolTip": "麦克风音量",
+    "micMonitorOn": "监听开",
+    "micMonitorOff": "监听关",
+    "micMonitorTip": "在扬声器上静音/取消静音麦克风 — 录音仍会捕获麦克风",
+    "micLatencyHint": "软件监听可能有延迟 — 建议使用硬件监听（如 AG06）",
+    "micFxLabel": "效果",
+    "micFxAmountTip": "湿/干比例",
+    "micWarning": "麦克风：{{message}}",
+    "micPreset": {
+      "off": "效果关",
+      "room": "房间",
+      "hall": "大厅",
+      "echo": "回声",
+      "karaoke": "卡拉OK"
+    },
+    "record": "录制",
+    "recording": "录制中…",
+    "recordStartTip": "开始录制（伴奏 + 麦克风，不含导唱）",
+    "recordStopTip": "停止录制并保存"
   },
   "details": {
     "title": "歌曲详情",
@@ -133,9 +154,7 @@
     "added": "添加于",
     "sungCount": "演唱次数",
     "sungCount_value_other": "{{count}} 次",
-    "source": "来源",
-    "history": "演唱记录",
-    "noHistory": "尚未演唱"
+    "source": "来源"
   },
   "creator": {
     "subtitle": "{{artist}} · 歌词",
@@ -249,6 +268,7 @@
     "llmApiKey": "API 密钥（可选）",
     "llmTestTip": "发送一个小提示词，检查地址、模型和密钥",
     "llmOk": "{{secs}} 秒内回复“{{reply}}”",
+    "llmModelsError": "无法加载模型列表 — 请手动输入模型名称",
     "llmHelp": "用于元数据清理和歌词工具。兼容 Ollama（默认地址）或任何 OpenAI 兼容接口。",
     "audio": "音频路由",
     "outputMode": "输出模式",
@@ -262,6 +282,16 @@
     "test": "测试",
     "toneTipMonitor": "在监听设备上播放测试音",
     "toneTipStream": "在直播设备上播放测试音",
-    "deviceMissing": "保存的设备不存在 — 请重新选择（暂时回退到系统默认）。"
+    "recordingFormat": "录音格式",
+    "recordingFormatHelp": "卡拉OK录音的封装格式。webm 体积更小；wav 无压缩、通用性强。",
+    "recordingWebm": "WebM（默认）",
+    "recordingWav": "WAV（无压缩）",
+    "deviceMissing": "保存的设备不存在 — 请重新选择（暂时回退到系统默认）。",
+    "micInput": "麦克风输入",
+    "micDevice": "麦克风设备",
+    "micDeviceHelp": "用于自我监听和录音的麦克风。在此保存；在播放器中每首歌启用。",
+    "micEnable": "在播放器中启用麦克风",
+    "micEnableHelp": "开启后，打开歌曲时自动启动麦克风。关闭可跳过 getUserMedia 权限提示。",
+    "inputN": "输入 {{id}}"
   }
 }
