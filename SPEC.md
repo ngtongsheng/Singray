@@ -612,29 +612,32 @@ The AG06 user sets monitor-off and relies on hardware monitoring; the app still 
 
 ### 14.3 Routing model
 
-Mic goes to **both** legs: the monitor leg (hear yourself) and the stream leg (so the recording/"singing website" path carries your voice). Graph, extending §9.2:
+The **recording tap lives on the monitor context** so recording works in every mode (including the common no-mixer / earphone case). On the monitor context one FX chain fans out (`micFxOut`) to two legs: the **monitor leg** (toggle-gated → speakers) and the **record leg** (always on → record tap), so muting your own monitor never drops the mic from the recording. The **stream leg** is a separate dual-mode **broadcast feed** to a *distinct* stream device only. Graph, extending §9.2:
 
 ```
-            getUserMedia(MediaStream)          ← one stream, shared
-              │                 │
-   ctxMonitor │                 │ ctxStream (dual mode only)
-   srcMic(monitor)         srcMic(stream)      ← MediaStreamAudioSourceNode is per-context;
-     │                       │                   each context builds its own from the SAME stream
-   micFX(monitor)          micFX(stream)        ← FX graph duplicated per context (§14.4)
-     │                       │
-   gainMicMon ─→ destMon     gainMicStr ─→ destStr (→ record tap, §14.5)
+                 getUserMedia(MediaStream)                ← one stream, shared
+                  │                          │
+   ctxMonitor     │                          │ ctxStream (dual mode, distinct stream device only)
+   srcMic(monitor)                       srcMic(stream)   ← MediaStreamAudioSourceNode is per-context;
+     │                                      │               each builds its own from the SAME stream
+   micFX(monitor) → micFxOut             micFX(stream)     ← FX graph duplicated per context (§14.4)
+       │        │                            │
+   gainMicMon  gainMicRec                  gainMicStr ─→ destStr   (broadcast feed)
+       │          │
+     destMon    record tap (§14.5, with gainInstr; no guide vocal)
 ```
 
 - A `MediaStreamAudioSourceNode` cannot be shared across contexts → build one **per context** off the single `MediaStream`. FX nodes likewise duplicate per context.
 - **Mic bypasses the SoundTouch worklets entirely** — it is live voice; pitch/tempo shifting it is neither wanted nor feasible in real time. Key/tempo changes never touch the mic graph.
 - The mic graph is **independent of the song sources**: it builds when mic is enabled and persists across play/pause/seek/tempo rebuilds (which only tear down `srcInstr`/`srcVocal`). It tears down when mic is disabled (and the `getUserMedia` track is stopped to release the device + mic indicator).
-- Drift: the stream leg already runs the §9.3 resync watchdog. Mic on the stream leg inherits any blip on resync — inaudible on a recording, acceptable.
+- **Dual mode requires a distinct, real stream device** (`streamDeviceId` non-empty and ≠ `monitorDeviceId`). Empty (= system default) or same-as-monitor would dump the mic onto the listener's own output with no way to silence it via the monitor toggle — so `load()` degrades that case to single mode (recording still works via the monitor-context tap; `routingWarning` set).
+- Drift: the stream broadcast leg already runs the §9.3 resync watchdog. Recording is taken from the monitor (master) context, so it is unaffected by stream resync blips.
 
 ### 14.4 Monitor toggle, single mode, volume, FX
 
-**Monitor toggle** mutes only the **monitor leg** (`gainMicMon → 0`, ramped). In dual mode the **stream leg keeps the mic**, so a recording still captures the voice while the singer monitors via hardware. In **single mode there is no stream context**, so monitor-off mutes the mic entirely — mic is only practically useful in dual mode; this is accepted, not worked around.
+**Monitor toggle** mutes only the **monitor leg** (`gainMicMon → 0`, ramped) — what *you* hear. The **record leg (`gainMicRec`) and broadcast leg (`gainMicStr`) are untouched**, so a recording always captures your voice even when you monitor via hardware (AG06 case) with the software monitor off. This holds in **single mode too** (record leg lives on the monitor context), so toggling monitor off never silences the recording — and, because there is no audible stream leg, monitor-off genuinely silences the mic on your speakers (no leak).
 
-**Volume:** mic gain on both legs, ramped click-free (reuse the §9 `RAMP` pattern). Monitor and stream mic gains move together off one control (the monitor toggle is a separate mute on the monitor leg only).
+**Volume:** mic gain on all legs, ramped click-free (reuse the §9 `RAMP` pattern). The monitor, record, and broadcast mic gains move together off one volume control; the monitor toggle is a separate mute on the monitor leg only.
 
 **FX presets** (one set, applied to the mic path, duplicated per context so monitor and recording get identical FX):
 
@@ -652,9 +655,9 @@ Mic goes to **both** legs: the monitor leg (hear yourself) and the stream leg (s
 
 ### 14.5 Recording
 
-**Source = the stream bus** (instrumental + mic + FX, **guide vocal excluded by construction** — the stream leg never carries the guide vocal, §9.1). That is exactly a clean karaoke take. **Dual-mode only** (the stream bus only exists in dual mode); the record button is **hidden in single mode**.
+**Source = the monitor bus** (`gainInstr` instrumental + `gainMicRec` mic record leg + FX, **guide vocal excluded by construction** — `gainVocal` is never tapped). That is exactly a clean karaoke take. **Works in every mode** (the tap lives on the monitor context), so the record button is **shown in single mode too** — the common no-mixer / earphone user can record.
 
-- Tap: a `MediaStreamAudioDestinationNode` on `ctxStream` fed by the stream mix (instrumental gain + mic gain) → `MediaRecorder` → `Blob`.
+- Tap: a `MediaStreamAudioDestinationNode` on `ctxMonitor` fed by `gainInstr` + `gainMicRec` (not `gainVocal`, not the toggle-gated `gainMicMon`) → `MediaRecorder` → `Blob`. It is not wired to any speaker, so it never leaks audio.
 - Save: Blob → IPC → song folder `recordings/<ISO-timestamp>.<recordingFormat>`.
 - **Format** configurable in Settings (`recordingFormat`, default `webm`): `webm` = `MediaRecorder` native (audio/webm; opus), zero encode; `wav` = decode + PCM-encode in the renderer. (mp3/m4a via bundled ffmpeg is a later option — Unscheduled.)
 - State: explicit recording indicator in the player bar; stopping or exiting mid-record flushes/saves the partial file (guard against silent loss).

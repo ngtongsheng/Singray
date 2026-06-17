@@ -133,7 +133,7 @@
     "micVolTip": "Mic volume",
     "micMonitorOn": "Monitor on",
     "micMonitorOff": "Monitor off",
-    "micMonitorTip": "Mute/unmute mic on monitor output (stream/record leg unaffected in dual mode)",
+    "micMonitorTip": "Mute/unmute mic on your speakers — recording still captures the mic",
     "micLatencyHint": "Software monitor may lag — prefer hardware monitoring (e.g. AG06)",
     "micFxLabel": "FX",
     "micFxAmountTip": "Wet/dry amount",
