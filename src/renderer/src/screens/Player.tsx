@@ -20,9 +20,9 @@ import {
   Volume2
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Lyrics, SongListItem } from '../../../shared/types'
+import type { SongListItem } from '../../../shared/types'
 import ArtistLink from '../components/ArtistLink'
 import EditMetaDialog from '../components/EditMetaDialog'
 import LyricRenderer from '../components/LyricRenderer'
@@ -43,9 +43,11 @@ import {
   Text,
   Toggle
 } from '../components/ui'
+import { type MicBootstrapState, useAudioEngine } from '../hooks/useAudioEngine'
+import { useAutoHideBar } from '../hooks/useAutoHideBar'
+import { usePlaybackClock } from '../hooks/usePlaybackClock'
 import { useSettings } from '../hooks/useSettings'
 import type { MicFxPreset } from '../lib/audioEngine'
-import { AudioEngine, encodeRecordingAsWav } from '../lib/audioEngine'
 
 interface Props {
   song: SongListItem
@@ -54,7 +56,6 @@ interface Props {
   onArtistClick: (artist: string) => void
 }
 
-const HIDE_AFTER_MS = 3000
 const TEMPO_PRESETS = [0.75, 0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.25]
 
 function fmt(s: number): string {
@@ -68,18 +69,12 @@ function fmt(s: number): string {
  */
 function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX.Element {
   const { t } = useTranslation()
-  const [engine, setEngine] = useState<AudioEngine | null>(null)
-  const [lyrics, setLyrics] = useState<Lyrics | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [playing, setPlaying] = useState(false)
   const [vocalOn, setVocalOn] = useState(false)
   const [vocalVol, setVocalVol] = useState(1)
   const [instrVol, setInstrVol] = useState(1)
-  const [position, setPosition] = useState(0)
   const [keyVal, setKeyVal] = useState(0)
   const [tempoVal, setTempoVal] = useState(1)
   const [tempoOpen, setTempoOpen] = useState(false)
-  const [barVisible, setBarVisible] = useState(true)
   const [pinned, setPinned] = useState(true)
   const [editOpen, setEditOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -95,130 +90,35 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
   const [micFxAmount, setMicFxAmount] = useState(0.3)
   const [micWarning, setMicWarning] = useState<string | null>(null)
   const [recording, setRecording] = useState(false)
-  const hideTimer = useRef<number>(0)
   const { settings, patch } = useSettings()
-  const settingsReady = settings !== null
-  const settingsRef = useRef(settings)
-  settingsRef.current = settings
 
-  // R3.REC1: stream-bus take → optional WAV re-encode → IPC save under the
-  // song's recordings/ folder. Used both by the record button and by a
-  // mid-record exit flush (engine.onRecordingFlushed, see dispose()).
-  const saveRecording = useCallback(
-    async (blob: Blob) => {
-      const format = settingsRef.current?.recordingFormat ?? 'webm'
-      const finalBlob = format === 'wav' ? await encodeRecordingAsWav(blob) : blob
-      await window.singray.recordings.save(song.id, await finalBlob.arrayBuffer(), format)
-    },
-    [song.id]
-  )
+  const applyMicReady = useCallback((s: MicBootstrapState) => {
+    setMicActive(s.active)
+    setMicMonitor(s.monitor)
+    setMicVol(s.vol)
+    setMicFxPreset(s.fxPreset)
+    setMicFxAmount(s.fxAmount)
+    if (s.warning) setMicWarning(s.warning)
+  }, [])
 
-  // Build the engine once settings are available; reads the snapshot via a ref
-  // so toggling pin/stageVisual (which patches settings) never rebuilds it.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: settings read once from the ref snapshot
+  const { engine, lyrics, error, saveRecording } = useAudioEngine({
+    song,
+    settings,
+    onMicReady: applyMicReady
+  })
+
+  // Seed UI prefs from settings + reset per-song state each time we (re)load a song.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: settings read once per song, not on every patch
   useEffect(() => {
-    const s = settingsRef.current
-    if (!s) return
-    let disposed = false
-    let eng: AudioEngine | null = null
-    setPinned(s.playerBarPinned)
-    setShowWaveform(s.showWaveform)
-    setShowBars(s.showBars)
+    if (!settings) return
+    setPinned(settings.playerBarPinned)
+    setShowWaveform(settings.showWaveform)
+    setShowBars(settings.showBars)
     setRecording(false)
-    Promise.all([
-      AudioEngine.load(song.id, {
-        mode: s.audioOutputMode,
-        monitorDeviceId: s.monitorDeviceId,
-        streamDeviceId: s.streamDeviceId
-      }),
-      window.singray.lyrics.get(song.id)
-    ])
-      .then(([e, l]) => {
-        if (disposed) {
-          e.dispose()
-          return
-        }
-        eng = e
-        e.setVocal(false) // guide vocal off by default (R1.2)
-        e.onRecordingFlushed = (blob) => {
-          void saveRecording(blob)
-        }
-        setEngine(e)
-        setLyrics(l)
-        if (e.routingWarning) console.warn(e.routingWarning)
-        if (import.meta.env.DEV) {
-          ;(window as Window & { __playerEngine?: AudioEngine }).__playerEngine = e
-        }
-        // Enable mic if configured (MIC4)
-        const ms = settingsRef.current
-        if (ms?.micEnabled) {
-          const preset = (ms.micFxPreset ?? 'off') as MicFxPreset
-          const amount = ms.micFxAmount ?? 0.3
-          const monitor = ms.micMonitor ?? true
-          const vol = ms.micVolume ?? 1
-          e.setMicFx(preset, amount)
-          e.setMicMonitor(monitor)
-          e.setMicVolume(vol)
-          setMicMonitor(monitor)
-          setMicVol(vol)
-          setMicFxPreset(preset)
-          setMicFxAmount(amount)
-          void e.enableMic(ms.micDeviceId || undefined).then(() => {
-            if (!disposed) {
-              setMicActive(e.micEnabled)
-              if (e.micWarning) setMicWarning(e.micWarning)
-            }
-          })
-        }
-      })
-      .catch((err: unknown) => {
-        if (!disposed) setError(err instanceof Error ? err.message : String(err))
-      })
-    return () => {
-      disposed = true
-      eng?.dispose()
-    }
-  }, [song.id, settingsReady])
+  }, [song.id, settings !== null])
 
-  // Coarse UI clock for the seek bar / timecode (the lyric wipe runs its own full-rate rAF).
-  // Also hosts the sing gate (R1.5): ≥60% accumulated playback → one timestamp per session.
-  const singLogged = useRef(false)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: song fields read from the entry snapshot
-  useEffect(() => {
-    if (!engine) return
-    singLogged.current = false
-    let raf = 0
-    const loop = (): void => {
-      const next = Math.round(engine.position * 4) / 4
-      setPosition((prev) => (prev === next ? prev : next))
-      setPlaying((prev) => (prev === engine.playing ? prev : engine.playing))
-      if (!singLogged.current && engine.playedSeconds >= 0.6 * engine.duration) {
-        singLogged.current = true
-        window.singray.library.updateMeta(song.id, {
-          sings: [...(song.sings ?? []), new Date().toISOString()]
-        })
-      }
-      raf = requestAnimationFrame(loop)
-    }
-    raf = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(raf)
-  }, [engine])
-
-  // Pinned: bar always visible. Unpinned: any activity shows it and re-arms the 3s timer (§10.6).
-  const poke = useCallback(() => {
-    setBarVisible(true)
-    window.clearTimeout(hideTimer.current)
-    if (!pinned) hideTimer.current = window.setTimeout(() => setBarVisible(false), HIDE_AFTER_MS)
-  }, [pinned])
-
-  useEffect(() => {
-    poke()
-    window.addEventListener('mousemove', poke)
-    return () => {
-      window.removeEventListener('mousemove', poke)
-      window.clearTimeout(hideTimer.current)
-    }
-  }, [poke])
+  const { position, playing } = usePlaybackClock(engine, song)
+  const { barVisible, poke } = useAutoHideBar(pinned)
 
   const togglePin = useCallback(() => {
     setPinned((p) => {
