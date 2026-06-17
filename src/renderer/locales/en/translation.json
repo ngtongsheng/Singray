@@ -288,7 +288,7 @@
     "toneTipStream": "Play a test tone on the stream device",
     "deviceMissing": "Saved device not found — pick again (falls back to system default).",
     "recordingFormat": "Recording format",
-    "recordingFormatHelp": "Container for recorded karaoke sessions (R3.REC1). webm = smaller; wav = uncompressed, universal.",
+    "recordingFormatHelp": "Container for recorded karaoke sessions. webm = smaller; wav = uncompressed, universal.",
     "recordingWebm": "WebM (default)",
     "recordingWav": "WAV (uncompressed)",
     "micInput": "Mic input",
