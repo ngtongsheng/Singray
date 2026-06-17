@@ -38,9 +38,9 @@ import {
   Menu,
   MenuItem,
   Popover,
-  Segmented,
   Slider,
   Stack,
+  StatusStrip,
   Text,
   Toggle
 } from '../components/ui'
@@ -426,9 +426,6 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
               gap={2}
               className="bg-gradient-to-t from-black/80 to-transparent px-6 pt-12 pb-5"
             >
-              {micActive && micMonitor && (
-                <p className="text-xs text-text-dim">{t('player.micLatencyHint')}</p>
-              )}
               {micWarning && (
                 <p className="text-xs text-danger">
                   {t('player.micWarning', { message: micWarning })}
@@ -463,7 +460,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                       engine.setInstrumentalVolume(v)
                     }}
                     title={t('player.instrVolTip')}
-                    className="h-11 w-16"
+                    className="h-11 w-12"
                   />
                 </span>
 
@@ -498,7 +495,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                       engine.setVocalVolume(v)
                     }}
                     title={t('player.guideVolTip')}
-                    className="h-8 w-14"
+                    className="h-8 w-12"
                   />
                 </Stack>
 
@@ -534,7 +531,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                         engine?.setMicVolume(v)
                       }}
                       title={t('player.micVolTip')}
-                      className="h-8 w-14"
+                      className="h-8 w-12"
                     />
                   </Stack>
                 )}
@@ -568,7 +565,8 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                         </Text>
                         <Stack
                           gap={1}
-                          className={`h-11 w-fit rounded-control border px-2 ${
+                          justify="between"
+                          className={`h-11 w-full rounded-control border px-2 ${
                             keyVal !== 0
                               ? 'border-accent text-accent'
                               : 'border-border text-text-dim'
@@ -583,7 +581,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                           >
                             <Minus className="size-4" strokeWidth={1.5} />
                           </IconButton>
-                          <span className="w-14 whitespace-nowrap text-center text-sm tabular-nums">
+                          <span className="whitespace-nowrap text-center text-sm tabular-nums">
                             {t('player.key', { value: keyVal > 0 ? `+${keyVal}` : keyVal })}
                           </span>
                           <IconButton
@@ -632,22 +630,37 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                         <>
                           <div className="h-px bg-border" />
                           <Stack direction="column" gap={2}>
-                            <Text as="span" variant="hint">
-                              {t('player.micFxLabel')}
-                            </Text>
-                            <Segmented
-                              value={micFxPreset}
-                              onChange={(p) => {
-                                setMicFxPreset(p)
-                                engine?.setMicFx(p, micFxAmount)
-                              }}
-                              options={(
-                                ['off', 'room', 'hall', 'echo', 'karaoke'] as MicFxPreset[]
-                              ).map((p) => ({
-                                value: p,
-                                label: t(`player.micPreset.${p}`)
-                              }))}
-                            />
+                            <Stack justify="between">
+                              <Text as="span" variant="hint">
+                                {t('player.micFxLabel')}
+                              </Text>
+                              <Button
+                                size="bare"
+                                onClick={() => {
+                                  setMicFxPreset('off')
+                                  engine?.setMicFx('off', micFxAmount)
+                                }}
+                                className="px-2 py-0.5 text-text-dim text-xs hover:text-text"
+                              >
+                                {t('common.reset')}
+                              </Button>
+                            </Stack>
+                            <Grid cols={4} gap={1}>
+                              {(['room', 'hall', 'echo', 'karaoke'] as MicFxPreset[]).map((p) => (
+                                <Toggle
+                                  key={p}
+                                  size="bare"
+                                  pressed={micFxPreset === p}
+                                  onClick={() => {
+                                    setMicFxPreset(p)
+                                    engine?.setMicFx(p, micFxAmount)
+                                  }}
+                                  className="px-2 py-1.5 text-sm"
+                                >
+                                  {t(`player.micPreset.${p}`)}
+                                </Toggle>
+                              ))}
+                            </Grid>
                             {micFxPreset !== 'off' && (
                               <Slider
                                 min={0}
@@ -682,7 +695,6 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                     className="tabular-nums"
                   >
                     <SlidersHorizontal className="size-4" strokeWidth={1.5} />
-                    {tempoVal.toFixed(2)}×
                   </Button>
                 </div>
 
@@ -700,6 +712,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                 </Toggle>
               </Stack>
             </Stack>
+            {micActive && micMonitor && <StatusStrip>{t('player.micLatencyHint')}</StatusStrip>}
           </motion.div>
         )}
       </div>

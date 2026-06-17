@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { Lyrics } from '../../../shared/types'
 import { useTapTimingCursor } from '../hooks/useTapTimingCursor'
 import ReviewPane from './ReviewPane'
-import { Button, IconButton, Slider, Stack } from './ui'
+import { Button, IconButton, Slider, Stack, StatusStrip } from './ui'
 import WaveformStrip from './WaveformStrip'
 
 interface Props {
@@ -170,25 +170,18 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
           </Stack>
         </>
       )}
-      {/* Progress strip (below shortcuts; height-matched, text bottom-aligned) */}{' '}
-      <div className="relative h-8 border-border border-t bg-surface px-6">
-        <div
-          className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300" // design-allow: width isn't in Tailwind's transition-property presets
-          style={{ width: `${progressPct}%` }}
-        />
-        <Stack gap={2} align="center" className="h-full text-xs">
-          {done ? (
-            <span className="font-medium text-success">{t('timing.done')}</span>
-          ) : (
-            <>
-              <span className="text-text-dim">
-                {stamps.length}/{flatUnits.length}
-              </span>
-              <span className="font-medium text-accent">{progressPct}%</span>
-            </>
-          )}
-        </Stack>
-      </div>
+      <StatusStrip progress={progressPct / 100} className="h-8">
+        {done ? (
+          <span className="font-medium text-success">{t('timing.done')}</span>
+        ) : (
+          <>
+            <span className="text-text-dim">
+              {stamps.length}/{flatUnits.length}
+            </span>
+            <span className="font-medium text-accent">{progressPct}%</span>
+          </>
+        )}
+      </StatusStrip>
       {/* Keyboard shortcuts (permanent — no dismiss button) */}
       <Stack className="border-border border-t bg-surface px-6 py-2 text-text-dim text-xs">
         <Stack gap={5}>

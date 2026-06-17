@@ -34,6 +34,7 @@ import {
   Segmented,
   Select,
   Stack,
+  StatusStrip,
   Text
 } from '../components/ui'
 import { useImports } from '../hooks/useImports'
@@ -353,23 +354,17 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
           const { job, title, moreCount } = importStrip
           const stripKey = STRIP_KEY[job.stage]
           return (
-            <div className="absolute inset-x-0 bottom-0 z-20 border-border border-t bg-surface px-6 py-1.5">
-              <Stack gap={2} className="text-xs">
+            <StatusStrip pinned progress={job.progress}>
+              <span className="text-text-dim">
+                {stripKey ? t(stripKey) : job.stage} · {title}
+              </span>
+              <span className="font-medium text-accent">{Math.round(job.progress * 100)}%</span>
+              {moreCount > 0 && (
                 <span className="text-text-dim">
-                  {stripKey ? t(stripKey) : job.stage} · {title}
+                  {t('library.moreQueued', { count: moreCount })}
                 </span>
-                <span className="font-medium text-accent">{Math.round(job.progress * 100)}%</span>
-                {moreCount > 0 && (
-                  <span className="text-text-dim">
-                    {t('library.moreQueued', { count: moreCount })}
-                  </span>
-                )}
-              </Stack>
-              <div
-                className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300" // design-allow: width isn't in Tailwind's transition-property presets
-                style={{ width: `${job.progress * 100}%` }}
-              />
-            </div>
+              )}
+            </StatusStrip>
           )
         })()}
 
