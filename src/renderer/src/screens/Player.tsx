@@ -513,6 +513,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                         const next = !micMonitor
                         setMicMonitor(next)
                         engine?.setMicMonitor(next)
+                        void patch({ micMonitor: next })
                       }}
                       title={t('player.micMonitorTip')}
                       className="shrink-0 whitespace-nowrap"
@@ -529,6 +530,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                         const v = Number(e.target.value)
                         setMicVol(v)
                         engine?.setMicVolume(v)
+                        void patch({ micVolume: v })
                       }}
                       title={t('player.micVolTip')}
                       className="h-8 w-12"
@@ -639,6 +641,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                                 onClick={() => {
                                   setMicFxPreset('off')
                                   engine?.setMicFx('off', micFxAmount)
+                                  void patch({ micFxPreset: 'off' })
                                 }}
                                 className="px-2 py-0.5 text-text-dim text-xs hover:text-text"
                               >
@@ -654,6 +657,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                                   onClick={() => {
                                     setMicFxPreset(p)
                                     engine?.setMicFx(p, micFxAmount)
+                                    void patch({ micFxPreset: p })
                                   }}
                                   className="px-2 py-1.5 text-sm"
                                 >
@@ -671,6 +675,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                                   const v = Number(e.target.value)
                                   setMicFxAmount(v)
                                   engine?.setMicFx(micFxPreset, v)
+                                  void patch({ micFxAmount: v })
                                 }}
                                 title={t('player.micFxAmountTip')}
                                 className="h-8 w-full"
