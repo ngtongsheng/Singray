@@ -11,7 +11,6 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Settings as SettingsModel } from '../../../shared/types'
 import PipelineInstaller from '../components/PipelineInstaller'
 import Titlebar from '../components/Titlebar'
 import {
@@ -389,7 +388,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
               <Field label={t('settings.stemFormat')} hint={t('settings.stemFormatHelp')}>
                 <Select
                   value={settings.stemFormat}
-                  onChange={(v) => patch({ stemFormat: v as SettingsModel['stemFormat'] })}
+                  onChange={(v) => patch({ stemFormat: v })}
                   options={[
                     { value: 'flac', label: t('settings.stemFlac') },
                     { value: 'm4a', label: t('settings.stemM4a') }
@@ -478,9 +477,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
               <Field label={t('settings.outputMode')} hint={t('settings.modeHelp')}>
                 <Select
                   value={settings.audioOutputMode}
-                  onChange={(v) =>
-                    patch({ audioOutputMode: v as SettingsModel['audioOutputMode'] })
-                  }
+                  onChange={(v) => patch({ audioOutputMode: v })}
                   options={[
                     { value: 'single', label: t('settings.modeSingle') },
                     { value: 'dual', label: t('settings.modeDual') }
@@ -548,9 +545,7 @@ function Settings({ onBack }: Props): React.JSX.Element {
               <Field label={t('settings.recordingFormat')} hint={t('settings.recordingFormatHelp')}>
                 <Select
                   value={settings.recordingFormat}
-                  onChange={(v) =>
-                    patch({ recordingFormat: v as SettingsModel['recordingFormat'] })
-                  }
+                  onChange={(v) => patch({ recordingFormat: v })}
                   options={[
                     { value: 'webm', label: t('settings.recordingWebm') },
                     { value: 'wav', label: t('settings.recordingWav') }

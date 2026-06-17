@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import type { Settings } from '../../../shared/types'
+import { setSink } from '../lib/sinkable'
 
 /** Play a short sine tone on a specific output device ('' = system default). */
 async function playTestTone(deviceId: string, freq: number): Promise<void> {
   const ctx = new AudioContext()
   try {
-    if (deviceId) {
-      await (ctx as AudioContext & { setSinkId(id: string): Promise<void> }).setSinkId(deviceId)
-    }
+    await setSink(ctx, deviceId)
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
     osc.frequency.value = freq

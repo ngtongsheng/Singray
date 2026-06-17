@@ -128,7 +128,7 @@ export default function PipelineInstaller({ onReady }: Props): React.JSX.Element
                 <span className={st ? 'text-text' : 'text-text-dim/60'}>
                   {t(`settings.setup.${STEP_KEY[step]}`)}
                 </span>
-                {ev?.pct !== undefined && (
+                {ev?.status === 'progress' && ev.pct !== undefined && (
                   <span className="text-text-dim tabular-nums">{Math.round(ev.pct * 100)}%</span>
                 )}
               </li>

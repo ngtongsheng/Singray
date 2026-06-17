@@ -3,7 +3,15 @@ import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { BrowserWindow } from 'electron'
-import type { ImportProgress, ImportRequest, ImportStage, SongMeta } from '../shared/types'
+import {
+  type ImportProgress,
+  type ImportRequest,
+  type ImportStage,
+  isImportPipelineLine,
+  type JobId,
+  type SongId,
+  type SongMeta
+} from '../shared/types'
 import { notifyLibraryChanged } from './library'
 import { pipelineScript } from './pipeline'
 import { effectivePythonPath, pipelineSpawnOptions } from './pipelineEnv'
@@ -11,8 +19,8 @@ import { getSettings } from './settings'
 import { lastStderrLine, spawnLines } from './spawnLines'
 
 interface Job {
-  jobId: string
-  songId: string
+  jobId: JobId
+  songId: SongId
   /** YouTube URL for a download import; empty when importing a local file. */
   url: string
   /** Local media path for a "From file" import (R3.7); null for URL imports. */
@@ -29,17 +37,21 @@ function broadcast(progress: ImportProgress): void {
   }
 }
 
-function sendProgress(job: Job, stage: ImportStage, progress: number, message?: string): void {
-  broadcast({ jobId: job.jobId, songId: job.songId, stage, progress, message })
+function sendProgress(job: Job, stage: Exclude<ImportStage, 'error'>, progress: number): void {
+  broadcast({ jobId: job.jobId, songId: job.songId, stage, progress })
 }
 
-function generateSongId(): string {
+function sendError(job: Job, message: string): void {
+  broadcast({ jobId: job.jobId, songId: job.songId, stage: 'error', progress: 0, message })
+}
+
+function generateSongId(): SongId {
   const now = new Date()
   const pad = (n: number): string => String(n).padStart(2, '0')
   const date = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`
   const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
   const rand = randomUUID().slice(0, 4)
-  return `${date}-${time}-${rand}`
+  return `${date}-${time}-${rand}` as SongId
 }
 
 function songDir(songId: string): string {
@@ -48,7 +60,7 @@ function songDir(songId: string): string {
 
 export async function startImport(req: ImportRequest): Promise<string> {
   const songId = generateSongId()
-  const jobId = randomUUID()
+  const jobId = randomUUID() as JobId
 
   const meta: SongMeta = {
     schemaVersion: 1,
@@ -78,10 +90,16 @@ export async function startImport(req: ImportRequest): Promise<string> {
 }
 
 export async function retryImport(songId: string): Promise<void> {
-  const dir = songDir(songId)
+  const id = songId as SongId
+  const dir = songDir(id)
   const meta = JSON.parse(await readFile(join(dir, 'meta.json'), 'utf-8')) as SongMeta
   await rm(join(dir, 'error.json'), { force: true })
-  enqueue({ jobId: randomUUID(), songId, url: meta.youtubeUrl, filePath: meta.sourceFile ?? null })
+  enqueue({
+    jobId: randomUUID() as JobId,
+    songId: id,
+    url: meta.youtubeUrl,
+    filePath: meta.sourceFile ?? null
+  })
   notifyLibraryChanged()
 }
 
@@ -114,7 +132,7 @@ async function failJob(job: Job, dir: string, message: string): Promise<void> {
     JSON.stringify({ message, at: new Date().toISOString() }, null, 2),
     'utf-8'
   ).catch(() => {})
-  sendProgress(job, 'error', 0, message)
+  sendError(job, message)
   notifyLibraryChanged()
 }
 
@@ -150,23 +168,19 @@ function run(job: Job): void {
         activeProc = p
       },
       onLine: (line) => {
-        let msg: {
-          stage: string
-          progress?: number
-          message?: string
-          durationSec?: number
-        }
+        let parsed: unknown
         try {
-          msg = JSON.parse(line)
+          parsed = JSON.parse(line)
         } catch {
           return // non-JSON noise, ignore
         }
-        if (msg.stage === 'done') {
-          void finalizeDone(job, msg.durationSec ?? 0)
-        } else if (msg.stage === 'error') {
-          lastError = msg.message ?? 'import failed'
+        if (!isImportPipelineLine(parsed)) return
+        if (parsed.stage === 'done') {
+          void finalizeDone(job, parsed.durationSec ?? 0)
+        } else if (parsed.stage === 'error') {
+          lastError = parsed.message
         } else {
-          sendProgress(job, msg.stage as ImportStage, msg.progress ?? 0)
+          sendProgress(job, parsed.stage, parsed.progress)
         }
       }
     }

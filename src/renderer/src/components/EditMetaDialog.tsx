@@ -102,7 +102,7 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
             <Field label={t('common.language')}>
               <Select
                 value={language}
-                onChange={(v) => setLanguage(v as Language)}
+                onChange={setLanguage}
                 options={options.map((l) => ({ value: l.code, label: l.label }))}
               />
             </Field>

@@ -1,6 +1,6 @@
 import { AlertTriangle, Heart, Loader2, MoreHorizontal, RotateCcw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { ImportProgress, SongListItem } from '../../../shared/types'
+import type { ImportProgress, ImportStage, SongListItem } from '../../../shared/types'
 import { useSongCardActions } from '../hooks/useSongCardActions'
 import ArtistLink from './ArtistLink'
 import SongCardMenu from './SongCardMenu'
@@ -14,7 +14,7 @@ interface Props {
   onArtistClick: (artist: string) => void
 }
 
-const STAGE_KEY: Record<string, string> = {
+const STAGE_KEY: Partial<Record<ImportStage, string>> = {
   queued: 'stage.queued',
   download: 'stage.download',
   separate: 'stage.separate',
@@ -27,10 +27,11 @@ function StatusBadge({
 }: Pick<Props, 'song' | 'importing'>): React.JSX.Element | null {
   const { t } = useTranslation()
   if (importing) {
+    const stageKey = STAGE_KEY[importing.stage]
     return (
       <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-control bg-black/60 px-2 py-0.5 text-text text-xs">
         <Loader2 className="size-3 animate-spin" />
-        {STAGE_KEY[importing.stage] ? t(STAGE_KEY[importing.stage] as string) : importing.stage}
+        {stageKey ? t(stageKey) : importing.stage}
         {importing.stage !== 'queued' && ` ${Math.round(importing.progress * 100)}%`}
       </span>
     )

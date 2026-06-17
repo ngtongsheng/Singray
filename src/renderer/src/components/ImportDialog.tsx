@@ -1,12 +1,7 @@
 import { FolderOpen, Loader2, Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  type Language,
-  type LanguageDef,
-  MEDIA_EXTENSIONS,
-  type SearchResult
-} from '../../../shared/types'
+import { type LanguageDef, MEDIA_EXTENSIONS, type SearchResult } from '../../../shared/types'
 import { useAsync } from '../hooks/useAsync'
 import { useMediaProbe } from '../hooks/useMediaProbe'
 import { stripIpcError } from '../lib/stripIpcError'
@@ -265,7 +260,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                 <Field label={t('common.language')}>
                   <Select
                     value={probe.language}
-                    onChange={(v) => probe.setLanguage(v as Language)}
+                    onChange={probe.setLanguage}
                     options={[
                       ...languages.map((l) => ({ value: l.code, label: l.label })),
                       ...(languages.some((l) => l.code === 'unknown')

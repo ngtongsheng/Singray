@@ -1,47 +1,34 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type {
-  AlignToken,
-  AudioTrack,
-  EnrichResult,
-  ImportProgress,
-  ImportRequest,
-  InstallEvent,
-  LlmTestResult,
-  LrclibHit,
-  LrclibQuery,
-  Lyrics,
-  PipelineStatus,
-  ProbeResult,
-  SearchResult,
-  Settings,
-  SingrayApi,
-  SongListItem,
-  SongMeta
-} from '../shared/types'
+import type { ImportProgress, InstallEvent, IpcChannel, IpcMap, SingrayApi } from '../shared/types'
+
+function invoke<C extends IpcChannel>(
+  channel: C,
+  ...args: IpcMap[C]['args']
+): Promise<IpcMap[C]['result']> {
+  return ipcRenderer.invoke(channel, ...args)
+}
 
 const api: SingrayApi = {
   library: {
-    list: () => ipcRenderer.invoke('library:list') as Promise<SongListItem[]>,
-    delete: (id) => ipcRenderer.invoke('library:delete', id) as Promise<void>,
-    updateMeta: (id, patch) =>
-      ipcRenderer.invoke('library:updateMeta', id, patch) as Promise<SongMeta>,
-    openFolder: (id) => ipcRenderer.invoke('library:openFolder', id) as Promise<void>
+    list: () => invoke('library:list'),
+    delete: (id) => invoke('library:delete', id),
+    updateMeta: (id, patch) => invoke('library:updateMeta', id, patch),
+    openFolder: (id) => invoke('library:openFolder', id)
   },
   lyrics: {
-    get: (id) => ipcRenderer.invoke('lyrics:get', id) as Promise<Lyrics | null>,
-    save: (id, lyrics) => ipcRenderer.invoke('lyrics:save', id, lyrics) as Promise<void>,
-    align: (id, text) => ipcRenderer.invoke('lyrics:align', id, text) as Promise<AlignToken[]>,
-    findLyrics: (query: LrclibQuery) =>
-      ipcRenderer.invoke('lyrics:findLyrics', query) as Promise<LrclibHit[]>
+    get: (id) => invoke('lyrics:get', id),
+    save: (id, lyrics) => invoke('lyrics:save', id, lyrics),
+    align: (id, text) => invoke('lyrics:align', id, text),
+    findLyrics: (query) => invoke('lyrics:findLyrics', query)
   },
   import: {
-    probe: (url) => ipcRenderer.invoke('import:probe', url) as Promise<ProbeResult>,
-    probeFile: (path) => ipcRenderer.invoke('import:probeFile', path) as Promise<ProbeResult>,
-    pickFile: () => ipcRenderer.invoke('import:pickFile') as Promise<string | null>,
+    probe: (url) => invoke('import:probe', url),
+    probeFile: (path) => invoke('import:probeFile', path),
+    pickFile: () => invoke('import:pickFile'),
     getPathForFile: (file) => webUtils.getPathForFile(file),
-    search: (query) => ipcRenderer.invoke('import:search', query) as Promise<SearchResult[]>,
-    start: (req: ImportRequest) => ipcRenderer.invoke('import:start', req) as Promise<string>,
-    retry: (id) => ipcRenderer.invoke('import:retry', id) as Promise<void>,
+    search: (query) => invoke('import:search', query),
+    start: (req) => invoke('import:start', req),
+    retry: (id) => invoke('import:retry', id),
     onProgress: (cb) => {
       const listener = (_e: unknown, p: ImportProgress): void => cb(p)
       ipcRenderer.on('import:progress', listener)
@@ -49,43 +36,41 @@ const api: SingrayApi = {
     }
   },
   settings: {
-    get: () => ipcRenderer.invoke('settings:get') as Promise<Settings>,
-    set: (patch) => ipcRenderer.invoke('settings:set', patch) as Promise<Settings>
+    get: () => invoke('settings:get'),
+    set: (patch) => invoke('settings:set', patch)
   },
   pipeline: {
-    status: () => ipcRenderer.invoke('pipeline:status') as Promise<PipelineStatus>,
-    install: () => ipcRenderer.invoke('pipeline:install') as Promise<void>,
-    cancelInstall: () => ipcRenderer.invoke('pipeline:cancelInstall') as Promise<void>,
+    status: () => invoke('pipeline:status'),
+    install: () => invoke('pipeline:install'),
+    cancelInstall: () => invoke('pipeline:cancelInstall'),
     onInstallProgress: (cb) => {
       const listener = (_e: unknown, ev: InstallEvent): void => cb(ev)
       ipcRenderer.on('pipeline:install:progress', listener)
       return () => ipcRenderer.removeListener('pipeline:install:progress', listener)
     },
-    listModels: (force) => ipcRenderer.invoke('pipeline:listModels', force) as Promise<string[]>
+    listModels: (force) => invoke('pipeline:listModels', force)
   },
   llm: {
-    test: () => ipcRenderer.invoke('llm:test') as Promise<LlmTestResult>,
-    listModels: (baseUrl: string, apiKey: string) =>
-      ipcRenderer.invoke('llm:listModels', baseUrl, apiKey) as Promise<string[]>,
-    enrichProbe: (probe) => ipcRenderer.invoke('llm:enrichProbe', probe) as Promise<EnrichResult>,
-    cleanMeta: (input) => ipcRenderer.invoke('llm:cleanMeta', input) as Promise<EnrichResult>,
-    cleanLyrics: (input) => ipcRenderer.invoke('llm:cleanLyrics', input) as Promise<string>
+    test: () => invoke('llm:test'),
+    listModels: (baseUrl, apiKey) => invoke('llm:listModels', baseUrl, apiKey),
+    enrichProbe: (probe) => invoke('llm:enrichProbe', probe),
+    cleanMeta: (input) => invoke('llm:cleanMeta', input),
+    cleanLyrics: (input) => invoke('llm:cleanLyrics', input)
   },
   audio: {
     // Extensionless: the protocol handler resolves to flac or m4a per song (R3.8).
-    url: (id: string, track: AudioTrack) => `karaoke://${id}/${track}`,
-    thumbUrl: (id: string) => `karaoke://${id}/thumb.jpg`
+    url: (id, track) => `karaoke://${id}/${track}`,
+    thumbUrl: (id) => `karaoke://${id}/thumb.jpg`
   },
   recordings: {
-    save: (songId: string, bytes: ArrayBuffer, ext: string) =>
-      ipcRenderer.invoke('recordings:save', songId, bytes, ext) as Promise<string>
+    save: (songId, bytes, ext) => invoke('recordings:save', songId, bytes, ext)
   },
   window: {
-    minimize: () => ipcRenderer.invoke('window:minimize') as Promise<void>,
-    toggleMaximize: () => ipcRenderer.invoke('window:toggleMaximize') as Promise<void>,
-    close: () => ipcRenderer.invoke('window:close') as Promise<void>,
-    isMaximized: () => ipcRenderer.invoke('window:isMaximized') as Promise<boolean>,
-    openExternal: (url) => ipcRenderer.invoke('window:openExternal', url) as Promise<void>,
+    minimize: () => invoke('window:minimize'),
+    toggleMaximize: () => invoke('window:toggleMaximize'),
+    close: () => invoke('window:close'),
+    isMaximized: () => invoke('window:isMaximized'),
+    openExternal: (url) => invoke('window:openExternal', url),
     onMaximizedChange: (cb) => {
       const listener = (_e: unknown, maximized: boolean): void => cb(maximized)
       ipcRenderer.on('window:maximized-changed', listener)

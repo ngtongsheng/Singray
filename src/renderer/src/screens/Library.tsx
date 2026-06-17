@@ -12,7 +12,13 @@ import {
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Language, LanguageDef, Settings, SongListItem } from '../../../shared/types'
+import type {
+  ImportStage,
+  Language,
+  LanguageDef,
+  Settings,
+  SongListItem
+} from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ImportDialog from '../components/ImportDialog'
 import SongCard from '../components/SongCard'
@@ -34,7 +40,7 @@ import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
 import { usePrefersReducedMotion } from '../lib/motionPresets'
 
-const STRIP_KEY: Record<string, string> = {
+const STRIP_KEY: Partial<Record<ImportStage, string>> = {
   queued: 'stage.queued',
   download: 'stage.download',
   separate: 'stage.separateLong',
@@ -244,7 +250,7 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
               <Select
                 uiSize="sm"
                 value={sort}
-                onChange={(v) => setSort(v as SortMode)}
+                onChange={setSort}
                 title={t('library.sort')}
                 options={[
                   { value: 'added', label: t('library.sortAdded') },
@@ -333,11 +339,12 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
           const job = activeJob ?? [...imports.values()][0]
           if (!job) return null
           const title = songs.find((s) => s.id === job.songId)?.title ?? job.songId
+          const stripKey = STRIP_KEY[job.stage]
           return (
             <div className="absolute inset-x-0 bottom-0 z-20 border-border border-t bg-surface px-6 py-1.5">
               <Stack gap={2} className="text-xs">
                 <span className="text-text-dim">
-                  {STRIP_KEY[job.stage] ? t(STRIP_KEY[job.stage] as string) : job.stage} · {title}
+                  {stripKey ? t(stripKey) : job.stage} · {title}
                 </span>
                 <span className="font-medium text-accent">{Math.round(job.progress * 100)}%</span>
                 {imports.size > 1 && (

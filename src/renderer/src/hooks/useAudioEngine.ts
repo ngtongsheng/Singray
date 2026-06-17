@@ -21,11 +21,16 @@ interface Options {
   onMicReady: (state: MicBootstrapState) => void
 }
 
+/** Engine load status — `engine`/`error` can no longer be set simultaneously. */
+export type EngineLoadState =
+  | { status: 'loading' }
+  | { status: 'ready'; engine: AudioEngine }
+  | { status: 'error'; message: string }
+
 interface Result {
-  engine: AudioEngine | null
+  state: EngineLoadState
   lyrics: Lyrics | null
   setLyrics: (lyrics: Lyrics | null) => void
-  error: string | null
   saveRecording: (blob: Blob) => Promise<void>
 }
 
@@ -36,9 +41,8 @@ interface Result {
  * (pin, stageVisual, ...) never rebuilds the engine.
  */
 export function useAudioEngine({ song, settings, onMicReady }: Options): Result {
-  const [engine, setEngine] = useState<AudioEngine | null>(null)
+  const [state, setState] = useState<EngineLoadState>({ status: 'loading' })
   const [lyrics, setLyrics] = useState<Lyrics | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const settingsReady = settings !== null
   const settingsRef = useRef(settings)
   settingsRef.current = settings
@@ -79,7 +83,7 @@ export function useAudioEngine({ song, settings, onMicReady }: Options): Result 
         e.onRecordingFlushed = (blob) => {
           void saveRecording(blob)
         }
-        setEngine(e)
+        setState({ status: 'ready', engine: e })
         setLyrics(l)
         if (e.routingWarning) console.warn(e.routingWarning)
         if (import.meta.env.DEV) {
@@ -88,7 +92,7 @@ export function useAudioEngine({ song, settings, onMicReady }: Options): Result 
         // Enable mic if configured (MIC4)
         const ms = settingsRef.current
         if (ms?.micEnabled) {
-          const preset = (ms.micFxPreset ?? 'off') as MicFxPreset
+          const preset = ms.micFxPreset ?? 'off'
           const amount = ms.micFxAmount ?? 0.3
           const monitor = ms.micMonitor ?? true
           const vol = ms.micVolume ?? 1
@@ -118,7 +122,9 @@ export function useAudioEngine({ song, settings, onMicReady }: Options): Result 
         }
       })
       .catch((err: unknown) => {
-        if (!disposed) setError(err instanceof Error ? err.message : String(err))
+        if (!disposed) {
+          setState({ status: 'error', message: err instanceof Error ? err.message : String(err) })
+        }
       })
     return () => {
       disposed = true
@@ -126,5 +132,5 @@ export function useAudioEngine({ song, settings, onMicReady }: Options): Result 
     }
   }, [song.id, settingsReady])
 
-  return { engine, lyrics, setLyrics, error, saveRecording }
+  return { state, lyrics, setLyrics, saveRecording }
 }

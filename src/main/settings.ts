@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
-import type { Settings } from '../shared/types'
+import { isMicFxPreset, type Settings } from '../shared/types'
 
 function defaults(): Settings {
   return {
@@ -47,6 +47,9 @@ export function getSettings(): Settings {
     stored = JSON.parse(readFileSync(settingsPath(), 'utf-8')) as Partial<Settings>
   } catch {
     // missing or corrupt file → defaults
+  }
+  if (stored.micFxPreset !== undefined && !isMicFxPreset(stored.micFxPreset)) {
+    delete stored.micFxPreset
   }
   cache = { ...defaults(), ...stored }
   return cache

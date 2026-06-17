@@ -30,20 +30,21 @@ interface Props {
   onBack: () => void
 }
 
+/** EL4: the three creator steps Ctrl+Tab / the tab bar cycle through. */
+type CreatorStep = 'text' | 'tap' | 'review'
+const CREATOR_STEPS = ['text', 'tap', 'review'] as const
+
 interface Pending {
   result: BuildResult
   action: 'continue' | 'align'
+  /** Step to land on once the user confirms (the tab they originally clicked). */
+  landOn: CreatorStep
 }
-
-/** EL4: the three creator steps Ctrl+Tab / the tab bar cycle through. `review` is a toggle within `timing`, not its own route. */
-type CreatorStep = 'text' | 'tap' | 'review'
-const CREATOR_STEPS = ['text', 'tap', 'review'] as const
 
 /** Lyric creator (SPEC §6): step (a) text + Align, step (b) timing. */
 function LyricCreator({ song, onBack }: Props): React.JSX.Element {
   const { t } = useTranslation()
-  const [step, setStep] = useState<'text' | 'timing'>('text')
-  const [review, setReview] = useState(false)
+  const [creatorStep, setCreatorStepDirect] = useState<CreatorStep>('text')
   const [text, setText] = useState('')
   const [saved, setSaved] = useState<Lyrics | null>(null)
   const [loaded, setLoaded] = useState(false)
@@ -68,21 +69,21 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
   const hasTiming =
     saved?.lines.some((l) => l.start !== null || l.units.some((u) => u.t !== null)) ?? false
 
-  const save = async (result: BuildResult): Promise<void> => {
+  const save = async (result: BuildResult, landOn: CreatorStep): Promise<void> => {
     await window.singray.lyrics.save(song.id, result.lyrics)
     setSaved(result.lyrics)
     setPending(null)
-    setStep('timing')
+    setCreatorStepDirect(landOn)
   }
 
-  const onContinue = (): void => {
+  const onContinue = (landOn: CreatorStep): void => {
     const result = buildLyrics(text, song.language, saved)
-    if (result.invalidated.length > 0) setPending({ result, action: 'continue' })
-    else void save(result)
+    if (result.invalidated.length > 0) setPending({ result, action: 'continue', landOn })
+    else void save(result, landOn)
   }
 
   /** Align (SPEC §6.6): forced alignment fills `t`; failure is non-fatal (tap mode remains). */
-  const doAlign = async (result: BuildResult): Promise<void> => {
+  const doAlign = async (result: BuildResult, landOn: CreatorStep): Promise<void> => {
     setPending(null)
     setAligning(true)
     setAlignError(null)
@@ -99,7 +100,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
       const withEnds = inferEnds(merged.lyrics, song.durationSec)
       await window.singray.lyrics.save(song.id, withEnds)
       setSaved(withEnds)
-      setStep('timing')
+      setCreatorStepDirect(landOn)
     } catch (err) {
       setAlignError(stripIpcError((err as Error).message))
     } finally {
@@ -109,8 +110,8 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
 
   const onAlign = (): void => {
     const result = buildLyrics(text, song.language, saved)
-    if (hasTiming) setPending({ result, action: 'align' })
-    else void doAlign(result)
+    if (hasTiming) setPending({ result, action: 'align', landOn: 'tap' })
+    else void doAlign(result, 'tap')
   }
 
   /** LRC import (R3.4): timestamped file → timed Lyrics, lands in the timing step for fix-up. */
@@ -119,7 +120,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
     await window.singray.lyrics.save(song.id, lyrics)
     setSaved(lyrics)
     setText(lyricsToText(lyrics))
-    setStep('timing')
+    setCreatorStepDirect('tap')
   }
 
   /** Shared LRC ingest (file picker + LRCLIB synced hit): parse → ends → confirm-if-timing. */
@@ -167,20 +168,13 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
     }
   }
 
-  /** EL4: derive the current step from `step` + `review` and translate cycle moves back into them. */
-  const creatorStep: CreatorStep = step === 'text' ? 'text' : review ? 'review' : 'tap'
-
   const setCreatorStep = (next: CreatorStep): void => {
-    if (next === 'text') {
-      setReview(false)
-      setStep('text')
+    if (next !== 'text' && creatorStep === 'text') {
+      if (!loaded || parsedEmpty(text) || aligning) return
+      onContinue(next)
       return
     }
-    if (step === 'text') {
-      if (!loaded || parsedEmpty(text) || aligning) return
-      onContinue()
-    }
-    setReview(next === 'review')
+    setCreatorStepDirect(next)
   }
 
   useTabCycle(CREATOR_STEPS, creatorStep, setCreatorStep)
@@ -245,7 +239,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
       {/* Content area (pt-19 clears the floating AppHeader + Titlebar) */}
       <Stack direction="column" gap={0} className="absolute inset-0 pt-19">
         {/* Row 2: Action buttons (text step only) */}
-        {step === 'text' && (
+        {creatorStep === 'text' && (
           <div className="border-border border-b px-6 py-2">
             <Stack gap={2}>
               <input
@@ -318,7 +312,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
         )}
 
         {/* Row 3 + 4: Content area (textarea + hint, or TimingStep) */}
-        {step === 'text' ? (
+        {creatorStep === 'text' ? (
           <>
             <Stack direction="column" gap={0} className="flex-1">
               <textarea
@@ -340,7 +334,12 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
           </>
         ) : (
           saved && (
-            <TimingStep songId={song.id} lyrics={saved} onChange={setSaved} review={review} />
+            <TimingStep
+              songId={song.id}
+              lyrics={saved}
+              onChange={setSaved}
+              review={creatorStep === 'review'}
+            />
           )
         )}
       </Stack>
@@ -379,7 +378,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
               title={t('creator.replaceTimingTitle')}
               body={t('creator.replaceTimingBody')}
               confirmLabel={t('creator.alignAnyway')}
-              onConfirm={() => void doAlign(pending.result)}
+              onConfirm={() => void doAlign(pending.result, pending.landOn)}
               onCancel={() => setPending(null)}
             />
           ) : (
@@ -390,7 +389,7 @@ function LyricCreator({ song, onBack }: Props): React.JSX.Element {
                 first: pending.result.invalidated[0]
               })}
               confirmLabel={t('creator.discard')}
-              onConfirm={() => void save(pending.result)}
+              onConfirm={() => void save(pending.result, pending.landOn)}
               onCancel={() => setPending(null)}
             />
           ))}

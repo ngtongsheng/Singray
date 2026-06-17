@@ -1,6 +1,7 @@
 import { computePeaks } from './computePeaks'
 import type { MicFxPreset } from './micFxGraph'
 import { buildFxGraph } from './micFxGraph'
+import { setSink } from './sinkable'
 
 // Audio engine (SPEC §9). Single mode: one AudioContext, two buffer sources
 // (instrumental + vocals) started sample-synced, per-stem gain nodes, master
@@ -49,10 +50,6 @@ export interface AudioRouting {
   streamDeviceId: string
 }
 
-interface SinkableContext extends AudioContext {
-  setSinkId(id: string): Promise<void>
-}
-
 /** State echo from the worklet (see soundtouch-processor.js). */
 export interface WorkletState {
   type: 'state'
@@ -61,6 +58,10 @@ export interface WorkletState {
   pitch: number
   bypass: boolean
   latencyFrames: number
+}
+
+function isWorkletState(x: unknown): x is WorkletState {
+  return typeof x === 'object' && x !== null && (x as { type?: unknown }).type === 'state'
 }
 
 let pingSeq = 0
@@ -180,14 +181,10 @@ export class AudioEngine {
     let warning: string | null = null
     try {
       if (routing?.mode === 'dual') {
-        if (routing.monitorDeviceId) {
-          await (ctx as SinkableContext).setSinkId(routing.monitorDeviceId)
-        }
+        await setSink(ctx, routing.monitorDeviceId)
         streamCtx = new AudioContext({ latencyHint: 'interactive' })
         try {
-          if (routing.streamDeviceId) {
-            await (streamCtx as SinkableContext).setSinkId(routing.streamDeviceId)
-          }
+          await setSink(streamCtx, routing.streamDeviceId)
         } catch (err) {
           void streamCtx.close()
           streamCtx = null
@@ -413,10 +410,10 @@ export class AudioEngine {
           new Promise<WorkletState>((resolve) => {
             const id = ++pingSeq
             const onMsg = (e: MessageEvent): void => {
-              const state = e.data as WorkletState
+              const state = e.data
               // Match on id: stale unsolicited states (id null) queue up on a
               // not-yet-started port and would otherwise resolve the ping early.
-              if (state.type === 'state' && state.id === id) {
+              if (isWorkletState(state) && state.id === id) {
                 node.port.removeEventListener('message', onMsg)
                 resolve(state)
               }

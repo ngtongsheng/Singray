@@ -2,6 +2,7 @@ import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import type { SongListItem } from '../../shared/types'
 import AppHeader from './components/AppHeader'
+import { assertNever } from './lib/assertNever'
 import { usePrefersReducedMotion } from './lib/motionPresets'
 import Library from './screens/Library'
 import LyricCreator from './screens/LyricCreator'
@@ -36,33 +37,45 @@ function App(): React.JSX.Element {
       <PipelineSetup onReady={() => setNeedsSetup(false)} onSkip={() => setNeedsSetup(false)} />
     )
     key = 'pipeline-setup'
-  } else if (view.name === 'settings') {
-    screen = <Settings onBack={() => setView({ name: 'library' })} />
-    key = 'settings'
-  } else if (view.name === 'creator') {
-    screen = (
-      <LyricCreator song={view.song} onBack={() => setView({ name: 'player', song: view.song })} />
-    )
-    key = `creator:${view.song.id}`
-  } else if (view.name === 'player') {
-    screen = (
-      <Player
-        song={view.song}
-        onExit={() => setView({ name: 'library' })}
-        onEditLyrics={(song) => setView({ name: 'creator', song })}
-        onArtistClick={(artist) => setView({ name: 'library', artistFilter: artist })}
-      />
-    )
-    key = `player:${view.song.id}`
   } else {
-    screen = (
-      <Library
-        initialArtistFilter={view.name === 'library' ? view.artistFilter : undefined}
-        onOpenSettings={() => setView({ name: 'settings' })}
-        onSing={(song) => setView({ name: 'player', song })}
-      />
-    )
-    key = 'library'
+    switch (view.name) {
+      case 'settings':
+        screen = <Settings onBack={() => setView({ name: 'library' })} />
+        key = 'settings'
+        break
+      case 'creator':
+        screen = (
+          <LyricCreator
+            song={view.song}
+            onBack={() => setView({ name: 'player', song: view.song })}
+          />
+        )
+        key = `creator:${view.song.id}`
+        break
+      case 'player':
+        screen = (
+          <Player
+            song={view.song}
+            onExit={() => setView({ name: 'library' })}
+            onEditLyrics={(song) => setView({ name: 'creator', song })}
+            onArtistClick={(artist) => setView({ name: 'library', artistFilter: artist })}
+          />
+        )
+        key = `player:${view.song.id}`
+        break
+      case 'library':
+        screen = (
+          <Library
+            initialArtistFilter={view.artistFilter}
+            onOpenSettings={() => setView({ name: 'settings' })}
+            onSing={(song) => setView({ name: 'player', song })}
+          />
+        )
+        key = 'library'
+        break
+      default:
+        assertNever(view)
+    }
   }
 
   // View transitions (R2.2, SPEC §10.5): quick fade + breath of scale, exit ≈ 70%

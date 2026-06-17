@@ -101,11 +101,17 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
     if (s.warning) setMicWarning(s.warning)
   }, [])
 
-  const { engine, lyrics, error, saveRecording } = useAudioEngine({
+  const {
+    state: engineState,
+    lyrics,
+    saveRecording
+  } = useAudioEngine({
     song,
     settings,
     onMicReady: applyMicReady
   })
+  const engine = engineState.status === 'ready' ? engineState.engine : null
+  const error = engineState.status === 'error' ? engineState.message : null
 
   // Seed UI prefs from settings + reset per-song state each time we (re)load a song.
   // biome-ignore lint/correctness/useExhaustiveDependencies: settings read once per song, not on every patch
@@ -518,8 +524,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
 
                     <Select
                       value={micFxPreset}
-                      onChange={(v) => {
-                        const p = v as MicFxPreset
+                      onChange={(p) => {
                         setMicFxPreset(p)
                         engine?.setMicFx(p, micFxAmount)
                       }}
