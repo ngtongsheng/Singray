@@ -3,7 +3,7 @@ import {
   AudioWaveform,
   BarChart3,
   Circle,
-  Gauge,
+  Headphones,
   Info,
   Loader2,
   Mic,
@@ -16,6 +16,7 @@ import {
   PinOff,
   Play,
   Plus,
+  SlidersHorizontal,
   Type,
   Volume2
 } from 'lucide-react'
@@ -37,7 +38,7 @@ import {
   Menu,
   MenuItem,
   Popover,
-  Select,
+  Segmented,
   Slider,
   Stack,
   Text,
@@ -46,6 +47,7 @@ import {
 import { type MicBootstrapState, useAudioEngine } from '../hooks/useAudioEngine'
 import { useAutoHideBar } from '../hooks/useAutoHideBar'
 import { usePlaybackClock, usePlaybackPosition } from '../hooks/usePlaybackClock'
+import { usePopoverClose } from '../hooks/usePopoverClose'
 import { useSettings } from '../hooks/useSettings'
 import type { AudioEngine, MicFxPreset } from '../lib/audioEngine'
 
@@ -103,7 +105,9 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
   const [instrVol, setInstrVol] = useState(1)
   const [keyVal, setKeyVal] = useState(0)
   const [tempoVal, setTempoVal] = useState(1)
-  const [tempoOpen, setTempoOpen] = useState(false)
+  const [tuneOpen, setTuneOpen] = useState(false)
+  const closeTune = useCallback(() => setTuneOpen(false), [])
+  const tuneRef = usePopoverClose(tuneOpen, closeTune)
   const [pinned, setPinned] = useState(true)
   const [editOpen, setEditOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -499,80 +503,40 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                 </Stack>
 
                 {micActive && (
-                  <>
-                    <span className="flex items-center gap-2 text-text-dim">
-                      <Mic className="size-4" strokeWidth={1.5} />
-                      <Slider
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={micVol}
-                        onChange={(e) => {
-                          const v = Number(e.target.value)
-                          setMicVol(v)
-                          engine?.setMicVolume(v)
-                        }}
-                        title={t('player.micVolTip')}
-                        className="h-11 w-16"
-                      />
-                    </span>
-
-                    <Stack
-                      gap={2}
-                      className={`h-11 rounded-control border px-2 ${
-                        micMonitor ? 'border-accent' : 'border-border'
-                      }`}
-                    >
-                      <Toggle
-                        variant="ghost"
-                        pressed={micMonitor}
-                        onClick={() => {
-                          const next = !micMonitor
-                          setMicMonitor(next)
-                          engine?.setMicMonitor(next)
-                        }}
-                        title={t('player.micMonitorTip')}
-                        className="shrink-0 whitespace-nowrap"
-                      >
-                        {micMonitor ? (
-                          <Mic className="size-4" strokeWidth={1.5} />
-                        ) : (
-                          <MicOff className="size-4" strokeWidth={1.5} />
-                        )}
-                        {micMonitor ? t('player.micMonitorOn') : t('player.micMonitorOff')}
-                      </Toggle>
-                    </Stack>
-
-                    <Select
-                      value={micFxPreset}
-                      onChange={(p) => {
-                        setMicFxPreset(p)
-                        engine?.setMicFx(p, micFxAmount)
+                  <Stack
+                    gap={2}
+                    className={`h-11 rounded-control border px-2 ${
+                      micMonitor ? 'border-accent' : 'border-border'
+                    }`}
+                  >
+                    <Toggle
+                      variant="ghost"
+                      pressed={micMonitor}
+                      onClick={() => {
+                        const next = !micMonitor
+                        setMicMonitor(next)
+                        engine?.setMicMonitor(next)
                       }}
-                      options={(['off', 'room', 'hall', 'echo', 'karaoke'] as MicFxPreset[]).map(
-                        (p) => ({
-                          value: p,
-                          label: t(`player.micPreset.${p}`)
-                        })
-                      )}
+                      title={t('player.micMonitorTip')}
+                      className="shrink-0 whitespace-nowrap"
+                    >
+                      <Headphones className="size-4" strokeWidth={1.5} />
+                      {micMonitor ? t('player.micMonitorOn') : t('player.micMonitorOff')}
+                    </Toggle>
+                    <Slider
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={micVol}
+                      onChange={(e) => {
+                        const v = Number(e.target.value)
+                        setMicVol(v)
+                        engine?.setMicVolume(v)
+                      }}
+                      title={t('player.micVolTip')}
+                      className="h-8 w-14"
                     />
-
-                    {micFxPreset !== 'off' && (
-                      <Slider
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={micFxAmount}
-                        onChange={(e) => {
-                          const v = Number(e.target.value)
-                          setMicFxAmount(v)
-                          engine?.setMicFx(micFxPreset, v)
-                        }}
-                        title={t('player.micFxAmountTip')}
-                        className="h-11 w-16"
-                      />
-                    )}
-                  </>
+                  </Stack>
                 )}
 
                 {engine.canRecord && (
@@ -591,76 +555,133 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                   </Toggle>
                 )}
 
-                <Stack
-                  gap={1}
-                  className={`h-11 rounded-control border px-2 ${
-                    keyVal !== 0 ? 'border-accent text-accent' : 'border-border text-text-dim'
-                  }`}
-                >
-                  <IconButton
-                    variant="ghost"
-                    size="xs"
-                    onClick={() => stepKey(-1)}
-                    disabled={keyVal <= -6}
-                    title={t('player.keyDownTip')}
-                  >
-                    <Minus className="size-4" strokeWidth={1.5} />
-                  </IconButton>
-                  <span className="w-14 whitespace-nowrap text-center text-sm tabular-nums">
-                    {t('player.key', { value: keyVal > 0 ? `+${keyVal}` : keyVal })}
-                  </span>
-                  <IconButton
-                    variant="ghost"
-                    size="xs"
-                    onClick={() => stepKey(1)}
-                    disabled={keyVal >= 6}
-                    title={t('player.keyUpTip')}
-                  >
-                    <Plus className="size-4" strokeWidth={1.5} />
-                  </IconButton>
-                </Stack>
-
-                <div className="relative">
+                <div className="relative" ref={tuneRef}>
                   <Popover
-                    open={tempoOpen}
+                    open={tuneOpen}
                     origin="bottom right"
                     className="right-0 bottom-full -translate-y-2 w-max p-3"
                   >
-                    <Stack justify="between" className="pb-2">
-                      <Text as="span" variant="hint">
-                        {t('player.tempo')}
-                      </Text>
-                      <Button
-                        size="bare"
-                        onClick={() => changeTempo(1)}
-                        className="px-2 py-0.5 text-text-dim text-xs hover:text-text"
-                      >
-                        {t('common.reset')}
-                      </Button>
-                    </Stack>
-                    <Grid cols={4} gap={1}>
-                      {TEMPO_PRESETS.map((t) => (
-                        <Toggle
-                          key={t}
-                          size="bare"
-                          pressed={tempoVal === t}
-                          onClick={() => changeTempo(t)}
-                          className="px-2 py-1.5 text-sm tabular-nums"
+                    <Stack direction="column" gap={3}>
+                      <Stack direction="column" gap={2}>
+                        <Text as="span" variant="hint">
+                          {t('player.keyLabel')}
+                        </Text>
+                        <Stack
+                          gap={1}
+                          className={`h-11 w-fit rounded-control border px-2 ${
+                            keyVal !== 0
+                              ? 'border-accent text-accent'
+                              : 'border-border text-text-dim'
+                          }`}
                         >
-                          {t.toFixed(2)}×
-                        </Toggle>
-                      ))}
-                    </Grid>
+                          <IconButton
+                            variant="ghost"
+                            size="xs"
+                            onClick={() => stepKey(-1)}
+                            disabled={keyVal <= -6}
+                            title={t('player.keyDownTip')}
+                          >
+                            <Minus className="size-4" strokeWidth={1.5} />
+                          </IconButton>
+                          <span className="w-14 whitespace-nowrap text-center text-sm tabular-nums">
+                            {t('player.key', { value: keyVal > 0 ? `+${keyVal}` : keyVal })}
+                          </span>
+                          <IconButton
+                            variant="ghost"
+                            size="xs"
+                            onClick={() => stepKey(1)}
+                            disabled={keyVal >= 6}
+                            title={t('player.keyUpTip')}
+                          >
+                            <Plus className="size-4" strokeWidth={1.5} />
+                          </IconButton>
+                        </Stack>
+                      </Stack>
+
+                      <div className="h-px bg-border" />
+
+                      <Stack direction="column" gap={2}>
+                        <Stack justify="between">
+                          <Text as="span" variant="hint">
+                            {t('player.tempo')}
+                          </Text>
+                          <Button
+                            size="bare"
+                            onClick={() => changeTempo(1)}
+                            className="px-2 py-0.5 text-text-dim text-xs hover:text-text"
+                          >
+                            {t('common.reset')}
+                          </Button>
+                        </Stack>
+                        <Grid cols={4} gap={1}>
+                          {TEMPO_PRESETS.map((t) => (
+                            <Toggle
+                              key={t}
+                              size="bare"
+                              pressed={tempoVal === t}
+                              onClick={() => changeTempo(t)}
+                              className="px-2 py-1.5 text-sm tabular-nums"
+                            >
+                              {t.toFixed(2)}×
+                            </Toggle>
+                          ))}
+                        </Grid>
+                      </Stack>
+
+                      {micActive && (
+                        <>
+                          <div className="h-px bg-border" />
+                          <Stack direction="column" gap={2}>
+                            <Text as="span" variant="hint">
+                              {t('player.micFxLabel')}
+                            </Text>
+                            <Segmented
+                              value={micFxPreset}
+                              onChange={(p) => {
+                                setMicFxPreset(p)
+                                engine?.setMicFx(p, micFxAmount)
+                              }}
+                              options={(
+                                ['off', 'room', 'hall', 'echo', 'karaoke'] as MicFxPreset[]
+                              ).map((p) => ({
+                                value: p,
+                                label: t(`player.micPreset.${p}`)
+                              }))}
+                            />
+                            {micFxPreset !== 'off' && (
+                              <Slider
+                                min={0}
+                                max={1}
+                                step={0.01}
+                                value={micFxAmount}
+                                onChange={(e) => {
+                                  const v = Number(e.target.value)
+                                  setMicFxAmount(v)
+                                  engine?.setMicFx(micFxPreset, v)
+                                }}
+                                title={t('player.micFxAmountTip')}
+                                className="h-8 w-full"
+                              />
+                            )}
+                          </Stack>
+                        </>
+                      )}
+                    </Stack>
                   </Popover>
                   <Button
                     size="lg"
-                    active={tempoVal !== 1}
-                    onClick={() => setTempoOpen((o) => !o)}
-                    aria-expanded={tempoOpen}
-                    title={t('player.tempo')}
+                    active={
+                      tuneOpen ||
+                      tempoVal !== 1 ||
+                      keyVal !== 0 ||
+                      (micActive && micFxPreset !== 'off')
+                    }
+                    onClick={() => setTuneOpen((o) => !o)}
+                    aria-expanded={tuneOpen}
+                    title={t('player.tuneTip')}
                     className="tabular-nums"
                   >
-                    <Gauge className="size-4" strokeWidth={1.5} />
+                    <SlidersHorizontal className="size-4" strokeWidth={1.5} />
                     {tempoVal.toFixed(2)}×
                   </Button>
                 </div>

@@ -1,5 +1,6 @@
 import type { MouseEvent, ReactNode } from 'react'
-import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useState } from 'react'
+import { usePopoverClose } from '../../hooks/usePopoverClose'
 import { cx } from './cx'
 import Popover from './Popover'
 
@@ -17,23 +18,8 @@ interface MenuProps {
 /** Dropdown menu: outside click + Esc close, items close on select. */
 function Menu({ trigger, origin, className, children }: MenuProps): React.JSX.Element {
   const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const onDown = (e: globalThis.MouseEvent): void => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    window.addEventListener('mousedown', onDown)
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('mousedown', onDown)
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [open])
+  const close = useCallback(() => setOpen(false), [])
+  const rootRef = usePopoverClose(open, close)
 
   return (
     <div ref={rootRef} className="relative">
@@ -41,7 +27,7 @@ function Menu({ trigger, origin, className, children }: MenuProps): React.JSX.El
         e.stopPropagation()
         setOpen(!open)
       })}
-      <MenuClose.Provider value={() => setOpen(false)}>
+      <MenuClose.Provider value={close}>
         <Popover open={open} origin={origin} className={className}>
           {children}
         </Popover>
