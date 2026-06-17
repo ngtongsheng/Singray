@@ -304,6 +304,10 @@ export interface SingrayApi {
     url(id: string, track: AudioTrack): string
     thumbUrl(id: string): string
   }
+  recordings: {
+    /** Saves a performance recording (R3.REC1) under the song's recordings/ folder; resolves the saved path. */
+    save(songId: string, bytes: ArrayBuffer, ext: string): Promise<string>
+  }
   window: {
     /** Custom titlebar controls (NAV1): replace the native min/max/close. */
     minimize(): void

@@ -142,7 +142,11 @@
       "hall": "Hall",
       "echo": "Echo",
       "karaoke": "Karaoke"
-    }
+    },
+    "record": "Record",
+    "recording": "Recording…",
+    "recordStartTip": "Start recording (instrumental + mic, no guide vocal)",
+    "recordStopTip": "Stop recording and save"
   },
   "details": {
     "title": "Song details",

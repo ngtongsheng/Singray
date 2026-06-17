@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   AudioWaveform,
   BarChart3,
+  Circle,
   Gauge,
   Info,
   Loader2,
@@ -43,7 +44,7 @@ import {
 } from '../components/ui'
 import { useSettings } from '../hooks/useSettings'
 import type { MicFxPreset } from '../lib/audioEngine'
-import { AudioEngine } from '../lib/audioEngine'
+import { AudioEngine, encodeRecordingAsWav } from '../lib/audioEngine'
 
 interface Props {
   song: SongListItem
@@ -92,11 +93,24 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
   const [micFxPreset, setMicFxPreset] = useState<MicFxPreset>('off')
   const [micFxAmount, setMicFxAmount] = useState(0.3)
   const [micWarning, setMicWarning] = useState<string | null>(null)
+  const [recording, setRecording] = useState(false)
   const hideTimer = useRef<number>(0)
   const { settings, patch } = useSettings()
   const settingsReady = settings !== null
   const settingsRef = useRef(settings)
   settingsRef.current = settings
+
+  // R3.REC1: stream-bus take → optional WAV re-encode → IPC save under the
+  // song's recordings/ folder. Used both by the record button and by a
+  // mid-record exit flush (engine.onRecordingFlushed, see dispose()).
+  const saveRecording = useCallback(
+    async (blob: Blob) => {
+      const format = settingsRef.current?.recordingFormat ?? 'webm'
+      const finalBlob = format === 'wav' ? await encodeRecordingAsWav(blob) : blob
+      await window.singray.recordings.save(song.id, await finalBlob.arrayBuffer(), format)
+    },
+    [song.id]
+  )
 
   // Build the engine once settings are available; reads the snapshot via a ref
   // so toggling pin/stageVisual (which patches settings) never rebuilds it.
@@ -109,6 +123,7 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
     setPinned(s.playerBarPinned)
     setShowWaveform(s.showWaveform)
     setShowBars(s.showBars)
+    setRecording(false)
     Promise.all([
       AudioEngine.load(song.id, {
         mode: s.audioOutputMode,
@@ -124,6 +139,9 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
         }
         eng = e
         e.setVocal(false) // guide vocal off by default (R1.2)
+        e.onRecordingFlushed = (blob) => {
+          void saveRecording(blob)
+        }
         setEngine(e)
         setLyrics(l)
         if (e.routingWarning) console.warn(e.routingWarning)
@@ -248,6 +266,19 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
     engine.setVocal(next)
     setVocalOn(next)
   }, [engine])
+
+  const toggleRecord = useCallback(() => {
+    if (!engine) return
+    if (!engine.recording) {
+      engine.startRecording()
+      setRecording(true)
+      return
+    }
+    setRecording(false)
+    void engine.stopRecording().then((blob) => {
+      if (blob) void saveRecording(blob)
+    })
+  }, [engine, saveRecording])
 
   const stepKey = useCallback(
     (delta: number) => {
@@ -617,6 +648,22 @@ function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX
                       />
                     )}
                   </>
+                )}
+
+                {engine.canRecord && (
+                  <Toggle
+                    size="lg"
+                    pressed={recording}
+                    onClick={toggleRecord}
+                    title={recording ? t('player.recordStopTip') : t('player.recordStartTip')}
+                    className={recording ? 'text-danger' : ''}
+                  >
+                    <Circle
+                      className={`size-4 ${recording ? 'animate-pulse fill-danger' : ''}`}
+                      strokeWidth={1.5}
+                    />
+                    {recording ? t('player.recording') : t('player.record')}
+                  </Toggle>
                 )}
 
                 <Stack

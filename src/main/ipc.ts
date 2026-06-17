@@ -16,6 +16,7 @@ import { deleteSong, getLyrics, listSongs, openSongFolder, saveLyrics, updateMet
 import { listLlmModels, testLlm } from './llm'
 import { findLyrics } from './lyricsFinder'
 import { alignLyrics, listPipelineModels, probe, probeFile, searchYoutube } from './pipeline'
+import { saveRecording } from './recordings'
 import { getSettings, setSettings } from './settings'
 
 /** Registers all IPC handlers (SPEC §8). */
@@ -93,4 +94,8 @@ export function registerIpc(): void {
     (e) => BrowserWindow.fromWebContents(e.sender)?.isMaximized() ?? false
   )
   ipcMain.handle('window:openExternal', (_e, url: string) => shell.openExternal(url))
+
+  ipcMain.handle('recordings:save', (_e, songId: string, bytes: ArrayBuffer, ext: string) =>
+    saveRecording(songId, bytes, ext)
+  )
 }

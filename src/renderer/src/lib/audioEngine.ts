@@ -81,6 +81,12 @@ export class AudioEngine {
   private gainInstr: GainNode
   private gainVocal: GainNode
   private gainInstrStream: GainNode | null = null
+  private recordDest: MediaStreamAudioDestinationNode | null = null
+  private mediaRecorder: MediaRecorder | null = null
+  private recordedChunks: Blob[] = []
+  private _recording = false
+  /** Fired with the captured Blob when a mid-dispose recording is force-flushed (§14.8). */
+  onRecordingFlushed: ((blob: Blob) => void) | null = null
   private stInstr: AudioWorkletNode
   private stVocal: AudioWorkletNode
   private stInstrStream: AudioWorkletNode | null = null
@@ -145,6 +151,11 @@ export class AudioEngine {
       this.gainInstrStream.connect(streamCtx.destination)
       this.stInstrStream = AudioEngine.createWorklet(streamCtx)
       this.stInstrStream.connect(this.gainInstrStream)
+      // Recording tap (R3.REC1): the stream bus (instrumental + mic, no guide
+      // vocal by construction) also feeds a MediaStreamAudioDestinationNode so
+      // MediaRecorder can capture it independently of the speaker output.
+      this.recordDest = streamCtx.createMediaStreamDestination()
+      this.gainInstrStream.connect(this.recordDest)
     }
   }
 
@@ -209,6 +220,15 @@ export class AudioEngine {
 
   get dual(): boolean {
     return this.streamCtx !== null
+  }
+
+  /** Recording (R3.REC1) is only possible when the stream bus exists (dual mode). */
+  get canRecord(): boolean {
+    return this.recordDest !== null
+  }
+
+  get recording(): boolean {
+    return this._recording
   }
 
   /** Authoritative playback position in seconds (master clock = monitor context, SPEC §7.3/§9.3.1).
@@ -634,6 +654,7 @@ export class AudioEngine {
         this.gainMicStr = this.streamCtx.createGain()
         this.gainMicStr.gain.value = this._micVolume
         this.gainMicStr.connect(this.streamCtx.destination)
+        if (this.recordDest) this.gainMicStr.connect(this.recordDest)
         this.srcMicStr = this.streamCtx.createMediaStreamSource(stream)
         this.fxNodesStr = this.buildFxGraph(
           this.streamCtx,
@@ -703,6 +724,35 @@ export class AudioEngine {
     this.fxNodesStr = []
   }
 
+  /** Starts capturing the stream bus (instrumental + mic + FX, no guide vocal). No-op in single mode. */
+  startRecording(): void {
+    if (!this.recordDest || this._recording) return
+    const mr = new MediaRecorder(this.recordDest.stream, { mimeType: 'audio/webm;codecs=opus' })
+    this.recordedChunks = []
+    mr.ondataavailable = (e) => {
+      if (e.data.size > 0) this.recordedChunks.push(e.data)
+    }
+    mr.start()
+    this.mediaRecorder = mr
+    this._recording = true
+  }
+
+  /** Stops recording and resolves the captured take, or null if nothing was recording. */
+  stopRecording(): Promise<Blob | null> {
+    const mr = this.mediaRecorder
+    if (!mr || !this._recording) return Promise.resolve(null)
+    return new Promise((resolve) => {
+      mr.onstop = () => {
+        this._recording = false
+        this.mediaRecorder = null
+        const blob = new Blob(this.recordedChunks, { type: mr.mimeType })
+        this.recordedChunks = []
+        resolve(blob)
+      }
+      mr.stop()
+    })
+  }
+
   /** Tear down everything; the engine is unusable afterwards. */
   dispose(): void {
     if (this.latencyTimer !== null) window.clearTimeout(this.latencyTimer)
@@ -710,8 +760,20 @@ export class AudioEngine {
     this.stopSources()
     this.disableMic()
     this._playing = false
-    void this.ctx.close()
-    void this.streamCtx?.close()
+    const closeContexts = (): void => {
+      void this.ctx.close()
+      void this.streamCtx?.close()
+    }
+    // §14.8: flush a mid-record exit before tearing down ctxStream — closing it
+    // immediately would cut MediaRecorder's stream off before it can flush.
+    if (this._recording) {
+      void this.stopRecording().then((blob) => {
+        if (blob) this.onRecordingFlushed?.(blob)
+        closeContexts()
+      })
+    } else {
+      closeContexts()
+    }
   }
 
   /** Estimate stream-vs-monitor playhead difference (ms) at a common wall instant. */
@@ -841,5 +903,62 @@ export class AudioEngine {
     node.gain.cancelScheduledValues(now)
     node.gain.setValueAtTime(node.gain.value, now)
     node.gain.linearRampToValueAtTime(target, now + RAMP)
+  }
+}
+
+/** PCM16 WAV container around a decoded AudioBuffer's interleaved channel data. */
+function encodeWavPcm16(buf: AudioBuffer): Blob {
+  const numCh = buf.numberOfChannels
+  const bytesPerSample = 2
+  const blockAlign = numCh * bytesPerSample
+  const dataSize = buf.length * blockAlign
+  const out = new ArrayBuffer(44 + dataSize)
+  const view = new DataView(out)
+  let offset = 0
+  const writeStr = (s: string): void => {
+    for (let i = 0; i < s.length; i++) view.setUint8(offset++, s.charCodeAt(i))
+  }
+  writeStr('RIFF')
+  view.setUint32(offset, 36 + dataSize, true)
+  offset += 4
+  writeStr('WAVE')
+  writeStr('fmt ')
+  view.setUint32(offset, 16, true)
+  offset += 4
+  view.setUint16(offset, 1, true) // PCM
+  offset += 2
+  view.setUint16(offset, numCh, true)
+  offset += 2
+  view.setUint32(offset, buf.sampleRate, true)
+  offset += 4
+  view.setUint32(offset, buf.sampleRate * blockAlign, true)
+  offset += 4
+  view.setUint16(offset, blockAlign, true)
+  offset += 2
+  view.setUint16(offset, 16, true)
+  offset += 2
+  writeStr('data')
+  view.setUint32(offset, dataSize, true)
+  offset += 4
+  const channels = Array.from({ length: numCh }, (_, ch) => buf.getChannelData(ch))
+  for (let i = 0; i < buf.length; i++) {
+    for (const data of channels) {
+      const s = Math.max(-1, Math.min(1, data[i] ?? 0))
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true)
+      offset += 2
+    }
+  }
+  return new Blob([out], { type: 'audio/wav' })
+}
+
+/** R3.SET4/REC1: `recordingFormat: 'wav'` decodes the recorded webm/opus take and
+ *  re-encodes it as PCM16 WAV (no native MediaRecorder WAV support). */
+export async function encodeRecordingAsWav(blob: Blob): Promise<Blob> {
+  const ctx = new AudioContext()
+  try {
+    const buf = await ctx.decodeAudioData(await blob.arrayBuffer())
+    return encodeWavPcm16(buf)
+  } finally {
+    await ctx.close()
   }
 }

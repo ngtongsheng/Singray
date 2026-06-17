@@ -76,6 +76,10 @@ const api: SingrayApi = {
     url: (id: string, track: AudioTrack) => `karaoke://${id}/${track}`,
     thumbUrl: (id: string) => `karaoke://${id}/thumb.jpg`
   },
+  recordings: {
+    save: (songId: string, bytes: ArrayBuffer, ext: string) =>
+      ipcRenderer.invoke('recordings:save', songId, bytes, ext) as Promise<string>
+  },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize') as Promise<void>,
     toggleMaximize: () => ipcRenderer.invoke('window:toggleMaximize') as Promise<void>,

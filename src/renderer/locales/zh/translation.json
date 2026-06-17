@@ -140,7 +140,11 @@
       "hall": "大厅",
       "echo": "回声",
       "karaoke": "卡拉OK"
-    }
+    },
+    "record": "录制",
+    "recording": "录制中…",
+    "recordStartTip": "开始录制（伴奏 + 麦克风，不含导唱）",
+    "recordStopTip": "停止录制并保存"
   },
   "details": {
     "title": "歌曲详情",
