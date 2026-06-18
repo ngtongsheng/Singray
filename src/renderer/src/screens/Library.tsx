@@ -1,48 +1,23 @@
-import {
-  Heart,
-  LayoutGrid,
-  List,
-  Mic2,
-  Plus,
-  Search,
-  Settings as SettingsIcon,
-  Type,
-  X
-} from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Mic2, Plus, Settings as SettingsIcon } from 'lucide-react'
+import { AnimatePresence } from 'motion/react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ImportStage, Language, LanguageDef, SongListItem } from '../../../shared/types'
+import type { LanguageDef, SongListItem } from '../../../shared/types'
+import ArtistList from '../components/ArtistList'
 import ConfirmDialog from '../components/ConfirmDialog'
+import FilterChips from '../components/FilterChips'
 import ImportDialog from '../components/ImportDialog'
-import SongCard from '../components/SongCard'
-import SongRow from '../components/SongRow'
+import ImportStatusStrip from '../components/ImportStatusStrip'
+import SearchInput from '../components/SearchInput'
+import SongGrid from '../components/SongGrid'
+import SongRowList from '../components/SongRowList'
 import Titlebar from '../components/Titlebar'
-import {
-  Button,
-  Chip,
-  Container,
-  Grid,
-  IconButton,
-  Input,
-  Segmented,
-  Select,
-  Stack,
-  StatusStrip,
-  Text
-} from '../components/ui'
+import { Button, Container, IconButton, Segmented, Stack } from '../components/ui'
+import ViewSortControls from '../components/ViewSortControls'
 import { useAppContext } from '../context/AppContext'
 import { LibraryProvider, useLibraryContext } from '../context/LibraryContext'
 import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
-import { usePrefersReducedMotion } from '../lib/motionPresets'
-
-const STRIP_KEY: Partial<Record<ImportStage, string>> = {
-  queued: 'stage.queued',
-  download: 'stage.download',
-  separate: 'stage.separateLong',
-  convert: 'stage.convert'
-}
 
 /** Sing count with the legacy MVP playCount as floor (R1.5 migration). */
 const singCount = (s: SongListItem): number => s.playCount + s.sings.length
@@ -66,22 +41,14 @@ function LibraryView(): React.JSX.Element {
   const { goSettings } = useAppContext()
   const {
     query,
-    setQuery,
     language,
-    setLanguage,
     favoritesOnly,
-    setFavoritesOnly,
     needsLyricsOnly,
-    setNeedsLyricsOnly,
     sort,
-    setSort,
     section,
     setSection,
     view,
-    setViewMode,
     artistFilter,
-    clearArtistFilter,
-    onArtistClick,
     pendingDelete,
     cancelDelete,
     confirmDelete
@@ -90,33 +57,10 @@ function LibraryView(): React.JSX.Element {
   const imports = useImports()
   const [showImport, setShowImport] = useState(false)
   const [langDefs, setLangDefs] = useState<LanguageDef[]>([])
-  const searchRef = useRef<HTMLInputElement>(null)
-  const reduced = usePrefersReducedMotion()
 
   useEffect(() => {
     window.singray.settings.get().then((s) => setLangDefs(s.languages))
   }, [])
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
-        e.preventDefault()
-        searchRef.current?.focus()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
-
-  // Filter chips (R2.4): settings languages first, then any extra codes still on
-  // songs (e.g. a removed language) so every song stays filterable.
-  const languages = useMemo(
-    () => [...new Set([...langDefs.map((l) => l.code), ...songs.map((s) => s.language)])],
-    [langDefs, songs]
-  )
-  const langLabel = (code: Language): string =>
-    langDefs.find((l) => l.code === code)?.label ??
-    (code === 'unknown' ? t('common.unknown') : code)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -135,44 +79,12 @@ function LibraryView(): React.JSX.Element {
     return list
   }, [songs, query, language, favoritesOnly, needsLyricsOnly, artistFilter, sort])
 
-  // ART1: every distinct artist with a song count, "" groups songs with no artist set.
-  // Only the artists section needs this, so skip the sort/count pass otherwise.
-  const artists = useMemo(() => {
-    if (section !== 'artists') return []
-    const counts = new Map<string, number>()
-    for (const s of songs) {
-      const name = s.artist.trim()
-      counts.set(name, (counts.get(name) ?? 0) + 1)
-    }
-    return [...counts.entries()]
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => (a.name || '￿').localeCompare(b.name || '￿', undefined, { numeric: true }))
-  }, [songs, section])
-
-  const importStrip = useMemo(() => {
-    if (imports.size === 0) return null
-    const activeJob = [...imports.values()].find((p) => p.stage !== 'queued')
-    const job = activeJob ?? [...imports.values()][0]
-    if (!job) return null
-    const title = songs.find((s) => s.id === job.songId)?.title ?? job.songId
-    return { job, title, moreCount: imports.size - 1 }
-  }, [imports, songs])
-
   return (
     <div className="relative h-full">
       <Titlebar>
         <Stack justify="between" className="w-full">
           <Stack gap={3}>
-            <div className="app-no-drag w-72">
-              <Input
-                ref={searchRef}
-                uiSize="sm"
-                icon={<Search className="size-4 text-text-dim" />}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('library.searchPlaceholder')}
-              />
-            </div>
+            <SearchInput />
             <Segmented
               className="app-no-drag"
               value={section}
@@ -201,61 +113,8 @@ function LibraryView(): React.JSX.Element {
       <Container>
         {section === 'songs' && (
           <Stack gap={2} justify="between" className="py-3">
-            <Stack gap={2} wrap>
-              {artistFilter !== null && (
-                <Chip active onClick={clearArtistFilter} title={t('library.clearArtistFilter')}>
-                  {t('library.artistFilter', { name: artistFilter || t('common.unknown') })}
-                  <X className="size-3.5" strokeWidth={1.5} />
-                </Chip>
-              )}
-              {languages.map((lang) => (
-                <Chip
-                  key={lang}
-                  active={language === lang}
-                  onClick={() => setLanguage(language === lang ? null : lang)}
-                >
-                  {langLabel(lang)}
-                </Chip>
-              ))}
-              <Chip active={favoritesOnly} onClick={() => setFavoritesOnly(!favoritesOnly)}>
-                <Heart className="size-3.5" strokeWidth={1.5} /> {t('library.favorites')}
-              </Chip>
-              <Chip active={needsLyricsOnly} onClick={() => setNeedsLyricsOnly(!needsLyricsOnly)}>
-                <Type className="size-3.5" strokeWidth={1.5} /> {t('library.needsLyrics')}
-              </Chip>
-            </Stack>
-            <Stack gap={2}>
-              <Segmented
-                className="app-no-drag"
-                value={view}
-                onChange={setViewMode}
-                options={[
-                  {
-                    value: 'grid',
-                    label: <LayoutGrid className="size-4" strokeWidth={1.5} />,
-                    title: t('library.viewGrid')
-                  },
-                  {
-                    value: 'list',
-                    label: <List className="size-4" strokeWidth={1.5} />,
-                    title: t('library.viewList')
-                  }
-                ]}
-              />
-              <div className="app-no-drag">
-                <Select
-                  uiSize="sm"
-                  value={sort}
-                  onChange={setSort}
-                  title={t('library.sort')}
-                  options={[
-                    { value: 'added', label: t('library.sortAdded') },
-                    { value: 'mostSung', label: t('library.sortMostSung') },
-                    { value: 'recentSung', label: t('library.sortRecentSung') }
-                  ]}
-                />
-              </div>
-            </Stack>
+            <FilterChips songs={songs} langDefs={langDefs} />
+            <ViewSortControls />
           </Stack>
         )}
 
@@ -268,74 +127,17 @@ function LibraryView(): React.JSX.Element {
             </Button>
           </Stack>
         ) : section === 'artists' ? (
-          <Stack direction="column" gap={2} className="pt-3 pb-12">
-            {artists.map(({ name, count }) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => onArtistClick(name)}
-                className="flex items-center justify-between rounded-card border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-text-dim/40"
-              >
-                <Text as="span" variant="item">
-                  {name || t('common.unknown')}
-                </Text>
-                <Text as="span" variant="hint" className="shrink-0">
-                  {t('library.songCount', { count })}
-                </Text>
-              </button>
-            ))}
-          </Stack>
+          <ArtistList songs={songs} />
         ) : filtered.length === 0 ? (
           <p className="py-12 text-center text-text-dim">{t('library.noMatch')}</p>
         ) : view === 'grid' ? (
-          <Grid minItemWidth={220} autoRows="min" gap={4} className="pb-12">
-            {filtered.map((song, i) => (
-              // Entrance stagger (SPEC §10.5): 30ms per card, capped, animates once per mount.
-              <motion.div
-                key={song.id}
-                initial={reduced ? false : { opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, ease: 'easeOut', delay: Math.min(i * 0.03, 0.45) }}
-              >
-                <SongCard song={song} importing={imports.get(song.id)} />
-              </motion.div>
-            ))}
-          </Grid>
+          <SongGrid songs={filtered} imports={imports} />
         ) : (
-          <Stack direction="column" gap={2} className="pb-12">
-            {filtered.map((song, i) => (
-              // Entrance stagger (SPEC §10.5): 30ms per card, capped, animates once per mount.
-              <motion.div
-                key={song.id}
-                initial={reduced ? false : { opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, ease: 'easeOut', delay: Math.min(i * 0.03, 0.45) }}
-              >
-                <SongRow song={song} importing={imports.get(song.id)} />
-              </motion.div>
-            ))}
-          </Stack>
+          <SongRowList songs={filtered} imports={imports} />
         )}
       </Container>
 
-      {importStrip &&
-        (() => {
-          const { job, title, moreCount } = importStrip
-          const stripKey = STRIP_KEY[job.stage]
-          return (
-            <StatusStrip pinned progress={job.progress}>
-              <span className="text-text-dim">
-                {stripKey ? t(stripKey) : job.stage} · {title}
-              </span>
-              <span className="font-medium text-accent">{Math.round(job.progress * 100)}%</span>
-              {moreCount > 0 && (
-                <span className="text-text-dim">
-                  {t('library.moreQueued', { count: moreCount })}
-                </span>
-              )}
-            </StatusStrip>
-          )
-        })()}
+      <ImportStatusStrip songs={songs} imports={imports} />
 
       <AnimatePresence>
         {showImport && <ImportDialog onClose={() => setShowImport(false)} />}
