@@ -44,6 +44,7 @@ import {
   Text,
   Toggle
 } from '../components/ui'
+import { useAppContext } from '../context/AppContext'
 import { type MicBootstrapState, useAudioEngine } from '../hooks/useAudioEngine'
 import { useAutoHideBar } from '../hooks/useAutoHideBar'
 import { usePlaybackClock, usePlaybackPosition } from '../hooks/usePlaybackClock'
@@ -53,9 +54,6 @@ import type { AudioEngine, MicFxPreset } from '../lib/audioEngine'
 
 interface Props {
   song: SongListItem
-  onExit: () => void
-  onEditLyrics: (song: SongListItem) => void
-  onArtistClick: (artist: string) => void
 }
 
 const TEMPO_PRESETS = [0.75, 0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.25]
@@ -98,8 +96,12 @@ const SeekBar = memo(function SeekBar({
  * Karaoke player (SPEC §7): blurred-art stage, lyric renderer on the engine clock,
  * auto-hide control bar (§7.2). Space play/pause, V guide vocal, Esc exits.
  */
-function Player({ song, onExit, onEditLyrics, onArtistClick }: Props): React.JSX.Element {
+function Player({ song }: Props): React.JSX.Element {
   const { t } = useTranslation()
+  const { goLibrary, goCreator } = useAppContext()
+  const onExit = useCallback(() => goLibrary(), [goLibrary])
+  const onEditLyrics = useCallback((s: SongListItem) => goCreator(s), [goCreator])
+  const onArtistClick = useCallback((artist: string) => goLibrary(artist), [goLibrary])
   const [vocalOn, setVocalOn] = useState(false)
   const [vocalVol, setVocalVol] = useState(1)
   const [instrVol, setInstrVol] = useState(1)

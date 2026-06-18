@@ -10,7 +10,7 @@ import {
   Wand2
 } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { parseLrc } from '../../../shared/lrc'
 import type { LrclibHit, Lyrics, SongListItem } from '../../../shared/types'
@@ -20,6 +20,7 @@ import LrclibFinderDialog from '../components/LrclibFinderDialog'
 import TimingStep from '../components/TimingStep'
 import Titlebar from '../components/Titlebar'
 import { Button, IconButton, Segmented, Stack, Text, useTabCycle } from '../components/ui'
+import { useAppContext } from '../context/AppContext'
 import { inferEnds } from '../lib/inferEnds'
 import { type BuildResult, buildLyrics, lyricsToText } from '../lib/lyricsText'
 import { mergeAlignment } from '../lib/mergeAlignment'
@@ -27,7 +28,6 @@ import { stripIpcError } from '../lib/stripIpcError'
 
 interface Props {
   song: SongListItem
-  onBack: () => void
 }
 
 /** EL4: the three creator steps Ctrl+Tab / the tab bar cycle through. */
@@ -42,8 +42,10 @@ interface Pending {
 }
 
 /** Lyric creator (SPEC §6): step (a) text + Align, step (b) timing. */
-function LyricCreator({ song, onBack }: Props): React.JSX.Element {
+function LyricCreator({ song }: Props): React.JSX.Element {
   const { t } = useTranslation()
+  const { goPlayer } = useAppContext()
+  const onBack = useCallback(() => goPlayer(song), [goPlayer, song])
   const [creatorStep, setCreatorStepDirect] = useState<CreatorStep>('text')
   const [text, setText] = useState('')
   const [saved, setSaved] = useState<Lyrics | null>(null)

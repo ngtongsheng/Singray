@@ -9,7 +9,7 @@ import {
   X,
   XCircle
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import PipelineInstaller from '../components/PipelineInstaller'
 import Titlebar from '../components/Titlebar'
@@ -26,16 +26,13 @@ import {
   Text,
   Toggle
 } from '../components/ui'
+import { useAppContext } from '../context/AppContext'
 import { useAsync } from '../hooks/useAsync'
 import { useAudioDevices } from '../hooks/useAudioDevices'
 import { useSettings } from '../hooks/useSettings'
 import { useTestTone } from '../hooks/useTestTone'
 import { availableLocales, i18n, localeName, resolveLocale } from '../lib/i18n'
 import { stripIpcError } from '../lib/stripIpcError'
-
-interface Props {
-  onBack: () => void
-}
 
 const TEST_URL = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
 
@@ -183,8 +180,10 @@ function LlmModelCombobox({
   )
 }
 
-function Settings({ onBack }: Props): React.JSX.Element {
+function Settings(): React.JSX.Element {
   const { t } = useTranslation()
+  const { goLibrary } = useAppContext()
+  const onBack = useCallback(() => goLibrary(), [goLibrary])
   const { settings, patch } = useSettings()
   const pipelineTest = useAsync(async () => {
     const started = Date.now()

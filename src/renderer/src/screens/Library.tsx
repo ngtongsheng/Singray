@@ -37,6 +37,7 @@ import {
   StatusStrip,
   Text
 } from '../components/ui'
+import { useAppContext } from '../context/AppContext'
 import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
 import { usePrefersReducedMotion } from '../lib/motionPresets'
@@ -57,14 +58,13 @@ const singCount = (s: SongListItem): number => s.playCount + s.sings.length
 const lastSungAt = (s: SongListItem): string => s.sings.at(-1) ?? s.lastPlayedAt ?? ''
 
 interface Props {
-  onOpenSettings: () => void
-  onSing: (song: SongListItem) => void
   /** Set when navigating from a song's artist name (ART2): pre-applies the artist filter. */
   initialArtistFilter?: string
 }
 
-function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.JSX.Element {
+function Library({ initialArtistFilter }: Props): React.JSX.Element {
   const { t } = useTranslation()
+  const { goSettings, goPlayer } = useAppContext()
   const { songs } = useLibrary()
   const imports = useImports()
   const [query, setQuery] = useState('')
@@ -203,7 +203,7 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
               <Plus className="size-4" strokeWidth={2} /> {t('library.addSong')}
             </Button>
             <IconButton
-              onClick={onOpenSettings}
+              onClick={goSettings}
               title={t('library.settings')}
               className="app-no-drag text-text-dim hover:text-text"
             >
@@ -320,7 +320,7 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
                   song={song}
                   importing={imports.get(song.id)}
                   onDelete={setPendingDelete}
-                  onSing={onSing}
+                  onSing={goPlayer}
                   onArtistClick={onArtistClick}
                 />
               </motion.div>
@@ -340,7 +340,7 @@ function Library({ onOpenSettings, onSing, initialArtistFilter }: Props): React.
                   song={song}
                   importing={imports.get(song.id)}
                   onDelete={setPendingDelete}
-                  onSing={onSing}
+                  onSing={goPlayer}
                   onArtistClick={onArtistClick}
                 />
               </motion.div>

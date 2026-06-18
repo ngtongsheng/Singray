@@ -1,7 +1,7 @@
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
-import type { SongListItem } from '../../shared/types'
 import AppHeader from './components/AppHeader'
+import { useAppContext } from './context/AppContext'
 import { assertNever } from './lib/assertNever'
 import { usePrefersReducedMotion } from './lib/motionPresets'
 import Library from './screens/Library'
@@ -10,14 +10,8 @@ import PipelineSetup from './screens/PipelineSetup'
 import Player from './screens/Player'
 import Settings from './screens/Settings'
 
-type View =
-  | { name: 'library'; artistFilter?: string }
-  | { name: 'settings' }
-  | { name: 'creator'; song: SongListItem }
-  | { name: 'player'; song: SongListItem }
-
 function App(): React.JSX.Element {
-  const [view, setView] = useState<View>({ name: 'library' })
+  const { view } = useAppContext()
   const reduced = usePrefersReducedMotion()
   // First-run gate (R4.3): show pipeline setup until installed or skipped this session.
   // null = still checking; true/false = whether the gate should show.
@@ -40,37 +34,19 @@ function App(): React.JSX.Element {
   } else {
     switch (view.name) {
       case 'settings':
-        screen = <Settings onBack={() => setView({ name: 'library' })} />
+        screen = <Settings />
         key = 'settings'
         break
       case 'creator':
-        screen = (
-          <LyricCreator
-            song={view.song}
-            onBack={() => setView({ name: 'player', song: view.song })}
-          />
-        )
+        screen = <LyricCreator song={view.song} />
         key = `creator:${view.song.id}`
         break
       case 'player':
-        screen = (
-          <Player
-            song={view.song}
-            onExit={() => setView({ name: 'library' })}
-            onEditLyrics={(song) => setView({ name: 'creator', song })}
-            onArtistClick={(artist) => setView({ name: 'library', artistFilter: artist })}
-          />
-        )
+        screen = <Player song={view.song} />
         key = `player:${view.song.id}`
         break
       case 'library':
-        screen = (
-          <Library
-            initialArtistFilter={view.artistFilter}
-            onOpenSettings={() => setView({ name: 'settings' })}
-            onSing={(song) => setView({ name: 'player', song })}
-          />
-        )
+        screen = <Library initialArtistFilter={view.artistFilter} />
         key = 'library'
         break
       default:

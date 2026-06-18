@@ -4,6 +4,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { tokenizeLine } from '../../shared/tokenize'
 import App from './App'
+import { AppProvider } from './context/AppContext'
 import { AudioEngine } from './lib/audioEngine'
 import { initI18n, resolveLocale } from './lib/i18n'
 
@@ -22,7 +23,9 @@ window.singray.settings.get().then((settings) => {
   initI18n(resolveLocale(settings.uiLanguage))
   createRoot(rootEl).render(
     <StrictMode>
-      <App />
+      <AppProvider>
+        <App />
+      </AppProvider>
     </StrictMode>
   )
 })
