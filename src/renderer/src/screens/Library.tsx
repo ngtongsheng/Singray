@@ -10,15 +10,9 @@ import {
   X
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type {
-  ImportStage,
-  Language,
-  LanguageDef,
-  Settings,
-  SongListItem
-} from '../../../shared/types'
+import type { ImportStage, Language, LanguageDef, SongListItem } from '../../../shared/types'
 import ConfirmDialog from '../components/ConfirmDialog'
 import ImportDialog from '../components/ImportDialog'
 import SongCard from '../components/SongCard'
@@ -38,6 +32,7 @@ import {
   Text
 } from '../components/ui'
 import { useAppContext } from '../context/AppContext'
+import { LibraryProvider, useLibraryContext } from '../context/LibraryContext'
 import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
 import { usePrefersReducedMotion } from '../lib/motionPresets'
@@ -49,10 +44,6 @@ const STRIP_KEY: Partial<Record<ImportStage, string>> = {
   convert: 'stage.convert'
 }
 
-type SortMode = 'added' | 'mostSung' | 'recentSung'
-type Section = 'songs' | 'artists'
-type ViewMode = Settings['libraryView']
-
 /** Sing count with the legacy MVP playCount as floor (R1.5 migration). */
 const singCount = (s: SongListItem): number => s.playCount + s.sings.length
 const lastSungAt = (s: SongListItem): string => s.sings.at(-1) ?? s.lastPlayedAt ?? ''
@@ -63,47 +54,47 @@ interface Props {
 }
 
 function Library({ initialArtistFilter }: Props): React.JSX.Element {
+  return (
+    <LibraryProvider initialArtistFilter={initialArtistFilter}>
+      <LibraryView />
+    </LibraryProvider>
+  )
+}
+
+function LibraryView(): React.JSX.Element {
   const { t } = useTranslation()
-  const { goSettings, goPlayer } = useAppContext()
+  const { goSettings } = useAppContext()
+  const {
+    query,
+    setQuery,
+    language,
+    setLanguage,
+    favoritesOnly,
+    setFavoritesOnly,
+    needsLyricsOnly,
+    setNeedsLyricsOnly,
+    sort,
+    setSort,
+    section,
+    setSection,
+    view,
+    setViewMode,
+    artistFilter,
+    clearArtistFilter,
+    onArtistClick,
+    pendingDelete,
+    cancelDelete,
+    confirmDelete
+  } = useLibraryContext()
   const { songs } = useLibrary()
   const imports = useImports()
-  const [query, setQuery] = useState('')
-  const [language, setLanguage] = useState<Language | null>(null)
-  const [favoritesOnly, setFavoritesOnly] = useState(false)
-  const [needsLyricsOnly, setNeedsLyricsOnly] = useState(false)
-  const [sort, setSort] = useState<SortMode>('added')
-  const [pendingDelete, setPendingDelete] = useState<SongListItem | null>(null)
   const [showImport, setShowImport] = useState(false)
   const [langDefs, setLangDefs] = useState<LanguageDef[]>([])
-  const [section, setSection] = useState<Section>('songs')
-  const [view, setView] = useState<ViewMode>('grid')
-  const [artistFilter, setArtistFilter] = useState<string | null>(initialArtistFilter ?? null)
   const searchRef = useRef<HTMLInputElement>(null)
   const reduced = usePrefersReducedMotion()
 
   useEffect(() => {
-    window.singray.settings.get().then((s) => {
-      setLangDefs(s.languages)
-      setView(s.libraryView)
-    })
-  }, [])
-
-  // ART2: navigating in from a song's artist name re-applies the filter even
-  // though Library stays mounted (App.tsx key is constant).
-  useEffect(() => {
-    if (initialArtistFilter === undefined) return
-    setArtistFilter(initialArtistFilter.trim())
-    setSection('songs')
-  }, [initialArtistFilter])
-
-  const setViewMode = (v: ViewMode): void => {
-    setView(v)
-    void window.singray.settings.set({ libraryView: v })
-  }
-
-  const onArtistClick = useCallback((artist: string): void => {
-    setArtistFilter(artist.trim())
-    setSection('songs')
+    window.singray.settings.get().then((s) => setLangDefs(s.languages))
   }, [])
 
   useEffect(() => {
@@ -157,12 +148,6 @@ function Library({ initialArtistFilter }: Props): React.JSX.Element {
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => (a.name || '￿').localeCompare(b.name || '￿', undefined, { numeric: true }))
   }, [songs, section])
-
-  const confirmDelete = async (): Promise<void> => {
-    if (!pendingDelete) return
-    await window.singray.library.delete(pendingDelete.id)
-    setPendingDelete(null)
-  }
 
   const importStrip = useMemo(() => {
     if (imports.size === 0) return null
@@ -218,11 +203,7 @@ function Library({ initialArtistFilter }: Props): React.JSX.Element {
           <Stack gap={2} justify="between" className="py-3">
             <Stack gap={2} wrap>
               {artistFilter !== null && (
-                <Chip
-                  active
-                  onClick={() => setArtistFilter(null)}
-                  title={t('library.clearArtistFilter')}
-                >
+                <Chip active onClick={clearArtistFilter} title={t('library.clearArtistFilter')}>
                   {t('library.artistFilter', { name: artistFilter || t('common.unknown') })}
                   <X className="size-3.5" strokeWidth={1.5} />
                 </Chip>
@@ -316,13 +297,7 @@ function Library({ initialArtistFilter }: Props): React.JSX.Element {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, ease: 'easeOut', delay: Math.min(i * 0.03, 0.45) }}
               >
-                <SongCard
-                  song={song}
-                  importing={imports.get(song.id)}
-                  onDelete={setPendingDelete}
-                  onSing={goPlayer}
-                  onArtistClick={onArtistClick}
-                />
+                <SongCard song={song} importing={imports.get(song.id)} />
               </motion.div>
             ))}
           </Grid>
@@ -336,13 +311,7 @@ function Library({ initialArtistFilter }: Props): React.JSX.Element {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, ease: 'easeOut', delay: Math.min(i * 0.03, 0.45) }}
               >
-                <SongRow
-                  song={song}
-                  importing={imports.get(song.id)}
-                  onDelete={setPendingDelete}
-                  onSing={goPlayer}
-                  onArtistClick={onArtistClick}
-                />
+                <SongRow song={song} importing={imports.get(song.id)} />
               </motion.div>
             ))}
           </Stack>
@@ -379,7 +348,7 @@ function Library({ initialArtistFilter }: Props): React.JSX.Element {
             })}
             confirmLabel={t('common.delete')}
             onConfirm={confirmDelete}
-            onCancel={() => setPendingDelete(null)}
+            onCancel={cancelDelete}
           />
         )}
       </AnimatePresence>

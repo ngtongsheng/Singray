@@ -2,6 +2,7 @@ import { AlertTriangle, Heart, Loader2, MoreHorizontal, RotateCcw } from 'lucide
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ImportProgress, ImportStage, SongListItem } from '../../../shared/types'
+import { useLibraryContext } from '../context/LibraryContext'
 import { useSongCardActions } from '../hooks/useSongCardActions'
 import ArtistLink from './ArtistLink'
 import SongCardMenu from './SongCardMenu'
@@ -10,9 +11,6 @@ import { Button, IconButton, Text } from './ui'
 interface Props {
   song: SongListItem
   importing: ImportProgress | undefined
-  onDelete: (song: SongListItem) => void
-  onSing: (song: SongListItem) => void
-  onArtistClick: (artist: string) => void
 }
 
 const STAGE_KEY: Partial<Record<ImportStage, string>> = {
@@ -57,14 +55,9 @@ function StatusBadge({
   return null
 }
 
-const SongCard = memo(function SongCard({
-  song,
-  importing,
-  onDelete,
-  onSing,
-  onArtistClick
-}: Props): React.JSX.Element {
+const SongCard = memo(function SongCard({ song, importing }: Props): React.JSX.Element {
   const { t } = useTranslation()
+  const { onSing, onArtistClick, requestDelete } = useLibraryContext()
   const { failed, openable, onActivate, onKeyActivate, toggleFavorite, retry } = useSongCardActions(
     { song, importing, onSing }
   )
@@ -93,7 +86,7 @@ const SongCard = memo(function SongCard({
         <div className="absolute top-2 left-2">
           <SongCardMenu
             song={song}
-            onDelete={onDelete}
+            onDelete={requestDelete}
             origin="top left"
             className="top-full left-0 translate-y-1 w-40 overflow-hidden py-1"
             trigger={(open, toggle) => (
