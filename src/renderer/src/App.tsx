@@ -1,6 +1,6 @@
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
-import AppHeader from './components/AppHeader'
+import AppHeader from './components/shared/AppHeader'
 import { useAppContext } from './context/AppContext'
 import { assertNever } from './lib/assertNever'
 import { usePrefersReducedMotion } from './lib/motionPresets'

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import PipelineInstaller from '../components/PipelineInstaller'
-import Titlebar from '../components/Titlebar'
+import PipelineInstaller from '../components/shared/PipelineInstaller'
+import Titlebar from '../components/shared/Titlebar'
 import { Button, Container, Stack, Text } from '../components/ui'
 
 interface Props {
