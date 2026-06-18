@@ -15,7 +15,7 @@ import SettingsButton from '../components/SettingsButton'
 import SongGrid from '../components/SongGrid'
 import SongRowList from '../components/SongRowList'
 import Titlebar from '../components/Titlebar'
-import { Container, Stack } from '../components/ui'
+import { Container, Stack, Text } from '../components/ui'
 import ViewSortControls from '../components/ViewSortControls'
 import { LibraryProvider, useLibraryContext } from '../context/LibraryContext'
 
@@ -77,13 +77,15 @@ function LibraryView(): React.JSX.Element {
         {songs.length === 0 ? (
           <Stack direction="column" gap={4} justify="center" align="center" className="py-24">
             <Mic2 className="size-12 text-accent" strokeWidth={1.5} />
-            <p className="text-text-dim">{t('library.emptyHint')}</p>
+            <Text variant="hint">{t('library.emptyHint')}</Text>
             <AddSongButton size="md" />
           </Stack>
         ) : section === 'artists' ? (
           <ArtistList />
         ) : filteredSongs.length === 0 ? (
-          <p className="py-12 text-center text-text-dim">{t('library.noMatch')}</p>
+          <Text variant="hint" className="py-12 text-center">
+            {t('library.noMatch')}
+          </Text>
         ) : view === 'grid' ? (
           <SongGrid />
         ) : (
