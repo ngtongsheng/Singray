@@ -38,6 +38,9 @@ interface LibraryContextValue {
   requestDelete: (song: SongListItem) => void
   cancelDelete: () => void
   confirmDelete: () => Promise<void>
+  showImport: boolean
+  openImport: () => void
+  closeImport: () => void
 }
 
 const LibraryContext = createContext<LibraryContextValue | null>(null)
@@ -65,6 +68,7 @@ export function LibraryProvider({
   const [view, setView] = useState<LibraryViewMode>('grid')
   const [artistFilter, setArtistFilter] = useState<string | null>(initialArtistFilter ?? null)
   const [pendingDelete, setPendingDelete] = useState<SongListItem | null>(null)
+  const [showImport, setShowImport] = useState(false)
 
   useEffect(() => {
     window.singray.settings.get().then((s) => setView(s.libraryView))
@@ -97,6 +101,9 @@ export function LibraryProvider({
     await window.singray.library.delete(pendingDelete.id)
     setPendingDelete(null)
   }, [pendingDelete])
+
+  const openImport = useCallback(() => setShowImport(true), [])
+  const closeImport = useCallback(() => setShowImport(false), [])
 
   const filteredSongs = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -141,7 +148,10 @@ export function LibraryProvider({
       pendingDelete,
       requestDelete,
       cancelDelete,
-      confirmDelete
+      confirmDelete,
+      showImport,
+      openImport,
+      closeImport
     }),
     [
       songs,
@@ -162,7 +172,10 @@ export function LibraryProvider({
       pendingDelete,
       requestDelete,
       cancelDelete,
-      confirmDelete
+      confirmDelete,
+      showImport,
+      openImport,
+      closeImport
     ]
   )
 

@@ -1,4 +1,4 @@
-export { default as Button } from './Button'
+export { type ButtonProps, default as Button } from './Button'
 export { default as Chip } from './Chip'
 export { default as Container } from './Container'
 export { default as Dialog } from './Dialog'

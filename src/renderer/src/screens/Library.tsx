@@ -1,20 +1,22 @@
-import { Mic2, Plus, Settings as SettingsIcon } from 'lucide-react'
+import { Mic2 } from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LanguageDef } from '../../../shared/types'
+import AddSongButton from '../components/AddSongButton'
 import ArtistList from '../components/ArtistList'
 import ConfirmDialog from '../components/ConfirmDialog'
 import FilterChips from '../components/FilterChips'
 import ImportDialog from '../components/ImportDialog'
 import ImportStatusStrip from '../components/ImportStatusStrip'
 import SearchInput from '../components/SearchInput'
+import SectionSwitch from '../components/SectionSwitch'
+import SettingsButton from '../components/SettingsButton'
 import SongGrid from '../components/SongGrid'
 import SongRowList from '../components/SongRowList'
 import Titlebar from '../components/Titlebar'
-import { Button, Container, IconButton, Segmented, Stack } from '../components/ui'
+import { Container, Stack } from '../components/ui'
 import ViewSortControls from '../components/ViewSortControls'
-import { useAppContext } from '../context/AppContext'
 import { LibraryProvider, useLibraryContext } from '../context/LibraryContext'
 
 interface Props {
@@ -32,18 +34,17 @@ function Library({ initialArtistFilter }: Props): React.JSX.Element {
 
 function LibraryView(): React.JSX.Element {
   const { t } = useTranslation()
-  const { goSettings } = useAppContext()
   const {
     songs,
     filteredSongs,
     section,
-    setSection,
     view,
     pendingDelete,
     cancelDelete,
-    confirmDelete
+    confirmDelete,
+    showImport,
+    closeImport
   } = useLibraryContext()
-  const [showImport, setShowImport] = useState(false)
   const [langDefs, setLangDefs] = useState<LanguageDef[]>([])
 
   useEffect(() => {
@@ -56,27 +57,11 @@ function LibraryView(): React.JSX.Element {
         <Stack justify="between" className="w-full">
           <Stack gap={3}>
             <SearchInput />
-            <Segmented
-              className="app-no-drag"
-              value={section}
-              onChange={setSection}
-              options={[
-                { value: 'songs', label: t('library.songs') },
-                { value: 'artists', label: t('library.artists') }
-              ]}
-            />
+            <SectionSwitch />
           </Stack>
           <Stack gap={3}>
-            <Button variant="primary" onClick={() => setShowImport(true)} className="app-no-drag">
-              <Plus className="size-4" strokeWidth={2} /> {t('library.addSong')}
-            </Button>
-            <IconButton
-              onClick={goSettings}
-              title={t('library.settings')}
-              className="app-no-drag text-text-dim hover:text-text"
-            >
-              <SettingsIcon className="size-4" strokeWidth={1.5} />
-            </IconButton>
+            <AddSongButton className="app-no-drag" />
+            <SettingsButton />
           </Stack>
         </Stack>
       </Titlebar>
@@ -93,9 +78,7 @@ function LibraryView(): React.JSX.Element {
           <Stack direction="column" gap={4} justify="center" align="center" className="py-24">
             <Mic2 className="size-12 text-accent" strokeWidth={1.5} />
             <p className="text-text-dim">{t('library.emptyHint')}</p>
-            <Button variant="primary" size="md" onClick={() => setShowImport(true)}>
-              <Plus className="size-4" strokeWidth={2} /> {t('library.addSong')}
-            </Button>
+            <AddSongButton size="md" />
           </Stack>
         ) : section === 'artists' ? (
           <ArtistList />
@@ -111,7 +94,7 @@ function LibraryView(): React.JSX.Element {
       <ImportStatusStrip />
 
       <AnimatePresence>
-        {showImport && <ImportDialog onClose={() => setShowImport(false)} />}
+        {showImport && <ImportDialog onClose={closeImport} />}
         {pendingDelete && (
           <ConfirmDialog
             title={t('library.deleteTitle')}
