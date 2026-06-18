@@ -1,17 +1,12 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SongListItem } from '../../../shared/types'
 import { useLibraryContext } from '../context/LibraryContext'
 import { Stack, Text } from './ui'
 
-interface Props {
-  songs: SongListItem[]
-}
-
 /** Artists section (ART1): every distinct artist with a song count, "" groups songs with no artist set. */
-function ArtistList({ songs }: Props): React.JSX.Element {
+function ArtistList(): React.JSX.Element {
   const { t } = useTranslation()
-  const { onArtistClick } = useLibraryContext()
+  const { songs, onArtistClick } = useLibraryContext()
 
   const artists = useMemo(() => {
     const counts = new Map<string, number>()

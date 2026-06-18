@@ -1,12 +1,21 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import type { Language, Settings, SongListItem } from '../../../shared/types'
+import type { ImportProgress, Language, Settings, SongListItem } from '../../../shared/types'
+import { useImports } from '../hooks/useImports'
+import { useLibrary } from '../hooks/useLibrary'
 import { useAppContext } from './AppContext'
 
 export type SortMode = 'added' | 'mostSung' | 'recentSung'
 export type Section = 'songs' | 'artists'
 export type LibraryViewMode = Settings['libraryView']
 
+/** Sing count with the legacy MVP playCount as floor (R1.5 migration). */
+const singCount = (s: SongListItem): number => s.playCount + s.sings.length
+const lastSungAt = (s: SongListItem): string => s.sings.at(-1) ?? s.lastPlayedAt ?? ''
+
 interface LibraryContextValue {
+  songs: SongListItem[]
+  filteredSongs: SongListItem[]
+  imports: Map<string, ImportProgress>
   query: string
   setQuery: (q: string) => void
   language: Language | null
@@ -45,6 +54,8 @@ export function LibraryProvider({
   children
 }: ProviderProps): React.JSX.Element {
   const { goPlayer } = useAppContext()
+  const { songs } = useLibrary()
+  const imports = useImports()
   const [query, setQuery] = useState('')
   const [language, setLanguage] = useState<Language | null>(null)
   const [favoritesOnly, setFavoritesOnly] = useState(false)
@@ -87,8 +98,28 @@ export function LibraryProvider({
     setPendingDelete(null)
   }, [pendingDelete])
 
+  const filteredSongs = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    const list = songs.filter((s) => {
+      if (q && !s.title.toLowerCase().includes(q) && !s.artist.toLowerCase().includes(q))
+        return false
+      if (language && s.language !== language) return false
+      if (favoritesOnly && !s.favorite) return false
+      if (needsLyricsOnly && s.hasLyrics) return false
+      if (artistFilter !== null && s.artist.trim() !== artistFilter) return false
+      return true
+    })
+    // 'added' keeps the listing order (addedAt desc from main)
+    if (sort === 'mostSung') list.sort((a, b) => singCount(b) - singCount(a))
+    else if (sort === 'recentSung') list.sort((a, b) => lastSungAt(b).localeCompare(lastSungAt(a)))
+    return list
+  }, [songs, query, language, favoritesOnly, needsLyricsOnly, artistFilter, sort])
+
   const value = useMemo<LibraryContextValue>(
     () => ({
+      songs,
+      filteredSongs,
+      imports,
       query,
       setQuery,
       language,
@@ -113,6 +144,9 @@ export function LibraryProvider({
       confirmDelete
     }),
     [
+      songs,
+      filteredSongs,
+      imports,
       query,
       language,
       favoritesOnly,

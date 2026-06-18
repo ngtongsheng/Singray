@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ImportProgress, ImportStage, SongListItem } from '../../../shared/types'
+import type { ImportStage } from '../../../shared/types'
+import { useLibraryContext } from '../context/LibraryContext'
 import { StatusStrip } from './ui'
 
 const STRIP_KEY: Partial<Record<ImportStage, string>> = {
@@ -10,14 +11,10 @@ const STRIP_KEY: Partial<Record<ImportStage, string>> = {
   convert: 'stage.convert'
 }
 
-interface Props {
-  songs: SongListItem[]
-  imports: Map<string, ImportProgress>
-}
-
 /** Pinned bottom strip showing the active/most-relevant import job's progress. */
-function ImportStatusStrip({ songs, imports }: Props): React.JSX.Element | null {
+function ImportStatusStrip(): React.JSX.Element | null {
   const { t } = useTranslation()
+  const { songs, imports } = useLibraryContext()
 
   const importStrip = useMemo(() => {
     if (imports.size === 0) return null

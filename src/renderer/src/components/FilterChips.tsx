@@ -1,19 +1,19 @@
 import { Heart, Type, X } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Language, LanguageDef, SongListItem } from '../../../shared/types'
+import type { Language, LanguageDef } from '../../../shared/types'
 import { useLibraryContext } from '../context/LibraryContext'
 import { Chip, Stack } from './ui'
 
 interface Props {
-  songs: SongListItem[]
   langDefs: LanguageDef[]
 }
 
 /** Filter chips row: artist filter (if any), language, favorites, needs-lyrics. */
-function FilterChips({ songs, langDefs }: Props): React.JSX.Element {
+function FilterChips({ langDefs }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const {
+    songs,
     artistFilter,
     clearArtistFilter,
     language,

@@ -1,20 +1,16 @@
 import { motion } from 'motion/react'
-import type { ImportProgress, SongListItem } from '../../../shared/types'
+import { useLibraryContext } from '../context/LibraryContext'
 import { usePrefersReducedMotion } from '../lib/motionPresets'
 import SongRow from './SongRow'
 import { Stack } from './ui'
 
-interface Props {
-  songs: SongListItem[]
-  imports: Map<string, ImportProgress>
-}
-
 /** List view of songs, with entrance stagger (SPEC §10.5). */
-function SongRowList({ songs, imports }: Props): React.JSX.Element {
+function SongRowList(): React.JSX.Element {
+  const { filteredSongs, imports } = useLibraryContext()
   const reduced = usePrefersReducedMotion()
   return (
     <Stack direction="column" gap={2} className="pb-12">
-      {songs.map((song, i) => (
+      {filteredSongs.map((song, i) => (
         <motion.div
           key={song.id}
           initial={reduced ? false : { opacity: 0, y: 8 }}
