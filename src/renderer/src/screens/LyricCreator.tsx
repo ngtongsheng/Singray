@@ -1,348 +1,66 @@
-import {
-  ArrowLeft,
-  Eye,
-  FileDown,
-  FileText,
-  Keyboard,
-  Loader2,
-  Search,
-  Sparkles,
-  Wand2
-} from 'lucide-react'
 import { AnimatePresence } from 'motion/react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { parseLrc } from '../../../shared/lrc'
-import type { LrclibHit, Lyrics, SongListItem } from '../../../shared/types'
+import type { SongListItem } from '../../../shared/types'
 import CleanLyricsDialog from '../components/lyricCreator/CleanLyricsDialog'
+import CreatorHeader from '../components/lyricCreator/CreatorHeader'
 import LrclibFinderDialog from '../components/lyricCreator/LrclibFinderDialog'
+import TextEditor from '../components/lyricCreator/TextEditor'
+import TextStepToolbar from '../components/lyricCreator/TextStepToolbar'
 import TimingStep from '../components/lyricCreator/TimingStep'
 import ConfirmDialog from '../components/shared/ConfirmDialog'
 import Titlebar from '../components/shared/Titlebar'
-import { Button, IconButton, Segmented, Stack, Text, useTabCycle } from '../components/ui'
-import { useAppContext } from '../context/AppContext'
-import { inferEnds } from '../lib/inferEnds'
-import { type BuildResult, buildLyrics, lyricsToText } from '../lib/lyricsText'
-import { mergeAlignment } from '../lib/mergeAlignment'
-import { stripIpcError } from '../lib/stripIpcError'
+import { Stack } from '../components/ui'
+import { LyricCreatorProvider, useLyricCreatorContext } from '../context/LyricCreatorContext'
 
 interface Props {
   song: SongListItem
 }
 
-/** EL4: the three creator steps Ctrl+Tab / the tab bar cycle through. */
-type CreatorStep = 'text' | 'tap' | 'review'
-const CREATOR_STEPS = ['text', 'tap', 'review'] as const
-
-interface Pending {
-  result: BuildResult
-  action: 'continue' | 'align'
-  /** Step to land on once the user confirms (the tab they originally clicked). */
-  landOn: CreatorStep
+function LyricCreator({ song }: Props): React.JSX.Element {
+  return (
+    <LyricCreatorProvider song={song}>
+      <LyricCreatorView />
+    </LyricCreatorProvider>
+  )
 }
 
-/** Lyric creator (SPEC §6): step (a) text + Align, step (b) timing. */
-function LyricCreator({ song }: Props): React.JSX.Element {
+function LyricCreatorView(): React.JSX.Element {
   const { t } = useTranslation()
-  const { goPlayer } = useAppContext()
-  const onBack = useCallback(() => goPlayer(song), [goPlayer, song])
-  const [creatorStep, setCreatorStepDirect] = useState<CreatorStep>('text')
-  const [text, setText] = useState('')
-  const [saved, setSaved] = useState<Lyrics | null>(null)
-  const [loaded, setLoaded] = useState(false)
-  const [pending, setPending] = useState<Pending | null>(null)
-  const [aligning, setAligning] = useState(false)
-  const [alignError, setAlignError] = useState<string | null>(null)
-  const [pendingLrc, setPendingLrc] = useState<Lyrics | null>(null)
-  const [lrcError, setLrcError] = useState<string | null>(null)
-  const [finderOpen, setFinderOpen] = useState(false)
-  const [cleaning, setCleaning] = useState(false)
-  const [cleanPreview, setCleanPreview] = useState<string | null>(null)
-  const fileRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    window.singray.lyrics.get(song.id).then((lyrics) => {
-      setSaved(lyrics)
-      if (lyrics) setText(lyricsToText(lyrics))
-      setLoaded(true)
-    })
-  }, [song.id])
-
-  const hasTiming = useMemo(
-    () => saved?.lines.some((l) => l.start !== null || l.units.some((u) => u.t !== null)) ?? false,
-    [saved]
-  )
-
-  const save = async (result: BuildResult, landOn: CreatorStep): Promise<void> => {
-    await window.singray.lyrics.save(song.id, result.lyrics)
-    setSaved(result.lyrics)
-    setPending(null)
-    setCreatorStepDirect(landOn)
-  }
-
-  const onContinue = (landOn: CreatorStep): void => {
-    const result = buildLyrics(text, song.language, saved)
-    if (result.invalidated.length > 0) setPending({ result, action: 'continue', landOn })
-    else void save(result, landOn)
-  }
-
-  /** Align (SPEC §6.6): forced alignment fills `t`; failure is non-fatal (tap mode remains). */
-  const doAlign = async (result: BuildResult, landOn: CreatorStep): Promise<void> => {
-    setPending(null)
-    setAligning(true)
-    setAlignError(null)
-    try {
-      // Persist the draft first so a pipeline crash still leaves valid lyrics.json.
-      await window.singray.lyrics.save(song.id, result.lyrics)
-      setSaved(result.lyrics)
-      const lyricText = result.lyrics.lines
-        .map((l) => l.text)
-        .filter((t) => t !== '')
-        .join('\n')
-      const tokens = await window.singray.lyrics.align(song.id, lyricText)
-      const merged = mergeAlignment(result.lyrics, tokens)
-      const withEnds = inferEnds(merged.lyrics, song.durationSec)
-      await window.singray.lyrics.save(song.id, withEnds)
-      setSaved(withEnds)
-      setCreatorStepDirect(landOn)
-    } catch (err) {
-      setAlignError(stripIpcError((err as Error).message))
-    } finally {
-      setAligning(false)
-    }
-  }
-
-  const onAlign = (): void => {
-    const result = buildLyrics(text, song.language, saved)
-    if (hasTiming) setPending({ result, action: 'align', landOn: 'tap' })
-    else void doAlign(result, 'tap')
-  }
-
-  /** LRC import (R3.4): timestamped file → timed Lyrics, lands in the timing step for fix-up. */
-  const applyLrc = async (lyrics: Lyrics): Promise<void> => {
-    setPendingLrc(null)
-    await window.singray.lyrics.save(song.id, lyrics)
-    setSaved(lyrics)
-    setText(lyricsToText(lyrics))
-    setCreatorStepDirect('tap')
-  }
-
-  /** Shared LRC ingest (file picker + LRCLIB synced hit): parse → ends → confirm-if-timing. */
-  const ingestLrc = (content: string): void => {
-    try {
-      const parsed = parseLrc(content, song.language)
-      const withEnds = inferEnds(parsed, song.durationSec)
-      if (hasTiming) setPendingLrc(withEnds)
-      else void applyLrc(withEnds)
-    } catch {
-      setLrcError(t('creator.lrcInvalid'))
-    }
-  }
-
-  const onFile = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    const file = e.target.files?.[0]
-    e.target.value = '' // allow re-picking the same file
-    if (!file) return
-    setLrcError(null)
-    const reader = new FileReader()
-    reader.onload = () => ingestLrc(String(reader.result))
-    reader.onerror = () => setLrcError(t('creator.lrcInvalid'))
-    reader.readAsText(file)
-  }
-
-  /** LRCLIB pick (R3.5): synced → timed import path, plain-only → fill the textarea. */
-  const onPickHit = (hit: LrclibHit): void => {
-    setFinderOpen(false)
-    setLrcError(null)
-    if (hit.syncedLyrics) ingestLrc(hit.syncedLyrics)
-    else if (hit.plainLyrics) setText(hit.plainLyrics)
-  }
-
-  /** LLM lyric cleanup (R3.6): preview a stripped/normalized version before applying. */
-  const onClean = async (): Promise<void> => {
-    setLrcError(null)
-    setCleaning(true)
-    try {
-      const cleaned = await window.singray.llm.cleanLyrics({ text, language: song.language })
-      setCleanPreview(cleaned)
-    } catch (err) {
-      setLrcError(stripIpcError((err as Error).message))
-    } finally {
-      setCleaning(false)
-    }
-  }
-
-  const setCreatorStep = (next: CreatorStep): void => {
-    if (next !== 'text' && creatorStep === 'text') {
-      if (!loaded || parsedEmpty(text) || aligning) return
-      onContinue(next)
-      return
-    }
-    setCreatorStepDirect(next)
-  }
-
-  useTabCycle(CREATOR_STEPS, creatorStep, setCreatorStep)
-
-  // Stable reference so LrclibFinderDialog's fetch effect doesn't refire on unrelated
-  // LyricCreator re-renders (e.g. alignError/lrcError changes) while it's open.
-  const finderQuery = useMemo(
-    () => ({ title: song.title, artist: song.artist, durationSec: song.durationSec }),
-    [song.title, song.artist, song.durationSec]
-  )
+  const {
+    song,
+    creatorStep,
+    saved,
+    setSaved,
+    pending,
+    setPending,
+    pendingLrc,
+    setPendingLrc,
+    applyLrc,
+    save,
+    doAlign,
+    finderOpen,
+    closeFinder,
+    finderQuery,
+    onPickHit,
+    cleanPreview,
+    setCleanPreview,
+    text,
+    setText
+  } = useLyricCreatorContext()
 
   return (
     <div className="relative h-full">
       {/* Row 1: Floating page header (Titlebar) — back + title (left), Segmented (right) */}
       <Titlebar>
-        <Stack justify="between" className="w-full">
-          <Stack gap={2} align="center" className="min-w-0">
-            <IconButton
-              onClick={onBack}
-              title={t('common.back')}
-              className="app-no-drag shrink-0 text-text-dim hover:text-text"
-            >
-              <ArrowLeft className="size-4" strokeWidth={1.5} />
-            </IconButton>
-            <Stack gap={2} align="baseline" className="min-w-0">
-              <Text as="h1" variant="subtitle" className="truncate">
-                {song.title}
-              </Text>
-              <Text variant="hint" className="hidden truncate sm:inline">
-                {t('creator.subtitle', { artist: song.artist })}
-              </Text>
-            </Stack>
-          </Stack>
-          <Stack gap={0} align="center" className="app-no-drag shrink-0">
-            <Segmented
-              value={creatorStep}
-              onChange={setCreatorStep}
-              options={[
-                {
-                  value: 'text',
-                  label: (
-                    <>
-                      <FileText className="size-4" strokeWidth={1.5} /> {t('creator.stepText')}
-                    </>
-                  )
-                },
-                {
-                  value: 'tap',
-                  label: (
-                    <>
-                      <Keyboard className="size-4" strokeWidth={1.5} /> {t('creator.stepTap')}
-                    </>
-                  )
-                },
-                {
-                  value: 'review',
-                  label: (
-                    <>
-                      <Eye className="size-4" strokeWidth={1.5} /> {t('creator.stepReview')}
-                    </>
-                  )
-                }
-              ]}
-            />
-          </Stack>
-        </Stack>
+        <CreatorHeader />
       </Titlebar>
 
       {/* Content area (pt-19 clears the floating AppHeader + Titlebar) */}
       <Stack direction="column" gap={0} className="absolute inset-0 pt-19">
-        {/* Row 2: Action buttons (text step only) */}
-        {creatorStep === 'text' && (
-          <Stack direction="column" gap={1} className="border-border border-b px-6 py-2">
-            <Stack gap={2}>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".lrc,.txt,text/plain"
-                onChange={onFile}
-                className="hidden"
-              />
-              <Button
-                onClick={() => setFinderOpen(true)}
-                disabled={!loaded || aligning}
-                title={t('finder.findTip')}
-                className="font-medium text-text-dim hover:text-text"
-              >
-                <Search className="size-4" strokeWidth={1.5} /> {t('finder.find')}
-              </Button>
-              <Button
-                onClick={() => fileRef.current?.click()}
-                disabled={!loaded || aligning}
-                title={t('creator.importLrcTip')}
-                className="font-medium text-text-dim hover:text-text"
-              >
-                <FileDown className="size-4" strokeWidth={1.5} /> {t('creator.importLrc')}
-              </Button>
-              <Button
-                onClick={() => void onClean()}
-                disabled={!loaded || parsedEmpty(text) || cleaning || aligning}
-                title={t('clean.tip')}
-                className="font-medium text-text-dim hover:text-text"
-              >
-                {cleaning ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" strokeWidth={2} />{' '}
-                    {t('clean.cleaning')}
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="size-4" strokeWidth={1.5} /> {t('clean.button')}
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={onAlign}
-                disabled={!loaded || parsedEmpty(text) || aligning}
-                title={t('creator.alignTip')}
-                className="font-medium text-text-dim hover:text-text"
-              >
-                {aligning ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" strokeWidth={2} />{' '}
-                    {t('creator.aligning')}
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="size-4" strokeWidth={1.5} /> {t('creator.align')}
-                  </>
-                )}
-              </Button>
-            </Stack>
-            {(alignError || lrcError) && (
-              <>
-                {alignError && (
-                  <Text variant="error">{t('creator.alignFailed', { message: alignError })}</Text>
-                )}
-                {lrcError && <Text variant="error">{lrcError}</Text>}
-              </>
-            )}
-          </Stack>
-        )}
+        {creatorStep === 'text' && <TextStepToolbar />}
 
-        {/* Row 3 + 4: Content area (textarea + hint, or TimingStep) */}
         {creatorStep === 'text' ? (
-          <>
-            <Stack direction="column" gap={0} className="flex-1">
-              <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                disabled={!loaded}
-                spellCheck={false}
-                placeholder={t('creator.placeholder')}
-                className="outline-none min-h-0 flex-1 resize-none overflow-y-auto bg-surface p-6 font-lyric text-base leading-7 placeholder:text-text-dim/40"
-              />
-            </Stack>
-            {/* Row 4: Helper text under textarea */}
-            <div className="border-border border-t px-6 py-2">
-              <Text variant="hint">
-                {t('creator.hint')}
-                {hasTiming && <span className="text-accent-soft">{t('creator.hintTimed')}</span>}
-              </Text>
-            </div>
-          </>
+          <TextEditor />
         ) : (
           saved && (
             <TimingStep
@@ -368,11 +86,7 @@ function LyricCreator({ song }: Props): React.JSX.Element {
           />
         )}
         {finderOpen && (
-          <LrclibFinderDialog
-            query={finderQuery}
-            onPick={onPickHit}
-            onClose={() => setFinderOpen(false)}
-          />
+          <LrclibFinderDialog query={finderQuery} onPick={onPickHit} onClose={closeFinder} />
         )}
         {pendingLrc && (
           <ConfirmDialog
@@ -407,10 +121,6 @@ function LyricCreator({ song }: Props): React.JSX.Element {
       </AnimatePresence>
     </div>
   )
-}
-
-function parsedEmpty(text: string): boolean {
-  return text.trim() === ''
 }
 
 export default LyricCreator
