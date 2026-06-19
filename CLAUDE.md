@@ -3,27 +3,30 @@
 Personal desktop karaoke app. Electron + React + TS + Tailwind v4, Python pipeline for YouTube download + UVR stem separation. Windows first.
 
 ## Source of truth
-- `SPEC.md` — full spec: architecture, data model, pipeline contract, audio engine, UI design system, risks. Read the sections relevant to the current story before coding.
-- `BACKLOG.md` — story checklist + **Now** pointer + session log. This is the development state.
+- `SPEC.md` — full spec: architecture, data model, pipeline contract, audio engine, UI design system, risks. Read the sections relevant to the current issue before coding.
+- **GitHub Issues** — the work backlog. `gh issue list` is the development state; issues close on PR merge.
+- `DECISIONS.md` — narrative decision log (the *why* behind resolutions). Read the relevant round before starting work.
+- `BACKLOG.md` — **archived** (Rounds 1–3). History only; do not add new work there.
 
 ## Resume protocol (start of every session)
-1. Read `BACKLOG.md`: the **Now** pointer and the top of the Session Log tell you where work stopped.
-2. If the current story is `[~]`, inspect the working tree (`git status`, recent commits) to see how far it got, then continue it.
-3. Otherwise start the story the **Now** pointer names. One story at a time, in order.
+1. `gh issue list --milestone "<current>"` (or open issues) for what's next. One issue at a time.
+2. Read the issue body + the matching `DECISIONS.md` section for context.
+3. If a branch for the issue already exists, inspect the working tree (`git status`, recent commits) to see how far it got, then continue it.
 
-## Story discipline
-- A story is done only when every "Done when" line has been verified by actually running it — not by reading code.
-- On completion: mark `[x]`, move the **Now** pointer to the next story, append one Session Log line (date · story · outcome/decisions/gotchas), commit with the story id in the subject (e.g. `S1.2: pipeline process command`).
-- Mid-story stop: mark `[~]`, log a Session Log line stating exactly what remains.
-- Scope creep goes to Phase 6 backlog, not into the current story.
-- Spec change discovered while building → update `SPEC.md` in the same commit and note it in the Session Log.
+## Issue discipline
+- An issue is done only when its acceptance criteria are verified by actually running them — not by reading code.
+- One issue → one branch (`feat/<n>-<slug>` / `fix/<n>-<slug>`) → PR → squash-merge. `Closes #<n>` in the PR body so merge closes the issue.
+- Conventional Commit subjects (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`). release-please reads these for the changelog.
+- A decision made mid-issue (trade-off, scope cut) → record it in `DECISIONS.md` in the same PR.
+- Scope creep → a new issue, not into the current one.
+- Spec change discovered while building → update `SPEC.md` in the same PR.
 
 ## Conventions
 - No unit tests (personal app, verified by running). Instead: `npm run check` (Biome + `tsc --noEmit`) must be green before every story commit; pre-commit hook enforces it. Python: `ruff check` + `ruff format`.
 - Renderer never touches `fs`/`child_process` — typed IPC only (SPEC §8).
 - Semantic design tokens only, no raw hex in components (SPEC §10.2).
 - Python deps pinned exact in `pipeline/setup.ps1`; npm deps caret.
-- Commit messages: `S<story>: <what>`, body only when a decision needs explaining.
+- Commit messages: Conventional Commits (`type: <what>`), body only when a decision needs explaining.
 
 ## Environment notes
 - Windows 11, PowerShell. Python via `pipeline/.venv` (3.13/3.11 base), GPU = RTX 5060 Ti (Blackwell, cu128).

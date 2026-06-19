@@ -1,4 +1,6 @@
-# Singray — Story Backlog (Round 3)
+# Singray — Story Backlog (Round 3) — ARCHIVED
+
+> **Frozen history (Rounds 1–3).** New work is tracked in [GitHub Issues](https://github.com/ngtongsheng/Singray/issues); decisions live in `DECISIONS.md`. Do not add stories here. The one open carry-over (`R3.REC2`) became an issue.
 
 Round 1 (Enhancement) archived at `docs/rounds/01-enhancement.md`. MVP at `docs/rounds/00-mvp.md`. Round 2 stories are all `[x]` — kept below for the Session Log to resolve.
 Round 2 feature source: user feedback 2026-06-14 (`docs/feedback/2026-06-14-round2.md`), grilled + triaged. Decisions from the grilling session are baked into each story below.
