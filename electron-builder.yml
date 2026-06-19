@@ -1,3 +1,11 @@
+# build/ vs resources/ — both exist on purpose, not a duplication:
+#   build/     = package-time assets electron-builder consumes when making the
+#                installer (icon.ico/.icns, entitlements.mac.plist). Pointed to
+#                by directories.buildResources below; never shipped into the app.
+#   resources/ = runtime-bundled assets, kept out of the asar (asarUnpack below)
+#                so they're real files on disk. main/index.ts imports
+#                resources/icon.png?asset for the BrowserWindow icon.
+# Same source image (icon.png), two different lifecycle stages.
 appId: com.singray.app
 productName: Singray
 directories:
