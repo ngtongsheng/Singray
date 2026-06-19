@@ -1,7 +1,7 @@
 import { motion } from 'motion/react'
 import { useTranslation } from 'react-i18next'
 import { usePlayerContext } from '../../context/PlayerContext'
-import { Stack, StatusStrip } from '../ui'
+import { Stack, StatusStrip, Text } from '../ui'
 import InstrumentalVolume from './InstrumentalVolume'
 import MicMonitor from './MicMonitor'
 import PinToggle from './PinToggle'
@@ -31,7 +31,7 @@ function ControlBar(): React.JSX.Element | null {
         className="bg-gradient-to-t from-black/80 to-transparent px-6 pt-12 pb-5"
       >
         {micWarning && (
-          <p className="text-xs text-danger">{t('player.micWarning', { message: micWarning })}</p>
+          <Text variant="error">{t('player.micWarning', { message: micWarning })}</Text>
         )}
         <Stack gap={4} className="">
           <PlaybackButton />

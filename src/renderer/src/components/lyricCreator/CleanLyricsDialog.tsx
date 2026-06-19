@@ -28,15 +28,16 @@ function CleanLyricsDialog({ original, cleaned, onApply, onClose }: Props): Reac
             <Text as="h2" variant="title">
               {t('clean.title')}
             </Text>
-            <p
-              className={`text-xs ${majorRemoval ? 'font-semibold text-danger' : 'text-text-dim'}`}
+            <Text
+              variant={majorRemoval ? 'error' : 'hint'}
+              className={majorRemoval ? 'font-semibold' : undefined}
             >
               {majorRemoval
                 ? t('clean.majorRemoval', { count: removed, total: before.length })
                 : removed > 0
                   ? t('clean.removed', { count: removed })
                   : t('clean.noChanges')}
-            </p>
+            </Text>
           </Stack>
           <div
             className="h-[55vh] overflow-y-auto whitespace-pre-wrap rounded-card border border-border bg-surface p-3 font-lyric text-sm leading-6" /* design-allow: 55vh tracks viewport height, no token fits */

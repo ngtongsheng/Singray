@@ -1,5 +1,6 @@
 import { Copy, Minus, Square, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Stack } from '../ui'
 import { cx } from '../ui/cx'
 
@@ -8,6 +9,7 @@ const BTN =
 
 /** Custom caption buttons (NAV1): replace the dropped native min/max/close overlay. */
 function WindowControls(): React.JSX.Element {
+  const { t } = useTranslation()
   const [maximized, setMaximized] = useState(false)
 
   useEffect(() => {
@@ -19,7 +21,7 @@ function WindowControls(): React.JSX.Element {
     <Stack align="stretch" className="h-full">
       <button
         type="button"
-        aria-label="Minimize"
+        aria-label={t('common.minimize')}
         onClick={() => window.singray.window.minimize()}
         className={BTN}
       >
@@ -27,7 +29,7 @@ function WindowControls(): React.JSX.Element {
       </button>
       <button
         type="button"
-        aria-label={maximized ? 'Restore' : 'Maximize'}
+        aria-label={maximized ? t('common.restore') : t('common.maximize')}
         onClick={() => window.singray.window.toggleMaximize()}
         className={BTN}
       >
@@ -39,7 +41,7 @@ function WindowControls(): React.JSX.Element {
       </button>
       <button
         type="button"
-        aria-label="Close"
+        aria-label={t('common.close')}
         onClick={() => window.singray.window.close()}
         className={cx(BTN, 'hover:bg-danger hover:text-text')}
       >
