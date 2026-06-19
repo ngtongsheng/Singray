@@ -107,7 +107,13 @@ Full detail, data model, pipeline contract, and audio routing: [`SPEC.md`](SPEC.
 
 ## Platform status
 
-Windows is the primary, tested target. **macOS builds are community-tested** —
+Windows is the primary, tested target. The installer ships **unsigned** (no
+code-signing certificate — not worth the cost for a personal app), so Windows
+SmartScreen shows a blue **"Windows protected your PC — unknown publisher"**
+warning on first run. To proceed: click **More info**, then **Run anyway**.
+This is expected for unsigned software; it appears once, not on later launches.
+
+**macOS builds are community-tested** —
 the release workflow produces an **unsigned** `.dmg`, so on first launch macOS
 will refuse to open it: right-click the app → **Open** → confirm, or run
 `xattr -dr com.apple.quarantine /Applications/Singray.app`. Separation runs on
