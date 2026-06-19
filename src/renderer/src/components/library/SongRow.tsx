@@ -61,9 +61,13 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
         />
       </div>
       {!song.hasLyrics && !failed && !importing && (
-        <span className="shrink-0 rounded-control bg-surface-2 px-2 py-0.5 text-text-dim text-xs">
+        <Text
+          as="span"
+          variant="hint"
+          className="shrink-0 rounded-control bg-surface-2 px-2 py-0.5"
+        >
           {t('card.needsLyrics')}
-        </span>
+        </Text>
       )}
       {failed && (
         <IconButton

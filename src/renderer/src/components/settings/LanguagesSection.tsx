@@ -32,7 +32,9 @@ function LanguagesSection(): React.JSX.Element | null {
       <Stack direction="column" gap={2}>
         {settings.languages.map((l) => (
           <Stack key={l.code} gap={3} className="rounded-control border border-border px-3 py-1.5">
-            <span className="w-12 text-text-dim text-xs tabular-nums">{l.code}</span>
+            <Text as="span" variant="hint" className="w-12 tabular-nums">
+              {l.code}
+            </Text>
             <span className="flex-1 text-sm">{l.label}</span>
             <IconButton
               variant="ghost"

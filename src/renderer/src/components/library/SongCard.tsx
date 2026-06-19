@@ -37,19 +37,25 @@ function StatusBadge({
   }
   if (song.error || !song.ready) {
     return (
-      <span
-        className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-control bg-black/60 px-2 py-0.5 text-danger text-xs"
+      <Text
+        as="span"
+        variant="error"
+        className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-control bg-black/60 px-2 py-0.5"
         title={song.error ?? t('card.importInterrupted')}
       >
         <AlertTriangle className="size-3" /> {t('card.error')}
-      </span>
+      </Text>
     )
   }
   if (!song.hasLyrics) {
     return (
-      <span className="absolute bottom-2 left-2 rounded-control bg-black/60 px-2 py-0.5 text-text-dim text-xs">
+      <Text
+        as="span"
+        variant="hint"
+        className="absolute bottom-2 left-2 rounded-control bg-black/60 px-2 py-0.5"
+      >
         {t('card.needsLyrics')}
-      </span>
+      </Text>
     )
   }
   return null
