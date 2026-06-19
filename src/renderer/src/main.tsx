@@ -7,6 +7,14 @@ import App from './App'
 import { AppProvider } from './context/AppContext'
 import { AudioEngine } from './lib/audioEngine'
 import { initI18n, resolveLocale } from './lib/i18n'
+import { createMockBridge } from './lib/mockBridge'
+
+if (import.meta.env.DEV && !window.singray) {
+  // Browser dev (localhost:5173): no Electron preload, so window.singray is
+  // undefined and the first settings.get() would throw → blank page. Install a
+  // fixture mock so the renderer runs standalone for component dev + react-scan.
+  window.singray = createMockBridge()
+}
 
 if (import.meta.env.DEV) {
   // dev-console access for eyeballing tokenization (SPEC §4.4)
