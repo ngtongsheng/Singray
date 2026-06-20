@@ -1,6 +1,5 @@
 import type { ComponentProps } from 'react'
 import { cn } from '../../lib/cn'
-import { ScrollArea } from './ScrollArea'
 
 export type ContainerPb = 0 | 4 | 6 | 8 | 10 | 12
 export type ContainerMaxWidth = 'lg' | 'xl'
@@ -19,14 +18,14 @@ const MAX_WIDTH: Record<ContainerMaxWidth, string> = {
   xl: 'mx-auto max-w-xl'
 }
 
-export interface ContainerProps extends ComponentProps<typeof ScrollArea> {
+export interface ContainerProps extends ComponentProps<'div'> {
   pb?: ContainerPb
   maxWidth?: ContainerMaxWidth
 }
 
 /**
- * Page-level scroll container. Radix ScrollArea overlays the thumb so no
- * scrollbar-gutter compensation needed — symmetric pl-6/pr-6.
+ * Page-level scroll container. Native scrollbar hidden via CSS (no gutter
+ * reserved), so symmetric pl-6/pr-6 without compensation.
  */
 function Container({
   pb = 0,
@@ -36,12 +35,16 @@ function Container({
   ...rest
 }: ContainerProps): React.JSX.Element {
   return (
-    <div className={cn('absolute inset-0', className)}>
-      <ScrollArea className="h-full" {...rest}>
-        <div className={cn('pl-6 pr-6 pt-19', PB[pb])}>
-          {maxWidth ? <div className={MAX_WIDTH[maxWidth]}>{children}</div> : children}
-        </div>
-      </ScrollArea>
+    <div
+      className={cn(
+        'absolute inset-0 overflow-y-auto pl-6 pr-6 pt-19',
+        '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        PB[pb],
+        className
+      )}
+      {...rest}
+    >
+      {maxWidth ? <div className={MAX_WIDTH[maxWidth]}>{children}</div> : children}
     </div>
   )
 }
