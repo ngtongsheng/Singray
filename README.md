@@ -1,5 +1,7 @@
 # Singray
 
+![Singray logo](resources/icon.png)
+
 A personal desktop karaoke app. Build a local song library from YouTube links
 or local files, split each track into vocal/instrumental stems, author
 per-syllable lyric timing with a tap-along creator, and perform with synced
