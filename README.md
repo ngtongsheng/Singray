@@ -18,22 +18,13 @@ website streaming setup, but works standalone.
 ## Demo
 
 **Library, browse & sing** — grid/list browse, search, open a song, pitch shift, guide vocal toggle
-
-![Library, browse & sing](docs/demo/library-and-sing.gif)
-
-<!-- TODO(video-upload): for real video w/ audio+controls, drag the equivalent mp4 (regenerate via scripts/record-demo.mjs-style capture) into this README's GitHub web editor, swap this line for the resulting https://github.com/user-attachments/assets/... URL -->
+https://github.com/user-attachments/assets/6c56b56b-8c38-4758-b8ac-f2607033e0b4
 
 **Manage a song** — edit title/artist & thumbnail crop, lyric creator text/tap/review steps
-
-![Manage a song](docs/demo/manage-song.gif)
-
-<!-- TODO(video-upload): see note above -->
+https://github.com/user-attachments/assets/d13bfa66-9cbe-43f2-be29-2a5d288462e4
 
 **Add a song** — search YouTube in-app, real download + GPU stem separation, play the finished song
-
-![Add a song](docs/demo/add-song.gif)
-
-<!-- TODO(video-upload): see note above -->
+https://github.com/user-attachments/assets/a1ebf3a9-7a0b-401e-b031-5af6756087f0
 
 ## Features
 
