@@ -71,6 +71,7 @@ function LyricRenderer({ lyrics, clock, onSeek, showGradient = true }: Props): R
   }, [lyrics])
 
   useEffect(() => {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let prevCur = -2 // force initial styling pass
     let raf = 0
 
@@ -129,12 +130,13 @@ function LyricRenderer({ lyrics, clock, onSeek, showGradient = true }: Props): R
           m.units.forEach((u, i) => {
             const span = els[i]
             if (!span) return
-            const state =
+            const rawState =
               u.t === null || time < u.t
                 ? 'pending'
                 : u.end === null || time >= u.end
                   ? 'sung'
                   : 'wipe'
+            const state = reducedMotion && rawState === 'wipe' ? 'sung' : rawState
             if (state === 'wipe' && u.t !== null && u.end !== null) {
               const p = ((time - u.t) / (u.end - u.t)) * 100
               span.dataset.state = 'wipe'
