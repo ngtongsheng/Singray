@@ -17,9 +17,17 @@ website streaming setup, but works standalone.
 
 ## Demo
 
-- [▶ Library, browse & sing](docs/demo/library-and-sing.mp4) — grid/list browse, search, open a song, pitch shift, guide vocal toggle (~34 s)
-- [▶ Manage a song](docs/demo/manage-song.mp4) — edit title/artist & thumbnail crop, lyric creator text/tap/review steps (~23 s)
-- [▶ Add a song](docs/demo/add-song.mp4) — search YouTube in-app, real download + GPU stem separation, play the finished song (~28 s)
+**Library, browse & sing** — grid/list browse, search, open a song, pitch shift, guide vocal toggle
+
+![Library, browse & sing](docs/demo/library-and-sing.gif)
+
+**Manage a song** — edit title/artist & thumbnail crop, lyric creator text/tap/review steps
+
+![Manage a song](docs/demo/manage-song.gif)
+
+**Add a song** — search YouTube in-app, real download + GPU stem separation, play the finished song
+
+![Add a song](docs/demo/add-song.gif)
 
 ## Features
 
