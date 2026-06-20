@@ -82,7 +82,7 @@ function PlayerHeader(): React.JSX.Element {
           </Button>
           <Menu
             origin="top right"
-            className="top-full right-0 translate-y-1 w-44 overflow-hidden py-1"
+            className="w-44 overflow-hidden"
             trigger={(open, toggle) => (
               <IconButton
                 variant="secondary"

@@ -104,6 +104,45 @@
   }
 }
 
+/* Radix overlay/content enter/exit (driven by data-state on the primitives,
+   replacing the motion springs the hand-rolled overlays used). */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pop-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 /* Frameless window (R2.1): the titlebar is the drag region; interactive
    children opt out so clicks reach them instead of moving the window. */
 .app-drag {

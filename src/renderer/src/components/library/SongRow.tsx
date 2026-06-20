@@ -91,7 +91,7 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
         song={song}
         onDelete={requestDelete}
         origin="top right"
-        className="top-full right-0 translate-y-1 w-40 overflow-hidden py-1"
+        className="w-40 overflow-hidden"
         trigger={(_open, toggle) => (
           <IconButton
             variant="bare"

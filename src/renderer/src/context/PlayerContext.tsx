@@ -3,7 +3,6 @@ import type { Lyrics, SongListItem } from '../../../shared/types'
 import { type MicBootstrapState, useAudioEngine } from '../hooks/useAudioEngine'
 import { useAutoHideBar } from '../hooks/useAutoHideBar'
 import { usePlaybackClock } from '../hooks/usePlaybackClock'
-import { usePopoverClose } from '../hooks/usePopoverClose'
 import { useSettings } from '../hooks/useSettings'
 import type { AudioEngine, MicFxPreset } from '../lib/audioEngine'
 import { useAppContext } from './AppContext'
@@ -39,8 +38,7 @@ interface PlayerContextValue {
   changeTempo: (t: number) => void
 
   tuneOpen: boolean
-  toggleTune: () => void
-  tuneRef: React.RefObject<HTMLDivElement | null>
+  setTuneOpen: (open: boolean) => void
 
   pinned: boolean
   togglePin: () => void
@@ -96,8 +94,6 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
   const [keyVal, setKeyVal] = useState(0)
   const [tempoVal, setTempoVal] = useState(1)
   const [tuneOpen, setTuneOpen] = useState(false)
-  const closeTune = useCallback(() => setTuneOpen(false), [])
-  const tuneRef = usePopoverClose(tuneOpen, closeTune)
   const [pinned, setPinned] = useState(true)
   const [editOpen, setEditOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -275,7 +271,6 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
     [engine, patch]
   )
 
-  const toggleTune = useCallback(() => setTuneOpen((o) => !o), [])
   const openEditMeta = useCallback(() => setEditOpen(true), [])
   const closeEditMeta = useCallback(() => setEditOpen(false), [])
   const openDetails = useCallback(() => setDetailsOpen(true), [])
@@ -329,8 +324,7 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
     tempoVal,
     changeTempo,
     tuneOpen,
-    toggleTune,
-    tuneRef,
+    setTuneOpen,
     pinned,
     togglePin,
     editOpen,

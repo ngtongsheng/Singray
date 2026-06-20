@@ -1,16 +1,15 @@
 import { Check } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSettingsContext } from '../../context/SettingsContext'
-import { Input, Popover } from '../ui'
+import { Input, Popover, PopoverAnchor, PopoverContent } from '../ui'
 
-/** Editable combobox for the LLM model field: type freely or pick from the fetched list. */
+/** Editable combobox (Radix Popover): type freely or pick from the fetched model list. */
 function LlmModelCombobox(): React.JSX.Element {
   const { settings, patch, llmModels } = useSettingsContext()
   const value = settings?.llmModel ?? ''
   const models = llmModels.data ?? []
   const [inputVal, setInputVal] = useState(value)
   const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => setInputVal(value), [value])
 
@@ -30,43 +29,39 @@ function LlmModelCombobox(): React.JSX.Element {
     setOpen(false)
   }
 
-  useEffect(() => {
-    if (!open) return
-    const onDown = (e: MouseEvent): void => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    window.addEventListener('mousedown', onDown)
-    return () => window.removeEventListener('mousedown', onDown)
-  }, [open])
-
   return (
-    <div ref={rootRef} className="relative flex-1">
-      <Input
-        value={inputVal}
-        onChange={(e) => {
-          setInputVal(e.target.value)
-          setOpen(true)
-        }}
-        onFocus={() => {
-          if (models.length) setOpen(true)
-        }}
-        onBlur={(e) => {
-          const v = e.target.value
-          setTimeout(() => commit(v), 150)
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') setOpen(false)
-          if (e.key === 'Enter') {
-            commit(inputVal)
-            ;(e.target as HTMLInputElement).blur()
-          }
-        }}
-        placeholder="gemma4:12b-it-qat"
-      />
-      <Popover
-        open={open && filtered.length > 0}
-        origin="top"
-        className="inset-x-0 top-full translate-y-1 max-h-48 overflow-y-auto py-1"
+    <Popover open={open && filtered.length > 0} onOpenChange={setOpen}>
+      <PopoverAnchor asChild>
+        <div className="relative flex-1">
+          <Input
+            value={inputVal}
+            onChange={(e) => {
+              setInputVal(e.target.value)
+              setOpen(true)
+            }}
+            onFocus={() => {
+              if (models.length) setOpen(true)
+            }}
+            onBlur={(e) => {
+              const v = e.target.value
+              setTimeout(() => commit(v), 150)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setOpen(false)
+              if (e.key === 'Enter') {
+                commit(inputVal)
+                ;(e.target as HTMLInputElement).blur()
+              }
+            }}
+            placeholder="gemma4:12b-it-qat"
+          />
+        </div>
+      </PopoverAnchor>
+      <PopoverContent
+        align="start"
+        sideOffset={4}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className="max-h-48 w-[var(--radix-popover-trigger-width)] overflow-y-auto py-1"
       >
         <div role="listbox">
           {filtered.map((model) => (
@@ -86,8 +81,8 @@ function LlmModelCombobox(): React.JSX.Element {
             </button>
           ))}
         </div>
-      </Popover>
-    </div>
+      </PopoverContent>
+    </Popover>
   )
 }
 

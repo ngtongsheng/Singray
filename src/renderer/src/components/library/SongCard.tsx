@@ -94,7 +94,7 @@ const SongCard = memo(function SongCard({ song, importing }: Props): React.JSX.E
             song={song}
             onDelete={requestDelete}
             origin="top left"
-            className="top-full left-0 translate-y-1 w-40 overflow-hidden py-1"
+            className="w-40 overflow-hidden"
             trigger={(open, toggle) => (
               <IconButton
                 variant="bare"

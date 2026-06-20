@@ -93,6 +93,9 @@ function tokensFromLiteral(literal) {
 const violations = []
 
 for (const file of listFiles(ROOT)) {
+  // shadcn/Radix primitives under ui/ need arbitrary values
+  // (w-[--radix-popover-trigger-width], data-[state=open]:…) the rule forbids elsewhere.
+  const inUi = file.replace(/\\/g, '/').includes('/components/ui/')
   const text = readFileSync(file, 'utf8')
   const lines = text.split('\n')
   lines.forEach((line, i) => {
@@ -123,7 +126,7 @@ for (const file of listFiles(ROOT)) {
             `${file}:${lineNo}: margin class "${token}" — only mx-auto/my-auto allowed, use gap otherwise`
           )
         }
-        if (arbitraryRe.test(bare)) {
+        if (arbitraryRe.test(bare) && !inUi) {
           violations.push(
             `${file}:${lineNo}: arbitrary value "${token}" — avoid unless no token/scale fits; add // design-allow: <reason> if unavoidable`
           )

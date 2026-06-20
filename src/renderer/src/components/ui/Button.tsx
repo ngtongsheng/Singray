@@ -1,15 +1,9 @@
+import { cva } from 'class-variance-authority'
 import type { ComponentProps } from 'react'
-import { cx } from './cx'
+import { cn } from '../../lib/cn'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'bare'
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'bare'
-
-const SIZE: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-sm',
-  md: 'px-4 py-2 text-sm',
-  lg: 'h-11 px-3 text-sm',
-  bare: ''
-}
 
 /**
  * Variant classes shared by Button and IconButton (SPEC §10.4: one primary
@@ -22,9 +16,9 @@ const SIZE: Record<ButtonSize, string> = {
 export function buttonVariantClass(variant: ButtonVariant, active?: boolean): string {
   switch (variant) {
     case 'primary':
-      return 'bg-primary font-medium text-foreground hover:bg-accent-soft'
+      return 'bg-primary font-medium text-primary-foreground hover:bg-accent-soft'
     case 'danger':
-      return 'bg-destructive font-medium text-foreground hover:opacity-90'
+      return 'bg-destructive font-medium text-destructive-foreground hover:opacity-90'
     case 'secondary':
       if (active === undefined) return 'border border-border hover:bg-card'
       return active
@@ -39,6 +33,22 @@ export function buttonVariantClass(variant: ButtonVariant, active?: boolean): st
       return ''
   }
 }
+
+/** Structural base + size (cva); variant colors come from buttonVariantClass. */
+const buttonBase = cva(
+  'inline-flex items-center justify-center gap-1.5 rounded-md disabled:opacity-50',
+  {
+    variants: {
+      size: {
+        sm: 'h-8 px-3 text-sm',
+        md: 'px-4 py-2 text-sm',
+        lg: 'h-11 px-3 text-sm',
+        bare: ''
+      }
+    },
+    defaultVariants: { size: 'sm' }
+  }
+)
 
 export interface ButtonProps extends ComponentProps<'button'> {
   variant?: ButtonVariant
@@ -61,12 +71,7 @@ function Button({
       className={
         variant === 'bare'
           ? className
-          : cx(
-              'inline-flex items-center justify-center gap-1.5 rounded-md disabled:opacity-50',
-              SIZE[size],
-              buttonVariantClass(variant, active),
-              className
-            )
+          : cn(buttonBase({ size }), buttonVariantClass(variant, active), className)
       }
       {...rest}
     />
