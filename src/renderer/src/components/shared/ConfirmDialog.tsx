@@ -30,7 +30,7 @@ function ConfirmDialog({
           <Text as="h2" variant="title">
             {title}
           </Text>
-          <p className="text-sm text-text-dim">{body}</p>
+          <p className="text-sm text-muted-foreground">{body}</p>
         </Stack>
         <DialogFooter>
           <Button ref={cancelRef} size="md" onClick={onCancel}>

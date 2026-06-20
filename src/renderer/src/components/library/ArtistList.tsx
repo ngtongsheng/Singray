@@ -26,7 +26,7 @@ function ArtistList(): React.JSX.Element {
           key={name}
           type="button"
           onClick={() => onArtistClick(name)}
-          className="flex items-center justify-between rounded-card border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-text-dim/40"
+          className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-left transition-colors hover:border-muted-foreground/40"
         >
           <Text as="span" variant="item">
             {name || t('common.unknown')}

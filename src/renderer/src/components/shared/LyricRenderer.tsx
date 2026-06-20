@@ -188,7 +188,7 @@ function LyricRenderer({ lyrics, clock, onSeek, showGradient = true }: Props): R
               }}
               data-role="future"
               style={{ transform: DIM_SCALE }}
-              className="py-2 text-center text-text-dim transition-transform duration-300 ease-out will-change-transform"
+              className="py-2 text-center text-muted-foreground transition-transform duration-300 ease-out will-change-transform"
             >
               <span className="inline-block px-3 transition-opacity duration-150">●</span>
               <span className="inline-block px-3 transition-opacity duration-150">●</span>

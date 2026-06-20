@@ -54,7 +54,7 @@ function Dialog({ label, alert, width, onClose, children }: DialogProps): React.
         aria-modal="true"
         aria-label={label}
         className={cx(
-          'w-full rounded-card border border-border bg-surface-2 p-6 shadow-raised',
+          'w-full rounded-lg border border-border bg-muted p-6 shadow-raised',
           WIDTH[width]
         )}
       >

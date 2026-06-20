@@ -28,7 +28,7 @@ function StatusBadge({
   if (importing) {
     const stageKey = STAGE_KEY[importing.stage]
     return (
-      <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-control bg-black/60 px-2 py-0.5 text-text text-xs">
+      <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-0.5 text-foreground text-xs">
         <Loader2 className="size-3 animate-spin" />
         {stageKey ? t(stageKey) : importing.stage}
         {importing.stage !== 'queued' && ` ${Math.round(importing.progress * 100)}%`}
@@ -40,7 +40,7 @@ function StatusBadge({
       <Text
         as="span"
         variant="error"
-        className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-control bg-black/60 px-2 py-0.5"
+        className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-0.5"
         title={song.error ?? t('card.importInterrupted')}
       >
         <AlertTriangle className="size-3" /> {t('card.error')}
@@ -52,7 +52,7 @@ function StatusBadge({
       <Text
         as="span"
         variant="hint"
-        className="absolute bottom-2 left-2 rounded-control bg-black/60 px-2 py-0.5"
+        className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-0.5"
       >
         {t('card.needsLyrics')}
       </Text>
@@ -75,11 +75,11 @@ const SongCard = memo(function SongCard({ song, importing }: Props): React.JSX.E
       tabIndex={0}
       onClick={onActivate}
       onKeyDown={onKeyActivate}
-      className={`group rounded-card border border-border bg-surface transition-colors hover:border-text-dim/40 ${
+      className={`group rounded-lg border border-border bg-card transition-colors hover:border-muted-foreground/40 ${
         openable ? 'cursor-pointer' : ''
       }`}
     >
-      <div className="relative aspect-video overflow-hidden rounded-t-card bg-surface-2">
+      <div className="relative aspect-video overflow-hidden rounded-t-card bg-muted">
         {song.ready && (
           <img
             src={window.singray.audio.thumbUrl(song.id)}
@@ -100,7 +100,7 @@ const SongCard = memo(function SongCard({ song, importing }: Props): React.JSX.E
                 variant="bare"
                 onClick={toggle}
                 title={t('card.moreActions')}
-                className={`rounded-control bg-black/50 p-1 transition-opacity hover:bg-black/70 ${
+                className={`rounded-md bg-black/50 p-1 transition-opacity hover:bg-black/70 ${
                   open ? '' : 'opacity-0 group-hover:opacity-100'
                 }`}
               >
@@ -113,12 +113,12 @@ const SongCard = memo(function SongCard({ song, importing }: Props): React.JSX.E
           variant="bare"
           onClick={toggleFavorite}
           title={song.favorite ? t('card.unfavorite') : t('card.favorite')}
-          className={`absolute top-2 right-2 rounded-control p-1 transition-opacity hover:scale-110 ${
+          className={`absolute top-2 right-2 rounded-md p-1 transition-opacity hover:scale-110 ${
             song.favorite ? '' : 'opacity-0 group-hover:opacity-100'
           }`}
         >
           <Heart
-            className={`size-5 ${song.favorite ? 'fill-accent text-accent' : 'text-text'}`}
+            className={`size-5 ${song.favorite ? 'fill-primary text-primary' : 'text-foreground'}`}
             strokeWidth={1.5}
           />
         </IconButton>

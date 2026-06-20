@@ -33,7 +33,7 @@ function IconButton({
           ? className
           : cx(
               'inline-flex shrink-0 items-center justify-center disabled:opacity-50',
-              round ? 'rounded-full' : 'rounded-control',
+              round ? 'rounded-full' : 'rounded-md',
               SIZE[size],
               buttonVariantClass(variant, active),
               className

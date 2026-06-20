@@ -30,12 +30,14 @@ function ImportStatusStrip(): React.JSX.Element | null {
   const stripKey = STRIP_KEY[job.stage]
   return (
     <StatusStrip pinned progress={job.progress}>
-      <span className="text-text-dim">
+      <span className="text-muted-foreground">
         {stripKey ? t(stripKey) : job.stage} · {title}
       </span>
-      <span className="font-medium text-accent">{Math.round(job.progress * 100)}%</span>
+      <span className="font-medium text-primary">{Math.round(job.progress * 100)}%</span>
       {moreCount > 0 && (
-        <span className="text-text-dim">{t('library.moreQueued', { count: moreCount })}</span>
+        <span className="text-muted-foreground">
+          {t('library.moreQueued', { count: moreCount })}
+        </span>
       )}
     </StatusStrip>
   )

@@ -2,37 +2,82 @@
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/noto-sans-sc";
 
-/* Design tokens — SPEC §10.2. Semantic tokens only; no raw hex in components.
-   --color-*: initial wipes Tailwind's default palette (red-500, gray-200, ...)
-   so only the tokens below exist — typos/defaults fail to compile a style instead
-   of silently working. */
-@theme {
-  --color-*: initial;
+/* Design tokens — SPEC §10.2. shadcn semantic vars carrying the brand values.
+   Raw vars (--background, --primary, ...) hold the hex; @theme inline maps them
+   to --color-* so Tailwind generates bg-background/text-foreground/etc. The
+   --color-*: initial wipe keeps Tailwind's default palette out, so only these
+   tokens exist — typos/defaults fail to compile instead of silently working. */
+:root {
+  /* shadcn surfaces */
+  --background: #0e0e12;
+  --foreground: #f2f2f5;
+  --card: #17171d;
+  --card-foreground: #f2f2f5;
+  --popover: #17171d;
+  --popover-foreground: #f2f2f5;
+  --secondary: #222230;
+  --secondary-foreground: #f2f2f5;
+  --muted: #222230;
+  --muted-foreground: #a0a0b0;
+  --border: #2e2e3a;
+  --input: #2e2e3a;
 
-  /* Color */
-  --color-bg: #0e0e12;
-  --color-surface: #17171d;
-  --color-surface-2: #222230;
-  --color-border: #2e2e3a;
-  --color-text: #f2f2f5;
-  --color-text-dim: #a0a0b0;
-  --color-accent: #ff5a3c;
-  --color-accent-soft: #ff8a3c;
-  --color-success: #3ecf8e;
-  --color-warning: #f5b942;
-  --color-danger: #f4504c;
+  /* shadcn brand */
+  --primary: #ff5a3c;
+  --primary-foreground: #f2f2f5;
+  --ring: #ff5a3c;
+  --destructive: #f4504c;
+  --destructive-foreground: #f2f2f5;
+
+  /* Brand extras with no shadcn slot */
+  --accent-soft: #ff8a3c;
+  --success: #3ecf8e;
+  --warning: #f5b942;
 
   /* Lyric-specific */
-  --color-lyric-pending: #e8e8ee;
-  --color-lyric-active: #ffffff;
-  --color-lyric-sung: #ff5a3c;
+  --lyric-pending: #e8e8ee;
+  --lyric-active: #ffffff;
+  --lyric-sung: #ff5a3c;
 
   /* Shape & elevation */
-  --radius-card: 12px;
-  --radius-control: 8px;
+  --radius: 8px;
+}
+
+@theme inline {
+  --color-*: initial;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  --color-lyric-pending: var(--lyric-pending);
+  --color-lyric-active: var(--lyric-active);
+  --color-lyric-sung: var(--lyric-sung);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+
   --shadow-raised: 0 4px 24px rgb(0 0 0 / 0.45);
 
-  /* Typography */
   --font-sans: "Inter Variable", system-ui, sans-serif;
   --font-lyric: "Noto Sans SC Variable", "Inter Variable", system-ui, sans-serif;
 }
@@ -45,8 +90,8 @@
   }
 
   body {
-    background-color: var(--color-bg);
-    color: var(--color-text);
+    background-color: var(--background);
+    color: var(--foreground);
     font-family: var(--font-sans);
     font-size: 14px;
     -webkit-font-smoothing: antialiased;
@@ -54,7 +99,7 @@
   }
 
   :focus-visible {
-    outline: 1.5px solid var(--color-accent);
+    outline: 1.5px solid var(--primary);
     outline-offset: 1px;
   }
 }
@@ -104,7 +149,7 @@
 .overflow-auto {
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: var(--color-border) transparent;
+  scrollbar-color: var(--border) transparent;
 }
 
 .overflow-y-auto::-webkit-scrollbar,
@@ -123,7 +168,7 @@
 .overflow-y-auto::-webkit-scrollbar-thumb,
 .overflow-x-auto::-webkit-scrollbar-thumb,
 .overflow-auto::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
+  background-color: var(--border);
   border: 2px solid transparent;
   border-radius: 5px;
   background-clip: padding-box;
@@ -132,7 +177,7 @@
 .overflow-y-auto::-webkit-scrollbar-thumb:hover,
 .overflow-x-auto::-webkit-scrollbar-thumb:hover,
 .overflow-auto::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-text-dim);
+  background-color: var(--muted-foreground);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -157,8 +202,8 @@
   border-radius: 2px;
   background: linear-gradient(
     to right,
-    var(--color-accent) var(--slider-pct),
-    var(--color-border) var(--slider-pct)
+    var(--primary) var(--slider-pct),
+    var(--border) var(--slider-pct)
   );
 }
 
@@ -169,20 +214,20 @@
   height: 12px;
   margin-top: -4.5px;
   border-radius: 50%;
-  background: var(--color-text);
+  background: var(--foreground);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
 }
 
 .slider::-moz-range-track {
   height: 3px;
   border-radius: 2px;
-  background: var(--color-border);
+  background: var(--border);
 }
 
 .slider::-moz-range-progress {
   height: 3px;
   border-radius: 2px;
-  background: var(--color-accent);
+  background: var(--primary);
 }
 
 .slider::-moz-range-thumb {
@@ -190,6 +235,6 @@
   height: 12px;
   border: none;
   border-radius: 50%;
-  background: var(--color-text);
+  background: var(--foreground);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
 }

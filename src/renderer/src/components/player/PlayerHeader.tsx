@@ -28,7 +28,7 @@ function PlayerHeader(): React.JSX.Element {
         <IconButton
           onClick={onExit}
           title={t('common.backEsc')}
-          className="app-no-drag text-text-dim hover:text-text"
+          className="app-no-drag text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" strokeWidth={1.5} />
         </IconButton>

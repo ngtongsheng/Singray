@@ -22,7 +22,7 @@ function Popover({ open, origin, className, children }: PopoverProps): React.JSX
           {...popover}
           style={{ transformOrigin: origin }}
           className={cx(
-            'absolute z-20 rounded-control border border-border bg-surface shadow-raised',
+            'absolute z-20 rounded-md border border-border bg-card shadow-raised',
             className
           )}
         >

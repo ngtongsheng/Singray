@@ -79,7 +79,7 @@ function LlmModelCombobox(): React.JSX.Element {
                 e.preventDefault()
                 pick(model)
               }}
-              className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm hover:bg-surface-2${model === value ? ' text-accent' : ''}`}
+              className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted${model === value ? ' text-primary' : ''}`}
             >
               <span className="truncate">{model}</span>
               {model === value && <Check className="size-3.5 shrink-0" strokeWidth={2} />}

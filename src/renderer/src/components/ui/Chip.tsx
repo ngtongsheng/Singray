@@ -13,8 +13,8 @@ function Chip({ active, className, ...rest }: ChipProps): React.JSX.Element {
       className={cx(
         'flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors',
         active
-          ? 'border-accent bg-accent/15 text-accent'
-          : 'border-border text-text-dim hover:border-text-dim hover:text-text',
+          ? 'border-primary bg-primary/15 text-primary'
+          : 'border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground',
         className
       )}
       {...rest}

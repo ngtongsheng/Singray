@@ -14,10 +14,10 @@ function RecordButton(): React.JSX.Element {
       pressed={recording}
       onClick={toggleRecord}
       title={recording ? t('player.recordStopTip') : t('player.recordStartTip')}
-      className={recording ? 'text-danger' : ''}
+      className={recording ? 'text-destructive' : ''}
     >
       <Circle
-        className={`size-4 ${recording ? 'animate-pulse fill-danger' : ''}`}
+        className={`size-4 ${recording ? 'animate-pulse fill-destructive' : ''}`}
         strokeWidth={1.5}
       />
       {recording ? t('player.recording') : t('player.record')}

@@ -75,7 +75,7 @@ function SongDetailsDialog({ song, onClose, onArtistClick }: Props): React.JSX.E
                     type="button"
                     title={song.youtubeUrl}
                     onClick={() => window.singray.window.openExternal(song.youtubeUrl)}
-                    className="inline-flex items-center gap-1 text-accent hover:underline"
+                    className="inline-flex items-center gap-1 text-primary hover:underline"
                   >
                     YouTube
                     <ExternalLink className="size-3" />

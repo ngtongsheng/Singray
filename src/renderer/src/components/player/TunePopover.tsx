@@ -38,8 +38,8 @@ function TunePopover(): React.JSX.Element {
             <Stack
               gap={1}
               justify="between"
-              className={`h-11 w-full rounded-control border px-2 ${
-                keyVal !== 0 ? 'border-accent text-accent' : 'border-border text-text-dim'
+              className={`h-11 w-full rounded-md border px-2 ${
+                keyVal !== 0 ? 'border-primary text-primary' : 'border-border text-muted-foreground'
               }`}
             >
               <IconButton
@@ -76,7 +76,7 @@ function TunePopover(): React.JSX.Element {
               <Button
                 size="bare"
                 onClick={() => changeTempo(1)}
-                className="px-2 py-0.5 text-text-dim text-xs hover:text-text"
+                className="px-2 py-0.5 text-muted-foreground text-xs hover:text-foreground"
               >
                 {t('common.reset')}
               </Button>
@@ -107,7 +107,7 @@ function TunePopover(): React.JSX.Element {
                   <Button
                     size="bare"
                     onClick={() => setMicFx('off', micFxAmount)}
-                    className="px-2 py-0.5 text-text-dim text-xs hover:text-text"
+                    className="px-2 py-0.5 text-muted-foreground text-xs hover:text-foreground"
                   >
                     {t('common.reset')}
                   </Button>

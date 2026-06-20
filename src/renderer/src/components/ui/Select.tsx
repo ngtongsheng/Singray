@@ -98,8 +98,8 @@ function Select<T extends string>({
         onClick={() => setOpen((o) => !o)}
         onKeyDown={onKeyDown}
         className={cx(
-          'flex items-center gap-2 rounded-control border border-border bg-surface text-left text-sm disabled:opacity-50',
-          uiSize === 'md' ? 'w-full justify-between px-3 py-2' : 'px-2 py-1 text-text-dim',
+          'flex items-center gap-2 rounded-md border border-border bg-card text-left text-sm disabled:opacity-50',
+          uiSize === 'md' ? 'w-full justify-between px-3 py-2' : 'px-2 py-1 text-muted-foreground',
           className
         )}
       >
@@ -125,8 +125,8 @@ function Select<T extends string>({
               onClick={() => select(opt)}
               className={cx(
                 'flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm',
-                i === highlight ? 'bg-surface-2' : '',
-                opt.value === value ? 'text-accent' : ''
+                i === highlight ? 'bg-muted' : '',
+                opt.value === value ? 'text-primary' : ''
               )}
             >
               <span className="truncate">{opt.label}</span>

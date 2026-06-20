@@ -52,13 +52,13 @@ function LrclibFinderDialog({ query, onPick, onClose }: Props): React.JSX.Elemen
           </Stack>
 
           {hits === null && !error && (
-            <Stack justify="center" gap={2} className="py-10 text-text-dim text-sm">
+            <Stack justify="center" gap={2} className="py-10 text-muted-foreground text-sm">
               <Loader2 className="size-4 animate-spin" strokeWidth={2} /> {t('finder.searching')}
             </Stack>
           )}
-          {error && <p className="py-8 text-center text-danger text-sm">{error}</p>}
+          {error && <p className="py-8 text-center text-destructive text-sm">{error}</p>}
           {hits !== null && hits.length === 0 && !error && (
-            <p className="py-10 text-center text-text-dim text-sm">{t('finder.empty')}</p>
+            <p className="py-10 text-center text-muted-foreground text-sm">{t('finder.empty')}</p>
           )}
 
           {hits !== null && hits.length > 0 && (
@@ -70,9 +70,9 @@ function LrclibFinderDialog({ query, onPick, onClose }: Props): React.JSX.Elemen
                   <Button
                     variant="bare"
                     onClick={() => onPick(h)}
-                    className="flex w-full items-center gap-3 rounded-control px-3 py-2 text-left hover:bg-surface"
+                    className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-card"
                   >
-                    <Music className="size-4 shrink-0 text-text-dim" strokeWidth={1.5} />
+                    <Music className="size-4 shrink-0 text-muted-foreground" strokeWidth={1.5} />
                     <span className="min-w-0 flex-1">
                       <Text as="span" variant="item" className="block">
                         {h.trackName}
@@ -83,10 +83,10 @@ function LrclibFinderDialog({ query, onPick, onClose }: Props): React.JSX.Elemen
                       </Text>
                     </span>
                     <span
-                      className={`shrink-0 rounded-control px-1.5 py-0.5 text-xs ${
+                      className={`shrink-0 rounded-md px-1.5 py-0.5 text-xs ${
                         h.syncedLyrics
-                          ? 'bg-accent/15 text-accent-soft'
-                          : 'border border-border text-text-dim'
+                          ? 'bg-primary/15 text-accent-soft'
+                          : 'border border-border text-muted-foreground'
                       }`}
                     >
                       {h.syncedLyrics ? t('finder.synced') : t('finder.plain')}

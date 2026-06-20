@@ -8,7 +8,7 @@ function InstrumentalVolume(): React.JSX.Element {
   const { instrVol, setInstrumentalVolume } = usePlayerContext()
 
   return (
-    <span className="flex items-center gap-2 text-text-dim">
+    <span className="flex items-center gap-2 text-muted-foreground">
       <Volume2 className="size-4" strokeWidth={1.5} />
       <Slider
         min={0}

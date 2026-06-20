@@ -14,7 +14,7 @@ function CreatorHeader(): React.JSX.Element {
         <IconButton
           onClick={onBack}
           title={t('common.back')}
-          className="app-no-drag shrink-0 text-text-dim hover:text-text"
+          className="app-no-drag shrink-0 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" strokeWidth={1.5} />
         </IconButton>

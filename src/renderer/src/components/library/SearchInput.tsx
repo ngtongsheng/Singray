@@ -26,7 +26,7 @@ function SearchInput(): React.JSX.Element {
       <Input
         ref={ref}
         uiSize="sm"
-        icon={<Search className="size-4 text-text-dim" />}
+        icon={<Search className="size-4 text-muted-foreground" />}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={t('library.searchPlaceholder')}

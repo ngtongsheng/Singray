@@ -22,17 +22,19 @@ const SIZE: Record<ButtonSize, string> = {
 export function buttonVariantClass(variant: ButtonVariant, active?: boolean): string {
   switch (variant) {
     case 'primary':
-      return 'bg-accent font-medium text-text hover:bg-accent-soft'
+      return 'bg-primary font-medium text-foreground hover:bg-accent-soft'
     case 'danger':
-      return 'bg-danger font-medium text-text hover:opacity-90'
+      return 'bg-destructive font-medium text-foreground hover:opacity-90'
     case 'secondary':
-      if (active === undefined) return 'border border-border hover:bg-surface'
+      if (active === undefined) return 'border border-border hover:bg-card'
       return active
-        ? 'border border-accent bg-accent/15 text-accent'
-        : 'border border-border text-text-dim hover:bg-surface hover:text-text'
+        ? 'border border-primary bg-primary/15 text-primary'
+        : 'border border-border text-muted-foreground hover:bg-card hover:text-foreground'
     case 'ghost':
-      if (active === undefined) return 'hover:bg-surface'
-      return active ? 'bg-accent/15 text-accent' : 'text-text-dim hover:bg-surface hover:text-text'
+      if (active === undefined) return 'hover:bg-card'
+      return active
+        ? 'bg-primary/15 text-primary'
+        : 'text-muted-foreground hover:bg-card hover:text-foreground'
     case 'bare':
       return ''
   }
@@ -60,7 +62,7 @@ function Button({
         variant === 'bare'
           ? className
           : cx(
-              'inline-flex items-center justify-center gap-1.5 rounded-control disabled:opacity-50',
+              'inline-flex items-center justify-center gap-1.5 rounded-md disabled:opacity-50',
               SIZE[size],
               buttonVariantClass(variant, active),
               className

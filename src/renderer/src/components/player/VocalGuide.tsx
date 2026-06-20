@@ -10,7 +10,7 @@ function VocalGuide(): React.JSX.Element {
   return (
     <Stack
       gap={2}
-      className={`h-11 rounded-control border px-2 ${vocalOn ? 'border-accent' : 'border-border'}`}
+      className={`h-11 rounded-md border px-2 ${vocalOn ? 'border-primary' : 'border-border'}`}
     >
       <Toggle
         variant="ghost"
