@@ -135,7 +135,7 @@ def cmd_probe(args: argparse.Namespace) -> int:
         opts = {"quiet": True, "no_warnings": True, "noprogress": True, "noplaylist": True}
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(args.url, download=False)
-        artists = info.get("artists") or ([info["artist"]] if info.get("artist") else [])
+        artists = info.get("artists") or ([info.get("artist")] if info.get("artist") else [])
         print(
             json.dumps(
                 {
@@ -277,11 +277,22 @@ def _measure_input_lufs(path: Path) -> float:
         errors="replace",
         check=True,
     )  # fmt: skip
-    start = proc.stderr.rfind("{")
-    end = proc.stderr.rfind("}")
-    if start == -1 or end == -1:
+    stderr = proc.stderr
+    start = stderr.rfind("{")
+    if start == -1:
         raise RuntimeError("loudnorm measurement produced no JSON")
-    return float(json.loads(proc.stderr[start : end + 1])["input_i"])
+    depth, end = 0, -1
+    for i, ch in enumerate(stderr[start:]):
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                end = start + i
+                break
+    if end == -1:
+        raise RuntimeError("loudnorm measurement produced no JSON")
+    return float(json.loads(stderr[start : end + 1])["input_i"])
 
 
 def _encode_audio(src: Path, dst: Path, gain_db: float, fmt: str) -> None:
@@ -310,7 +321,7 @@ def _encode_audio(src: Path, dst: Path, gain_db: float, fmt: str) -> None:
             check=True,
         )  # fmt: skip
     except subprocess.CalledProcessError as exc:
-        raise RuntimeError(f"ffmpeg encode failed for {src.name}: {exc.stderr.strip()}") from exc
+        raise RuntimeError(f"ffmpeg encode failed for {src.name}: {exc.stderr.strip() or '(see logs)'}") from exc
 
 
 def _encode_thumb(src: Path, dst: Path) -> None:
