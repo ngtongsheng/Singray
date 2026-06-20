@@ -288,7 +288,7 @@
     "audio": "音频路由",
     "outputMode": "输出模式",
     "modeSingle": "单路 — 全部输出到一个设备",
-    "modeDual": "双路 — 监听 + 直播两路混音（第 4 阶段）",
+    "modeDual": "双路 — 监听 + 直播两路混音",
     "modeHelp": "双路把纯伴奏送到直播设备，监听耳机里保留导唱人声。",
     "monitorDevice": "监听设备（你的耳机 / AG06）",
     "streamDevice": "直播设备（接歌唱网站的虚拟声卡）",
