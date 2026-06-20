@@ -43,6 +43,16 @@ shadcn/react-query PR exercises release-please + branch protection).
 | **immer** | In — nested immutable updates where they appear (e.g. import-progress Map, lyric timing). | — |
 | **react-scan** | In, dev-only — perf auditing during the migration. | Zero prod cost, finds wasted re-renders. |
 
+### deps update — done #7 (2026-06-20), deviations from the Deps row above
+
+| Choice | Decision | Why |
+|---|---|---|
+| **Vite 8** | **Pinned back to ^7.** electron-vite 5.0.0's peer is `vite ^5 \|\| ^6 \|\| ^7` — the named hard blocker. | Predicted in the issue; electron-vite hasn't shipped a Vite 8-compatible release yet. Revisit when it does. |
+| **@vitejs/plugin-react 6** | **Pinned back to ^5.** plugin-react 6 requires `vite ^8`, so it's bound to the Vite pin. | Bumps in lockstep with Vite 8. |
+| **Everything else** | Bumped to latest incl. majors: **TS 6**, **@types/node 26**, biome 2.5, electron 42.4.1, electron-builder 26.15.3, tailwind 4.3.1, lucide-react 1.21. | Per the row; `npm run build` stays green. |
+| **TS 6 fallout** | Dropped deprecated `baseUrl` from `tsconfig.web.json` (TS5101) and made the `@renderer/*` path entry relative (`./src/...`, TS5090). biome 2.5 config migrated via `biome migrate`. | TS 6 deprecates `baseUrl`; paths resolve relative to the config file without it. |
+| **Audit** | `npm audit fix` cleared the high (undici). One **low** (esbuild dev-server file-read on Windows) remains — it's gated behind the Vite 7 pin and is dev-server-only. | Can't fix without Vite 8; not shipped in the app. Clears with the Vite bump. |
+
 ### Carry-over
 - `R3.REC2` Recordings view (only open item from Round 3) → migrate to an Issue.
 
