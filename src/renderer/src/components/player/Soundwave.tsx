@@ -14,6 +14,7 @@ const BARS = 96
  */
 function Soundwave({ analyser, playing }: Props): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const dataRef = useRef<Uint8Array<ArrayBuffer>>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -30,7 +31,10 @@ function Soundwave({ analyser, playing }: Props): React.JSX.Element {
     ro.observe(canvas)
 
     const accent = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()
-    const data = new Uint8Array(analyser.frequencyBinCount)
+    if (!dataRef.current || dataRef.current.length !== analyser.frequencyBinCount) {
+      dataRef.current = new Uint8Array(analyser.frequencyBinCount)
+    }
+    const data = dataRef.current
     // Bottom ~2/3 of the spectrum carries the music; the top is mostly empty.
     const usableBins = Math.floor(analyser.frequencyBinCount * 0.66)
     let raf = 0
