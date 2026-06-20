@@ -36,7 +36,7 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
           <AspectRatio ratio={16 / 9} className="flex items-center justify-center bg-muted">
             {song.ready && (
               <img
-                src={window.singray.audio.thumbUrl(song.id)}
+                src={window.singray.audio.thumbUrl(song.id, song.thumbVersion)}
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover"
                 draggable={false}

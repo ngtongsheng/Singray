@@ -13,7 +13,10 @@ const api: SingrayApi = {
     list: () => invoke('library:list'),
     delete: (id) => invoke('library:delete', id),
     updateMeta: (id, patch) => invoke('library:updateMeta', id, patch),
-    openFolder: (id) => invoke('library:openFolder', id)
+    openFolder: (id) => invoke('library:openFolder', id),
+    uploadThumb: (id, bytes) => invoke('library:uploadThumb', id, bytes),
+    setThumbFromUrl: (id, url) => invoke('library:setThumbFromUrl', id, url),
+    searchArtwork: (query) => invoke('library:searchArtwork', query)
   },
   lyrics: {
     get: (id) => invoke('lyrics:get', id),
@@ -60,7 +63,8 @@ const api: SingrayApi = {
   audio: {
     // Extensionless: the protocol handler resolves to flac or m4a per song (R3.8).
     url: (id, track) => `karaoke://${id}/${track}`,
-    thumbUrl: (id) => `karaoke://${id}/thumb.jpg`
+    thumbUrl: (id, version) =>
+      version ? `karaoke://${id}/thumb.jpg?v=${version}` : `karaoke://${id}/thumb.jpg`
   },
   recordings: {
     save: (songId, bytes, ext) => invoke('recordings:save', songId, bytes, ext),

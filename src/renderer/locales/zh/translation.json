@@ -83,7 +83,14 @@
     "preview": "清理建议",
     "apply": "应用",
     "dismiss": "忽略",
-    "noChanges": "已经很干净，无需修改。"
+    "noChanges": "已经很干净，无需修改。",
+    "thumbnail": "封面",
+    "thumbUpload": "上传图片",
+    "thumbSearch": "在线搜索",
+    "thumbSearchPlaceholder": "歌手和歌名…",
+    "thumbSearching": "搜索中…",
+    "thumbNoResults": "未找到结果",
+    "thumbPick": "使用此封面"
   },
   "clean": {
     "button": "AI 清理",

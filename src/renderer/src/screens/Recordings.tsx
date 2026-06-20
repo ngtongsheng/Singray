@@ -184,7 +184,7 @@ function Recordings({ songId }: Props): React.JSX.Element {
             className="absolute inset-x-0 bottom-0 z-10 border-t border-border bg-popover px-4 py-3"
           >
             <img
-              src={window.singray.audio.thumbUrl(playingRec.songId)}
+              src={window.singray.audio.thumbUrl(playingRec.songId, playingSong?.thumbVersion)}
               alt=""
               className="size-10 shrink-0 rounded object-cover"
               draggable={false}

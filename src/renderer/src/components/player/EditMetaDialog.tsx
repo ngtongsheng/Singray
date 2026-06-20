@@ -1,14 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, Sparkles } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import type { Language, SongListItem } from '../../../../shared/types'
+import type { ArtworkResult, Language, SongListItem } from '../../../../shared/types'
 import { useLibrary } from '../../hooks/useLibrary'
 import { useSettings } from '../../hooks/useSettings'
 import ArtistChips from '../shared/ArtistChips'
-import { Button, Dialog, Field, Input, Select, Stack, Text } from '../ui'
+import { AspectRatio, Button, Dialog, Field, Input, Select, Stack, Text } from '../ui'
 
 const editMetaSchema = z.object({
   title: z.string().min(1),
@@ -35,6 +35,17 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
   const [cleaning, setCleaning] = useState(false)
   const [cleanError, setCleanError] = useState<string | null>(null)
   const [preview, setPreview] = useState<{ title: string; artist: string } | null>(null)
+
+  // Thumbnail state
+  const [thumbVersion, setThumbVersion] = useState(song.thumbVersion)
+  const [thumbSearchOpen, setThumbSearchOpen] = useState(false)
+  const [thumbQuery, setThumbQuery] = useState(
+    [song.title, song.artists[0]].filter(Boolean).join(' ')
+  )
+  const [artworkResults, setArtworkResults] = useState<ArtworkResult[]>([])
+  const [thumbSearching, setThumbSearching] = useState(false)
+  const [thumbUpdating, setThumbUpdating] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { control, handleSubmit, setValue, watch, formState } = useForm<EditMetaValues>({
     resolver: zodResolver(editMetaSchema),
@@ -103,6 +114,47 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
     }
   })
 
+  const handleUploadThumb = (): void => {
+    fileInputRef.current?.click()
+  }
+
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    setThumbUpdating(true)
+    try {
+      const bytes = await file.arrayBuffer()
+      await window.singray.library.uploadThumb(song.id, bytes)
+      setThumbVersion(Date.now())
+    } finally {
+      setThumbUpdating(false)
+    }
+  }
+
+  const searchArtwork = async (): Promise<void> => {
+    setThumbSearching(true)
+    setArtworkResults([])
+    try {
+      const results = await window.singray.library.searchArtwork(thumbQuery)
+      setArtworkResults(results)
+    } finally {
+      setThumbSearching(false)
+    }
+  }
+
+  const pickArtwork = async (url: string): Promise<void> => {
+    setThumbUpdating(true)
+    try {
+      await window.singray.library.setThumbFromUrl(song.id, url)
+      setThumbVersion(Date.now())
+      setThumbSearchOpen(false)
+      setArtworkResults([])
+    } finally {
+      setThumbUpdating(false)
+    }
+  }
+
   return (
     <Dialog label={t('editMeta.aria')} width="md" onClose={onClose}>
       <Stack direction="column" gap={6}>
@@ -152,6 +204,93 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
                 )}
               />
             </Field>
+
+            {/* Thumbnail */}
+            <Field label={t('editMeta.thumbnail')}>
+              <Stack gap={3} align="start">
+                <div className="w-24 shrink-0 overflow-hidden rounded-md border border-border">
+                  <AspectRatio ratio={16 / 9} className="bg-muted">
+                    <img
+                      src={window.singray.audio.thumbUrl(song.id, thumbVersion || undefined)}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover"
+                      draggable={false}
+                    />
+                  </AspectRatio>
+                </div>
+                <Stack direction="column" gap={2}>
+                  <Button size="sm" onClick={handleUploadThumb} disabled={thumbUpdating}>
+                    {t('editMeta.thumbUpload')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setThumbSearchOpen((v) => !v)}
+                    disabled={thumbUpdating}
+                  >
+                    {t('editMeta.thumbSearch')}
+                  </Button>
+                </Stack>
+              </Stack>
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={onFileChange}
+              />
+            </Field>
+
+            {/* Artwork search panel */}
+            {thumbSearchOpen && (
+              <Stack direction="column" gap={3} className="rounded-lg border border-border p-3">
+                <Stack gap={2}>
+                  <Input
+                    value={thumbQuery}
+                    onChange={(e) => setThumbQuery(e.target.value)}
+                    placeholder={t('editMeta.thumbSearchPlaceholder')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') void searchArtwork()
+                    }}
+                    className="flex-1"
+                  />
+                  <Button size="sm" onClick={searchArtwork} disabled={thumbSearching}>
+                    {thumbSearching ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      t('editMeta.thumbSearch')
+                    )}
+                  </Button>
+                </Stack>
+                {thumbSearching && <Text variant="hint">{t('editMeta.thumbSearching')}</Text>}
+                {!thumbSearching && artworkResults.length === 0 && thumbQuery && (
+                  <Text variant="hint">{t('editMeta.thumbNoResults')}</Text>
+                )}
+                {artworkResults.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2">
+                    {artworkResults.map((r) => (
+                      <button
+                        key={r.artworkUrl}
+                        type="button"
+                        title={`${r.trackName} — ${r.artistName}`}
+                        onClick={() => void pickArtwork(r.artworkUrl)}
+                        disabled={thumbUpdating}
+                        className="overflow-hidden rounded border border-border hover:ring-2 hover:ring-ring focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                      >
+                        <AspectRatio ratio={1}>
+                          <img
+                            src={r.artworkUrl}
+                            alt={`${r.trackName} — ${r.artistName}`}
+                            className="absolute inset-0 h-full w-full object-cover"
+                            draggable={false}
+                          />
+                        </AspectRatio>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </Stack>
+            )}
           </Stack>
 
           {(cleanError || preview) && (

@@ -61,7 +61,8 @@ function song(id: string, title: string, artists: string[], language: string): S
     enrichment: null,
     hasLyrics: true,
     error: null,
-    ready: true
+    ready: true,
+    thumbVersion: 0
   }
 }
 
@@ -82,7 +83,10 @@ export function createMockBridge(): SingrayApi {
         const base = songs.find((s) => s.id === id) ?? songs[0]
         return Promise.resolve({ ...base, ...patch } as SongMeta)
       },
-      openFolder: () => Promise.resolve()
+      openFolder: () => Promise.resolve(),
+      uploadThumb: () => Promise.resolve(),
+      setThumbFromUrl: () => Promise.resolve(),
+      searchArtwork: () => Promise.resolve([])
     },
     lyrics: {
       get: () => Promise.resolve(null),
@@ -131,7 +135,8 @@ export function createMockBridge(): SingrayApi {
     },
     audio: {
       url: (id, track) => `karaoke://${id}/${track}`,
-      thumbUrl: (id) => `karaoke://${id}/thumb.jpg`
+      thumbUrl: (id, version) =>
+        version ? `karaoke://${id}/thumb.jpg?v=${version}` : `karaoke://${id}/thumb.jpg`
     },
     recordings: {
       save: () => Promise.resolve('mock://recording'),
