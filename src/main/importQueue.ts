@@ -66,7 +66,7 @@ export async function startImport(req: ImportRequest): Promise<string> {
     schemaVersion: 1,
     id: songId,
     title: req.title,
-    artist: req.artist,
+    artists: req.artists,
     language: req.language,
     youtubeUrl: req.url,
     youtubeTitle: req.youtubeTitle,
