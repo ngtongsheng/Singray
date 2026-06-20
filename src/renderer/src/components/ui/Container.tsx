@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react'
 import { cn } from '../../lib/cn'
+import { ScrollArea } from './ScrollArea'
 
 export type ContainerPb = 0 | 4 | 6 | 8 | 10 | 12
 export type ContainerMaxWidth = 'lg' | 'xl'
@@ -23,10 +24,7 @@ export interface ContainerProps extends ComponentProps<'div'> {
   maxWidth?: ContainerMaxWidth
 }
 
-/**
- * Page-level scroll container. Native scrollbar hidden via CSS (no gutter
- * reserved), so symmetric pl-6/pr-6 without compensation.
- */
+/** Page-level scroll container, fixed below the Titlebar; scrolling via ScrollArea. */
 function Container({
   pb = 0,
   maxWidth,
@@ -35,16 +33,12 @@ function Container({
   ...rest
 }: ContainerProps): React.JSX.Element {
   return (
-    <div
-      className={cn(
-        'absolute inset-0 overflow-y-auto pl-6 pr-6 pt-19',
-        '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
-        PB[pb],
-        className
-      )}
-      {...rest}
-    >
-      {maxWidth ? <div className={MAX_WIDTH[maxWidth]}>{children}</div> : children}
+    <div className={cn('absolute inset-0 pt-19', className)} {...rest}>
+      <ScrollArea className="h-full">
+        <div className={cn('pl-6 pr-6', PB[pb])}>
+          {maxWidth ? <div className={MAX_WIDTH[maxWidth]}>{children}</div> : children}
+        </div>
+      </ScrollArea>
     </div>
   )
 }
