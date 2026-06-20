@@ -29,7 +29,7 @@ function LlmSection(): React.JSX.Element | null {
               <LlmModelCombobox />
               <IconButton
                 variant="secondary"
-                size="sm"
+                size="md"
                 onClick={() => void llmModels.run(settings.llmBaseUrl, settings.llmApiKey)}
                 disabled={llmModels.loading}
                 title={t('settings.modelRefresh')}

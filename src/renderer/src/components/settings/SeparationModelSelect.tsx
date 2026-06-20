@@ -41,7 +41,7 @@ function SeparationModelSelect(): React.JSX.Element {
       />
       <IconButton
         variant="secondary"
-        size="sm"
+        size="md"
         onClick={() => run(true)}
         disabled={loading}
         title={t('settings.modelRefresh')}
