@@ -235,7 +235,9 @@
     "play": "播放",
     "pause": "暂停",
     "deleteTitle": "删除录音？",
-    "deleteBody": "此录音将被永久删除。"
+    "deleteBody": "此录音将被永久删除。",
+    "sortNewest": "最新",
+    "sortOldest": "最早"
   },
   "settings": {
     "title": "设置",
