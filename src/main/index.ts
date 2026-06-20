@@ -25,6 +25,9 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
+      // sandbox:false required — the preload uses Node.js APIs (contextBridge, ipcRenderer,
+      // webUtils) that the sandbox disables. contextIsolation (default true) still prevents
+      // renderer code from accessing Node.
       sandbox: false,
       // Keep rAF running while occluded/minimized — the lyric renderer must not
       // freeze mid-song when another window covers the player.

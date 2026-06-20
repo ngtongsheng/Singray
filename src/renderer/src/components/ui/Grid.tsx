@@ -1,5 +1,5 @@
+import { clsx as cx } from 'clsx'
 import type { ComponentProps } from 'react'
-import { cx } from './cx'
 import { GAP, type StackGap } from './Stack'
 
 export type GridCols = 1 | 2 | 3 | 4 | 6 | 12

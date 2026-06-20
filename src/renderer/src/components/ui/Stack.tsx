@@ -1,5 +1,5 @@
+import { clsx as cx } from 'clsx'
 import type { ComponentProps, ElementType } from 'react'
-import { cx } from './cx'
 
 export type StackGap = 0 | 0.5 | 1 | 1.5 | 2 | 3 | 4 | 5 | 6 | 8
 export type StackJustify = 'start' | 'center' | 'end' | 'between' | 'around' | 'evenly'

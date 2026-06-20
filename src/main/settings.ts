@@ -71,6 +71,8 @@ export function setSettings(patch: Partial<Settings>): Settings {
   const next = { ...getSettings(), ...patch }
   cache = next
   mkdirSync(app.getPath('userData'), { recursive: true })
+  // ponytail: llmApiKey stored plaintext — safeStorage deferred (personal app, single user,
+  // no multi-user threat model; add if user requests it).
   writeFileSync(settingsPath(), JSON.stringify(next, null, 2), 'utf-8')
   return next
 }

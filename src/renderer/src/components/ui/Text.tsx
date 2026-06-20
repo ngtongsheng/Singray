@@ -1,5 +1,5 @@
+import { clsx as cx } from 'clsx'
 import type { ComponentPropsWithoutRef, ElementType } from 'react'
-import { cx } from './cx'
 
 export type TextVariant = 'title' | 'subtitle' | 'item' | 'hint' | 'error'
 

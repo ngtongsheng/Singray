@@ -1,5 +1,5 @@
+import { clsx as cx } from 'clsx'
 import { type ButtonProps, buttonVariantClass } from './Button'
-import { cx } from './cx'
 
 type IconButtonSize = 'xs' | 'sm' | 'md' | 'lg'
 

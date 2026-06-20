@@ -54,7 +54,10 @@ function generateSongId(): SongId {
   return `${date}-${time}-${rand}` as SongId
 }
 
+const SONG_ID = /^[a-z0-9-]+$/i
+
 function songDir(songId: string): string {
+  if (!SONG_ID.test(songId)) throw new Error(`invalid song id: ${songId}`)
   return join(getSettings().libraryDir, songId)
 }
 

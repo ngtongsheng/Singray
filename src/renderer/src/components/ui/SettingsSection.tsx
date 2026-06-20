@@ -1,5 +1,5 @@
+import { clsx as cx } from 'clsx'
 import type { ReactNode } from 'react'
-import { cx } from './cx'
 
 interface Props {
   title: string

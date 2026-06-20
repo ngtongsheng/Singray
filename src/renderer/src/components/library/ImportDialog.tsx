@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { clsx as cx } from 'clsx'
 import { FolderOpen, Loader2, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
@@ -26,7 +27,6 @@ import {
   Text,
   Tooltip
 } from '../ui'
-import { cx } from '../ui/cx'
 
 type SourceMode = 'youtube' | 'file'
 
