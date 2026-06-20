@@ -106,6 +106,16 @@ Audited `pipeline/pipeline.py` (+ `setup.ps1`/`setup.sh`/`ruff.toml`) and verifi
 | **Root cause** | Not the audio-routing logic (`setSink`/`enableMic` already treated `''` as "omit constraint" correctly) — it was `@radix-ui/react-select`'s `Select.Value`, which hardcodes `shouldShowPlaceholder(value) => value === '' \|\| value === undefined`. Any `Select.Item` with `value=""` can never render its label in the trigger; Radix can't tell "selected the empty-string item" apart from "nothing selected". | Found by building the app and screenshotting Settings — all three System Default options (monitor/stream/mic) showed a blank trigger, never the label, regardless of the underlying setting. |
 | **Fix** | `ui/Select.tsx` remaps `''` to an internal sentinel for Radix only, translated back at the `value`/`onChange` boundary. Settings/IPC/audio-engine code is untouched — it was already correct. | Keeps the fix to one generic primitive instead of special-casing every call site that uses `''` as a "default" sentinel. |
 
+### #71 — lead-in countdown to first lyric word
+
+| Choice | Decision | Why |
+|---|---|---|
+| **Silence padding = scheduling delay, not audio splice** | Delay `engine.play()` by `(lead - onset)` wall-clock seconds when onset < lead. No audio buffer is edited; the gap is real-time silence before the engine starts. | Matches spec's "scheduling, not editing the audio file" — simplest implementation that satisfies the requirement. |
+| **Eligibility tracking** | `playFromStartEligible` ref (reset per song, cleared by any seek or first play). CountdownOverlay fires only when the ref is true AND `engine.position === 0`. | Gate excludes: resume-after-pause (ref consumed on first play), seek-then-play (seek clears ref), re-play after song ends (position no longer 0). |
+| **Arrow-key seeks route through context `seek()`** | Moved `seek` callback definition above the keyboard effect; ArrowLeft/Right now call `seek(position ± 5)` instead of `engine?.seek(...)`. | Ensures keyboard seeks also clear `playFromStartEligible` and cancel any active pad countdown, consistent with all other seek paths. |
+| **CountdownOverlay in shared/**, not player/ | `src/renderer/src/components/shared/CountdownOverlay.tsx` — pure presentational, usable by #65 prep dialog without importing from player/ namespace. | Issue asked to reuse overlay with #65; placing it in shared/ avoids a circular or cross-namespace import later. |
+| **No countdown overlay for #65 yet** | #65 (pre-record prep dialog) is still open; it can import `CountdownOverlay` directly when built. No wiring done in this PR. | Scope boundary: #71 builds the component, #65 integrates it. |
+
 ### #85 — release-please: fix repo permission, hold until Round 5 closes
 
 | Choice | Decision | Why |

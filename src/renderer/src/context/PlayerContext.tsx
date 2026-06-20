@@ -1,7 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { Lyrics, SongListItem } from '../../../shared/types'
 import { type MicBootstrapState, useAudioEngine } from '../hooks/useAudioEngine'
 import { useAutoHideBar } from '../hooks/useAutoHideBar'
+import { useLeadInCountdown } from '../hooks/useLeadInCountdown'
 import { usePlaybackClock } from '../hooks/usePlaybackClock'
 import { useSettings } from '../hooks/useSettings'
 import type { AudioEngine, MicFxPreset } from '../lib/audioEngine'
@@ -74,6 +75,7 @@ interface PlayerContextValue {
   closeRecordPrep: () => void
   startRecording: () => void
   stopRecording: () => void
+  leadInRemaining: number | null
 }
 
 const PlayerContext = createContext<PlayerContextValue | null>(null)
@@ -135,6 +137,10 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
   const engine = engineState.status === 'ready' ? engineState.engine : null
   const error = engineState.status === 'error' ? engineState.message : null
 
+  /** True until the first play() call or any seek — resets per song. */
+  const playFromStartEligible = useRef(true)
+  const leadIn = useLeadInCountdown(engine, lyrics, settings?.countdownLead ?? 0)
+
   // Seed UI prefs from settings + reset per-song state each time we (re)load a song.
   // biome-ignore lint/correctness/useExhaustiveDependencies: settings read once per song, not on every patch
   useEffect(() => {
@@ -143,6 +149,7 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
     setShowWaveform(settings.showWaveform)
     setShowBars(settings.showBars)
     setRecording(false)
+    playFromStartEligible.current = true
   }, [song.id, settings !== null])
 
   const playing = usePlaybackClock(engine, song)
@@ -190,9 +197,21 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
 
   const togglePlay = useCallback(() => {
     if (!engine) return
-    if (engine.playing) engine.pause()
+    if (engine.playing) {
+      engine.pause()
+      leadIn.cancel()
+      return
+    }
+    // Cancel a pending pad-phase countdown without starting audio.
+    if (leadIn.remaining !== null) {
+      leadIn.cancel()
+      return
+    }
+    const eligible = playFromStartEligible.current && engine.position === 0
+    playFromStartEligible.current = false
+    if (eligible) leadIn.start()
     else engine.play()
-  }, [engine])
+  }, [engine, leadIn])
 
   const toggleVocal = useCallback(() => {
     if (!engine) return
@@ -288,6 +307,17 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
   const openDetails = useCallback(() => setDetailsOpen(true), [])
   const closeDetails = useCallback(() => setDetailsOpen(false), [])
 
+  // Lyric clock follows what's audible: engine position minus shifter latency (§7.3).
+  const clock = useCallback(() => engine?.displayPosition ?? 0, [engine])
+  const seek = useCallback(
+    (t: number) => {
+      playFromStartEligible.current = false
+      leadIn.cancel()
+      engine?.seek(t)
+    },
+    [engine, leadIn]
+  )
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       poke()
@@ -300,8 +330,8 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
       if (e.key === 'v' || e.key === 'V') toggleVocal()
       if (e.key === '[') stepKey(-1)
       if (e.key === ']') stepKey(1)
-      if (e.key === 'ArrowLeft') engine?.seek(engine.position - 5)
-      if (e.key === 'ArrowRight') engine?.seek(engine.position + 5)
+      if (e.key === 'ArrowLeft') seek((engine?.position ?? 0) - 5)
+      if (e.key === 'ArrowRight') seek((engine?.position ?? 0) + 5)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -314,12 +344,9 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
     editOpen,
     detailsOpen,
     recordPrepOpen,
-    engine
+    engine,
+    seek
   ])
-
-  // Lyric clock follows what's audible: engine position minus shifter latency (§7.3).
-  const clock = useCallback(() => engine?.displayPosition ?? 0, [engine])
-  const seek = useCallback((t: number) => engine?.seek(t), [engine])
 
   const value: PlayerContextValue = {
     song,
@@ -376,7 +403,8 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
     openRecordPrep,
     closeRecordPrep,
     startRecording,
-    stopRecording
+    stopRecording,
+    leadInRemaining: leadIn.remaining
   }
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>

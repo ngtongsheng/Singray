@@ -318,6 +318,11 @@
     "micDeviceHelp": "用于自我监听和录音的麦克风。在此保存；在播放器中每首歌启用。",
     "micEnable": "在播放器中启用麦克风",
     "micEnableHelp": "开启后，打开歌曲时自动启动麦克风。关闭可跳过 getUserMedia 权限提示。",
-    "inputN": "输入 {{id}}"
+    "inputN": "输入 {{id}}",
+    "countdownLead": "前导倒计时",
+    "countdownLeadHelp": "从头播放歌曲时，在第一个歌词字之前显示的倒计时秒数。",
+    "countdownLeadOff": "关闭",
+    "countdownLead3": "3 秒（默认）",
+    "countdownLead5": "5 秒"
   }
 }

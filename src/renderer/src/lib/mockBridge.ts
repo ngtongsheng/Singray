@@ -36,7 +36,8 @@ const settings: Settings = {
   micMonitor: true,
   micVolume: 1,
   micFxPreset: 'off',
-  micFxAmount: 0.3
+  micFxAmount: 0.3,
+  countdownLead: 3
 }
 
 function song(id: string, title: string, artists: string[], language: string): SongListItem {
