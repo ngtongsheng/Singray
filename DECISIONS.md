@@ -53,6 +53,16 @@ shadcn/react-query PR exercises release-please + branch protection).
 | **TS 6 fallout** | Dropped deprecated `baseUrl` from `tsconfig.web.json` (TS5101) and made the `@renderer/*` path entry relative (`./src/...`, TS5090). biome 2.5 config migrated via `biome migrate`. | TS 6 deprecates `baseUrl`; paths resolve relative to the config file without it. |
 | **Audit** | `npm audit fix` cleared the high (undici). One **low** (esbuild dev-server file-read on Windows) remains — it's gated behind the Vite 7 pin and is dev-server-only. | Can't fix without Vite 8; not shipped in the app. Clears with the Vite bump. |
 
+### pipeline audit — done #11 (2026-06-20)
+
+Audited `pipeline/pipeline.py` (+ `setup.ps1`/`setup.sh`/`ruff.toml`) and verified by running.
+
+| Finding | Outcome |
+|---|---|
+| **Functional correctness** | No bugs. Verified end-to-end on the RTX 5060 Ti: `process` ran download → GPU separation (~18 it/s) → loudnorm gain → FLAC ×3 + thumb, exit 0, correct JSON-lines contract. `probe`/`search`/`list-models` also exercised against live YouTube + the model registry. `ruff check` + `ruff format` already clean. |
+| **Cleanups applied** | Dropped a redundant in-function `import shutil` (already module-level); fixed stale `vocals.m4a` wording in the `align` docstring/help — stems default to FLAC now and the code already resolves either extension. |
+| **Benign warnings (not fixed)** | `audio-separator` logs (a) `CUDAExecutionProvider not available in ONNXruntime` — only bites ONNX models; the default karaoke `.pth` runs on the torch CUDA path (GPU confirmed), so left alone rather than chasing an onnxruntime-gpu/cu128 pin; (b) libsndfile `Could not detect input audio bit depth` on the `.webm` download → defaults PCM_16, separation decodes via ffmpeg regardless. Both cosmetic. |
+
 ### Carry-over
 - `R3.REC2` Recordings view (only open item from Round 3) → migrate to an Issue.
 
