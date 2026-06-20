@@ -1,4 +1,8 @@
 // Single source of truth for types shared by main / preload / renderer (SPEC §8).
+// Runtime-validated types live in schemas.ts and are re-exported here for import compat.
+import type { ImportPipelineLine, ImportStage, LrclibHit, MicFxPreset } from './schemas'
+
+export type { ImportPipelineLine, ImportStage, LrclibHit, MicFxPreset }
 
 /** File extensions accepted by "From file" import (R3.7 picker filter + ADD2 drop zone). */
 export const MEDIA_EXTENSIONS = [
@@ -126,14 +130,6 @@ export interface Settings {
   micFxAmount: number
 }
 
-export const MIC_FX_PRESETS = ['off', 'room', 'hall', 'echo', 'karaoke'] as const
-export type MicFxPreset = (typeof MIC_FX_PRESETS)[number]
-
-/** Validates a persisted/IPC value against the MicFxPreset union before use. */
-export function isMicFxPreset(x: unknown): x is MicFxPreset {
-  return typeof x === 'string' && (MIC_FX_PRESETS as readonly string[]).includes(x)
-}
-
 /** Cleaned title/artist from metadata enrichment (R3.2). */
 export interface EnrichResult {
   title: string
@@ -167,13 +163,6 @@ export interface SearchResult {
   url: string
 }
 
-export const IMPORT_STAGES = ['queued', 'download', 'separate', 'convert', 'done', 'error'] as const
-export type ImportStage = (typeof IMPORT_STAGES)[number]
-
-function isImportStage(x: unknown): x is ImportStage {
-  return typeof x === 'string' && (IMPORT_STAGES as readonly string[]).includes(x)
-}
-
 /**
  * Branded ids for the import queue (R3.7): both are plain strings on the wire,
  * but the brand stops `jobId`/`songId` — same primitive type, easy to swap at a
@@ -195,21 +184,6 @@ interface ImportProgressBase {
 export type ImportProgress =
   | (ImportProgressBase & { stage: Exclude<ImportStage, 'error'> })
   | (ImportProgressBase & { stage: 'error'; message: string })
-
-/** One JSON line from `pipeline.py` for the download/separate/convert stages (SPEC §6.2). */
-export type ImportPipelineLine =
-  | { stage: Exclude<ImportStage, 'done' | 'error'>; progress: number }
-  | { stage: 'done'; durationSec?: number }
-  | { stage: 'error'; message: string }
-
-/** Validates one parsed JSON line against the pipeline's stage protocol before use. */
-export function isImportPipelineLine(x: unknown): x is ImportPipelineLine {
-  if (typeof x !== 'object' || x === null || !('stage' in x)) return false
-  const { stage } = x as { stage: unknown }
-  if (!isImportStage(stage)) return false
-  if (stage === 'error') return typeof (x as { message?: unknown }).message === 'string'
-  return true
-}
 
 export interface ImportRequest {
   url: string
@@ -236,18 +210,6 @@ export interface LrclibQuery {
   title: string
   artist: string
   durationSec: number
-}
-
-/** One LRCLIB candidate (R3.5). `syncedLyrics` is an LRC string when present. */
-export interface LrclibHit {
-  id: number
-  trackName: string
-  artistName: string
-  albumName: string
-  duration: number
-  instrumental: boolean
-  plainLyrics: string | null
-  syncedLyrics: string | null
 }
 
 export type AudioTrack = 'original' | 'instrumental' | 'vocals'
