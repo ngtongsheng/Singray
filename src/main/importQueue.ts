@@ -3,14 +3,14 @@ import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { BrowserWindow } from 'electron'
-import {
-  type ImportProgress,
-  type ImportRequest,
-  type ImportStage,
-  isImportPipelineLine,
-  type JobId,
-  type SongId,
-  type SongMeta
+import { ImportPipelineLineSchema } from '../shared/schemas'
+import type {
+  ImportProgress,
+  ImportRequest,
+  ImportStage,
+  JobId,
+  SongId,
+  SongMeta
 } from '../shared/types'
 import { notifyLibraryChanged } from './library'
 import { pipelineScript } from './pipeline'
@@ -174,13 +174,14 @@ function run(job: Job): void {
         } catch {
           return // non-JSON noise, ignore
         }
-        if (!isImportPipelineLine(parsed)) return
-        if (parsed.stage === 'done') {
-          void finalizeDone(job, parsed.durationSec ?? 0)
-        } else if (parsed.stage === 'error') {
-          lastError = parsed.message
+        const pipelineLine = ImportPipelineLineSchema.safeParse(parsed)
+        if (!pipelineLine.success) return
+        if (pipelineLine.data.stage === 'done') {
+          void finalizeDone(job, pipelineLine.data.durationSec ?? 0)
+        } else if (pipelineLine.data.stage === 'error') {
+          lastError = pipelineLine.data.message
         } else {
-          sendProgress(job, parsed.stage, parsed.progress)
+          sendProgress(job, pipelineLine.data.stage, pipelineLine.data.progress)
         }
       }
     }

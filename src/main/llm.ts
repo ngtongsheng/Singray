@@ -1,3 +1,4 @@
+import { ChatCompletionResponseSchema, ListModelsResponseSchema } from '../shared/schemas'
 import type { LlmTestResult } from '../shared/types'
 import { getSettings } from './settings'
 
@@ -98,13 +99,14 @@ export async function chat(messages: ChatMessage[], opts: ChatOptions = {}): Pro
   if (opts.noReasoning && res.status === 400) res = await request(false)
   if (!res.ok) throw await friendlyHttpError(res, model)
 
-  let content: unknown
+  let raw: unknown
   try {
-    const body = (await res.json()) as { choices?: { message?: { content?: unknown } }[] }
-    content = body.choices?.[0]?.message?.content
+    raw = await res.json()
   } catch {
     throw new Error('Endpoint returned non-JSON — not an OpenAI-compatible /v1 URL?')
   }
+  const parsed = ChatCompletionResponseSchema.safeParse(raw)
+  const content = parsed.success ? parsed.data.choices[0]?.message?.content : undefined
   if (typeof content !== 'string')
     throw new Error('Unexpected response shape — not an OpenAI-compatible /v1 URL?')
   return content
@@ -123,8 +125,8 @@ export async function listLlmModels(baseUrl: string, apiKey: string): Promise<st
     throw friendlyNetworkError(err, base, 5000)
   }
   if (!res.ok) throw await friendlyHttpError(res, '')
-  const body = (await res.json()) as { data?: { id: string }[] }
-  return (body.data ?? []).map((m) => m.id).sort()
+  const parsed = ListModelsResponseSchema.safeParse(await res.json())
+  return (parsed.success ? parsed.data.data : []).map((m) => m.id).sort()
 }
 
 /** Settings "Test" button: tiny round-trip proving URL + model + key all work. */

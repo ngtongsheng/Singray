@@ -2,6 +2,7 @@
 // track/artist, returns candidates with synced (LRC) and/or plain lyrics. Fetched
 // in main (renderer CSP blocks cross-origin), rewritten into friendly errors.
 
+import { LrclibHitSchema } from '../shared/schemas'
 import type { LrclibHit, LrclibQuery } from '../shared/types'
 
 const BASE = 'https://lrclib.net/api'
@@ -9,30 +10,6 @@ const TIMEOUT_MS = 12_000
 /** LRCLIB asks clients to identify themselves. */
 const USER_AGENT = 'Singray (https://github.com/ngtongsheng/singray)'
 const MAX_HITS = 8
-
-interface RawHit {
-  id: number
-  trackName: string
-  artistName: string
-  albumName: string | null
-  duration: number | null
-  instrumental: boolean
-  plainLyrics: string | null
-  syncedLyrics: string | null
-}
-
-function toHit(r: RawHit): LrclibHit {
-  return {
-    id: r.id,
-    trackName: r.trackName ?? '',
-    artistName: r.artistName ?? '',
-    albumName: r.albumName ?? '',
-    duration: r.duration ?? 0,
-    instrumental: r.instrumental ?? false,
-    plainLyrics: r.plainLyrics || null,
-    syncedLyrics: r.syncedLyrics || null
-  }
-}
 
 /**
  * Search LRCLIB for a song. Tries structured track/artist params, falling back to
@@ -60,18 +37,20 @@ export async function findLyrics(q: LrclibQuery): Promise<LrclibHit[]> {
   }
   if (!res.ok) throw new Error(`LRCLIB returned HTTP ${res.status}.`)
 
-  let raw: RawHit[]
+  let body: unknown
   try {
-    raw = (await res.json()) as RawHit[]
+    body = await res.json()
   } catch {
     throw new Error('LRCLIB returned an unexpected response.')
   }
-  if (!Array.isArray(raw)) return []
+  if (!Array.isArray(body)) return []
+  const raw = body
+    .map((item) => LrclibHitSchema.safeParse(item))
+    .flatMap((r) => (r.success ? [r.data] : []))
 
   const dur = q.durationSec || 0
   return raw
     .filter((r) => !r.instrumental && (r.syncedLyrics || r.plainLyrics))
-    .map(toHit)
     .sort((a, b) => {
       // Synced beats plain; within a tier, closest duration wins.
       const synced = Number(!!b.syncedLyrics) - Number(!!a.syncedLyrics)

@@ -1,7 +1,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
-import { isMicFxPreset, type Settings } from '../shared/types'
+import { MicFxPresetSchema } from '../shared/schemas'
+import type { Settings } from '../shared/types'
 
 function defaults(): Settings {
   return {
@@ -48,7 +49,10 @@ export function getSettings(): Settings {
   } catch {
     // missing or corrupt file → defaults
   }
-  if (stored.micFxPreset !== undefined && !isMicFxPreset(stored.micFxPreset)) {
+  if (
+    stored.micFxPreset !== undefined &&
+    !MicFxPresetSchema.safeParse(stored.micFxPreset).success
+  ) {
     delete stored.micFxPreset
   }
   cache = { ...defaults(), ...stored }
