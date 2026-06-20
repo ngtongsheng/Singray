@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react'
-import { cx } from './cx'
+import { cn } from '../../lib/cn'
 
 export type ContainerPb = 0 | 4 | 6 | 8 | 10 | 12
 export type ContainerMaxWidth = 'lg' | 'xl'
@@ -20,14 +20,12 @@ const MAX_WIDTH: Record<ContainerMaxWidth, string> = {
 
 export interface ContainerProps extends ComponentProps<'div'> {
   pb?: ContainerPb
-  /** Centers content to a max width (forms), instead of running full-width. */
   maxWidth?: ContainerMaxWidth
 }
 
 /**
- * Page-level scroll container: sits below the floating header (pt-19),
- * edges at pl-6/pr-[14px] (24px visual both sides — pr compensates for the
- * 10px scrollbar-gutter reserved by .overflow-y-auto in main.css).
+ * Page-level scroll container. Native scrollbar hidden via CSS (no gutter
+ * reserved), so symmetric pl-6/pr-6 without compensation.
  */
 function Container({
   pb = 0,
@@ -38,7 +36,12 @@ function Container({
 }: ContainerProps): React.JSX.Element {
   return (
     <div
-      className={cx('absolute inset-0 overflow-y-auto pl-6 pr-[14px] pt-19', PB[pb], className)} // design-allow: scrollbar-gutter compensation (comment above)
+      className={cn(
+        'absolute inset-0 overflow-y-auto pl-6 pr-6 pt-19',
+        '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        PB[pb],
+        className
+      )}
       {...rest}
     >
       {maxWidth ? <div className={MAX_WIDTH[maxWidth]}>{children}</div> : children}

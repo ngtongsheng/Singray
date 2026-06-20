@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { diffLines } from '../../lib/lineDiff'
-import { Button, DialogFooter, Stack, Text } from '../ui'
+import { Button, DialogFooter, ScrollArea, Stack, Text } from '../ui'
 import { cx } from '../ui/cx'
 import Dialog from '../ui/Dialog'
 
@@ -39,25 +39,27 @@ function CleanLyricsDialog({ original, cleaned, onApply, onClose }: Props): Reac
                   : t('clean.noChanges')}
             </Text>
           </Stack>
-          <div
-            className="h-[55vh] overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-card p-3 font-lyric text-sm leading-6" /* design-allow: 55vh tracks viewport height, no token fits */
+          <ScrollArea
+            className="h-[55vh] rounded-lg border border-border bg-card font-lyric text-sm leading-6" /* design-allow: 55vh tracks viewport height, no token fits */
           >
-            {diff.map((op, i) => (
-              <div
-                // biome-ignore lint/suspicious/noArrayIndexKey: static preview snapshot
-                key={i}
-                className={cx(
-                  op.type === 'removed' && 'text-destructive line-through',
-                  op.type === 'added' && 'text-success'
-                )}
-              >
-                <span className="inline-block w-4 select-none text-muted-foreground/50">
-                  {op.type === 'removed' ? '−' : op.type === 'added' ? '+' : ''}
-                </span>
-                {op.line}
-              </div>
-            ))}
-          </div>
+            <div className="whitespace-pre-wrap p-3">
+              {diff.map((op, i) => (
+                <div
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static preview snapshot
+                  key={i}
+                  className={cx(
+                    op.type === 'removed' && 'text-destructive line-through',
+                    op.type === 'added' && 'text-success'
+                  )}
+                >
+                  <span className="inline-block w-4 select-none text-muted-foreground/50">
+                    {op.type === 'removed' ? '−' : op.type === 'added' ? '+' : ''}
+                  </span>
+                  {op.line}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
         </Stack>
         <DialogFooter gap={2}>
           <Button onClick={onClose}>{t('common.cancel')}</Button>

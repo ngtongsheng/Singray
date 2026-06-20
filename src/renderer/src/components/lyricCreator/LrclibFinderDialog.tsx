@@ -2,7 +2,7 @@ import { Loader2, Music } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LrclibHit, LrclibQuery } from '../../../../shared/types'
-import { Button, DialogFooter, Stack, Text } from '../ui'
+import { Button, DialogFooter, ScrollArea, Stack, Text } from '../ui'
 import Dialog from '../ui/Dialog'
 
 interface Props {
@@ -62,39 +62,41 @@ function LrclibFinderDialog({ query, onPick, onClose }: Props): React.JSX.Elemen
           )}
 
           {hits !== null && hits.length > 0 && (
-            <ul
-              className="flex max-h-[50vh] flex-col gap-1 overflow-y-auto" /* design-allow: 50vh tracks viewport height, no token fits */
+            <ScrollArea
+              className="h-[50vh]" /* design-allow: 50vh tracks viewport height, no token fits */
             >
-              {hits.map((h) => (
-                <li key={h.id}>
-                  <Button
-                    variant="bare"
-                    onClick={() => onPick(h)}
-                    className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-card"
-                  >
-                    <Music className="size-4 shrink-0 text-muted-foreground" strokeWidth={1.5} />
-                    <span className="min-w-0 flex-1">
-                      <Text as="span" variant="item" className="block">
-                        {h.trackName}
-                      </Text>
-                      <Text as="span" variant="hint" className="block truncate">
-                        {h.artistName}
-                        {h.albumName ? ` · ${h.albumName}` : ''} · {fmtDur(h.duration)}
-                      </Text>
-                    </span>
-                    <span
-                      className={`shrink-0 rounded-md px-1.5 py-0.5 text-xs ${
-                        h.syncedLyrics
-                          ? 'bg-primary/15 text-accent-soft'
-                          : 'border border-border text-muted-foreground'
-                      }`}
+              <ul className="flex flex-col gap-1">
+                {hits.map((h) => (
+                  <li key={h.id}>
+                    <Button
+                      variant="bare"
+                      onClick={() => onPick(h)}
+                      className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-card"
                     >
-                      {h.syncedLyrics ? t('finder.synced') : t('finder.plain')}
-                    </span>
-                  </Button>
-                </li>
-              ))}
-            </ul>
+                      <Music className="size-4 shrink-0 text-muted-foreground" strokeWidth={1.5} />
+                      <span className="min-w-0 flex-1">
+                        <Text as="span" variant="item" className="block">
+                          {h.trackName}
+                        </Text>
+                        <Text as="span" variant="hint" className="block truncate">
+                          {h.artistName}
+                          {h.albumName ? ` · ${h.albumName}` : ''} · {fmtDur(h.duration)}
+                        </Text>
+                      </span>
+                      <span
+                        className={`shrink-0 rounded-md px-1.5 py-0.5 text-xs ${
+                          h.syncedLyrics
+                            ? 'bg-primary/15 text-accent-soft'
+                            : 'border border-border text-muted-foreground'
+                        }`}
+                      >
+                        {h.syncedLyrics ? t('finder.synced') : t('finder.plain')}
+                      </span>
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </ScrollArea>
           )}
         </Stack>
 
