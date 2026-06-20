@@ -162,7 +162,8 @@
       "countdown": "Countdown",
       "none": "None",
       "start": "Start"
-    }
+    },
+    "viewRecordings": "Recordings"
   },
   "details": {
     "title": "Song details",
