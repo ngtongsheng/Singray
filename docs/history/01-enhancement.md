@@ -2,7 +2,7 @@
 
 > **Closed 2026-06-14.** Round 1 coding done. All unverified items moved to **Round 2 Phase 0** in the active `BACKLOG.md`: the five `[~]` (R4.2, R4.3, R4.4, R5.1, R5.2) plus user-side R0.1 (ear batch) + R0.2 (AG06). This file is a frozen snapshot — do not edit; work in `BACKLOG.md`.
 
-Source: user feedback 2026-06-12 (`Some enhancement.md`), grilled + triaged. MVP backlog archived at `docs/rounds/00-mvp.md`.
+Source: user feedback 2026-06-12 (`Some enhancement.md`), grilled + triaged. MVP backlog archived at `docs/history/00-mvp.md`.
 
 Status legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked (note why)
 
@@ -195,4 +195,4 @@ Release workflow adds macos job: electron-builder .dmg (unsigned), uploaded to s
 - 2026-06-12 · R1.2 · No autoplay (enter paused at 0:00, guide vocal off via `engine.setVocal(false)` post-load); new `playerBarPinned` setting (default true) + pin/unpin button at bar end — unpin restores 3s auto-hide; control order play → seek → instr vol → guide cluster (toggle+volume in one bordered unit) → key → tempo; ←/→ seek ±5s; Key span `w-14 whitespace-nowrap` fixes +n wrap; tempo slider → radio presets (0.75–1.25) + Reset. All done-when checks verified via playwright driver (full-song pinned check proxied at 4.5s idle; ear-grade wipe check stays in R0.1).
 - 2026-06-12 · R1.1 · Whole card click → player; hover overlay removed — overlay was the favorite-bug root cause (its `absolute inset-0` div sat over the heart and swallowed clicks). Card keeps heart + small ⋯ menu (Open folder / Delete); Edit details + Edit/Add lyrics moved to player top-right chrome (EditMetaDialog renders in player; Esc guard added so closing dialog doesn't exit player). Import strip moved to bottom status bar. All done-when checks verified by driving the built app with playwright-core `_electron` (scripts in `%TEMP%\singray-drive`, reusable pattern for future UI verification).
 - 2026-06-12 · — · Backlog additions: R1.5 sing history (≥60% gate, timestamped log, library sort), R2.5 localisation (i18next, OS-locale default), R3.7 local file import (ffmpeg-decodable formats), R3.8 flac stem default with m4a setting. Round 2 candidates section added: record singing, effects, EQ.
-- 2026-06-12 · — · Round 1 backlog created from `Some enhancement.md` feedback + grilling session; MVP backlog archived to `docs/rounds/00-mvp.md`. Key decisions recorded in Triage block above. Tokenizer apostrophe bug confirmed in code (`'` not in `\p{L}` word run). Dropped: nudge editor, fullscreen stage, playlists.
+- 2026-06-12 · — · Round 1 backlog created from `Some enhancement.md` feedback + grilling session; MVP backlog archived to `docs/history/00-mvp.md`. Key decisions recorded in Triage block above. Tokenizer apostrophe bug confirmed in code (`'` not in `\p{L}` word run). Dropped: nudge editor, fullscreen stage, playlists.
