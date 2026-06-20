@@ -203,7 +203,7 @@ export class AudioEngine {
           try {
             await setSink(streamCtx, routing.streamDeviceId)
           } catch (err) {
-            void streamCtx.close()
+            await streamCtx.close()
             streamCtx = null
             warning = `Stream output unavailable (${err instanceof Error ? err.message : String(err)}) — playing on monitor only.`
           }

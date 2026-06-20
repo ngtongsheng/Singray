@@ -33,7 +33,7 @@ export function spawnLines(
       stderrTail = (stderrTail + d.toString()).slice(-2000)
     })
     proc.on('error', reject)
-    proc.on('close', (code) => resolve({ code: code ?? -1, stderrTail }))
+    proc.on('close', (code) => resolve({ code: code ?? 0, stderrTail }))
   })
 }
 
