@@ -25,6 +25,7 @@ const settings: Settings = {
     { code: 'en', label: 'English' }
   ],
   uiLanguage: '',
+  llmProvider: 'ollama',
   llmBaseUrl: 'http://localhost:11434/v1',
   llmModel: '',
   llmApiKey: '',
