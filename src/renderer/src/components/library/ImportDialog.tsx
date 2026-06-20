@@ -41,6 +41,10 @@ interface Props {
   onClose: () => void
 }
 
+function extractYouTubeId(url: string): string | null {
+  return url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/)?.[1] ?? null
+}
+
 function formatDuration(sec: number): string {
   if (!sec) return ''
   const m = Math.floor(sec / 60)
@@ -293,13 +297,24 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
               <Stack direction="column" gap={2} className="w-56 shrink-0">
                 <div className="overflow-hidden rounded-lg bg-card">
                   <AspectRatio ratio={16 / 9}>
-                    {probe.probed.thumbnailUrl && (
-                      <img
-                        src={probe.probed.thumbnailUrl}
-                        alt=""
-                        className="absolute inset-0 h-full w-full object-cover"
-                      />
-                    )}
+                    {(() => {
+                      const ytId = !probe.filePath ? extractYouTubeId(probe.url) : null
+                      return ytId ? (
+                        <iframe
+                          className="absolute inset-0 h-full w-full"
+                          src={`https://www.youtube-nocookie.com/embed/${ytId}`}
+                          allow="autoplay; encrypted-media; picture-in-picture"
+                          allowFullScreen
+                          title={probe.probed.title}
+                        />
+                      ) : probe.probed.thumbnailUrl ? (
+                        <img
+                          src={probe.probed.thumbnailUrl}
+                          alt=""
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      ) : null
+                    })()}
                   </AspectRatio>
                 </div>
                 <Text variant="hint" className="line-clamp-2">
