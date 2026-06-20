@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { RecordingItem } from '../../../shared/types'
 import ConfirmDialog from '../components/shared/ConfirmDialog'
 import Titlebar from '../components/shared/Titlebar'
-import { Container, IconButton, Slider, Stack, Text } from '../components/ui'
+import { Container, IconButton, Segmented, Slider, Stack, Text } from '../components/ui'
 import { useAppContext } from '../context/AppContext'
 import { useLibrary } from '../hooks/useLibrary'
 
@@ -29,6 +29,7 @@ function Recordings({ songId }: Props): React.JSX.Element {
   const { goBack } = useAppContext()
   const qc = useQueryClient()
   const { songs } = useLibrary()
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
 
   const queryKey = ['recordings', songId ?? 'all'] as const
   const { data: recordings = [], isPending } = useQuery({
@@ -73,19 +74,34 @@ function Recordings({ songId }: Props): React.JSX.Element {
     ? (songs.find((s) => s.id === songId)?.title ?? t('recordings.title'))
     : t('recordings.title')
 
+  const sorted = sortOrder === 'newest' ? [...recordings].reverse() : recordings
+
   return (
     <div className="relative h-full">
       <Titlebar>
-        <IconButton
-          onClick={goBack}
-          title={t('common.backEsc')}
-          className="app-no-drag text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" strokeWidth={1.5} />
-        </IconButton>
-        <Text as="h1" variant="title">
-          {title}
-        </Text>
+        <Stack justify="between" className="w-full">
+          <Stack gap={3}>
+            <IconButton
+              onClick={goBack}
+              title={t('common.backEsc')}
+              className="app-no-drag text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" strokeWidth={1.5} />
+            </IconButton>
+            <Text as="h1" variant="title">
+              {title}
+            </Text>
+          </Stack>
+          <Segmented
+            className="app-no-drag"
+            value={sortOrder}
+            onChange={setSortOrder}
+            options={[
+              { value: 'newest', label: t('recordings.sortNewest') },
+              { value: 'oldest', label: t('recordings.sortOldest') }
+            ]}
+          />
+        </Stack>
       </Titlebar>
 
       <Container pb={playingUrl ? 12 : 6}>
@@ -93,13 +109,13 @@ function Recordings({ songId }: Props): React.JSX.Element {
           <Text variant="hint" className="py-12 text-center">
             {t('common.loading')}
           </Text>
-        ) : recordings.length === 0 ? (
+        ) : sorted.length === 0 ? (
           <Text variant="hint" className="py-12 text-center">
             {t('recordings.empty')}
           </Text>
         ) : (
           <Stack direction="column" gap={0} className="divide-y divide-border py-3">
-            {recordings.map((rec) => (
+            {sorted.map((rec) => (
               <Stack key={rec.path} justify="between" align="center" className="px-1 py-3">
                 <Stack direction="column" gap={0.5}>
                   {!songId && (

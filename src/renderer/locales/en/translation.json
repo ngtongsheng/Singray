@@ -239,7 +239,9 @@
     "play": "Play",
     "pause": "Pause",
     "deleteTitle": "Delete recording?",
-    "deleteBody": "This recording will be permanently deleted."
+    "deleteBody": "This recording will be permanently deleted.",
+    "sortNewest": "Newest",
+    "sortOldest": "Oldest"
   },
   "settings": {
     "title": "Settings",
