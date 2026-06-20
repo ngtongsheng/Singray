@@ -99,6 +99,7 @@ const SongCard = memo(function SongCard({ song, importing }: Props): React.JSX.E
                 variant="bare"
                 onClick={toggle}
                 title={t('card.moreActions')}
+                aria-label={t('card.moreActions')}
                 className={`rounded-md bg-black/50 p-1 transition-opacity hover:bg-black/70 ${
                   open ? '' : 'opacity-0 group-hover:opacity-100'
                 }`}

@@ -46,6 +46,7 @@ function TunePopover(): React.JSX.Element {
             tuneOpen || tempoVal !== 1 || keyVal !== 0 || (micActive && micFxPreset !== 'off')
           }
           title={t('player.tuneTip')}
+          aria-label={t('player.tuneTip')}
           className="app-no-drag tabular-nums"
         >
           <SlidersHorizontal className="size-4" strokeWidth={1.5} />

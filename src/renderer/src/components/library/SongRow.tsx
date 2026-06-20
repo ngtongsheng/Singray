@@ -93,6 +93,7 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
               variant="bare"
               onClick={toggle}
               title={t('card.moreActions')}
+              aria-label={t('card.moreActions')}
               className="shrink-0 text-muted-foreground hover:text-foreground"
             >
               <MoreHorizontal className="size-4" strokeWidth={1.5} />
