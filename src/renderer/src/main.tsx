@@ -1,11 +1,13 @@
 import './assets/main.css'
 
 import { QueryClientProvider } from '@tanstack/react-query'
+import { enableMapSet } from 'immer'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { scan } from 'react-scan' // ponytail: dev-only perf overlay, tree-shaken in prod
 import { tokenizeLine } from '../../shared/tokenize'
 import App from './App'
+import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { AppProvider } from './context/AppContext'
 import { SETTINGS_KEY } from './hooks/useSettings'
 import { AudioEngine } from './lib/audioEngine'
@@ -13,6 +15,7 @@ import { initI18n, resolveLocale } from './lib/i18n'
 import { createMockBridge } from './lib/mockBridge'
 import { queryClient } from './lib/queryClient'
 
+enableMapSet()
 scan({ enabled: import.meta.env.DEV })
 
 if (import.meta.env.DEV && !window.singray) {
@@ -39,11 +42,13 @@ window.singray.settings.get().then((settings) => {
   initI18n(resolveLocale(settings.uiLanguage))
   createRoot(rootEl).render(
     <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <AppProvider>
-          <App />
-        </AppProvider>
-      </QueryClientProvider>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <AppProvider>
+            <App />
+          </AppProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
     </StrictMode>
   )
 })
