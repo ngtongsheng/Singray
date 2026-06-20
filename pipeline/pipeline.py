@@ -321,7 +321,8 @@ def _encode_audio(src: Path, dst: Path, gain_db: float, fmt: str) -> None:
             check=True,
         )  # fmt: skip
     except subprocess.CalledProcessError as exc:
-        raise RuntimeError(f"ffmpeg encode failed for {src.name}: {exc.stderr.strip() or '(see logs)'}") from exc
+        msg = f"ffmpeg encode failed for {src.name}: {exc.stderr.strip() or '(see logs)'}"
+        raise RuntimeError(msg) from exc
 
 
 def _encode_thumb(src: Path, dst: Path) -> None:
