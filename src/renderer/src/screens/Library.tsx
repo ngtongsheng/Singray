@@ -110,9 +110,9 @@ function LibraryView(): React.JSX.Element {
             )}
           </div>
         </ScrollArea>
-      </div>
 
-      <ImportStatusStrip />
+        <ImportStatusStrip />
+      </div>
 
       <AnimatePresence>
         {showImport && <ImportDialog onClose={closeImport} />}

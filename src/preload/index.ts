@@ -15,7 +15,7 @@ const api: SingrayApi = {
     updateMeta: (id, patch) => invoke('library:updateMeta', id, patch),
     openFolder: (id) => invoke('library:openFolder', id),
     uploadThumb: (id, bytes) => invoke('library:uploadThumb', id, bytes),
-    setThumbFromUrl: (id, url) => invoke('library:setThumbFromUrl', id, url),
+    fetchArtworkBytes: (url) => invoke('library:fetchArtworkBytes', url),
     searchArtwork: (query) => invoke('library:searchArtwork', query)
   },
   lyrics: {

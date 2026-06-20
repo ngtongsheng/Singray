@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect } from 'react'
+import { createContext, useContext, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LlmProvider, Settings as SettingsModel } from '../../../shared/types'
 import { type UseAsync, useAsync } from '../hooks/useAsync'
@@ -27,8 +27,8 @@ const SettingsContext = createContext<SettingsContextValue | null>(null)
 
 export function SettingsProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   const { t } = useTranslation()
-  const { goLibrary } = useAppContext()
-  const onBack = useCallback(() => goLibrary(), [goLibrary])
+  const { goBack } = useAppContext()
+  const onBack = goBack
   const { settings, patch } = useSettings()
   const pipelineTest = useAsync(async () => {
     const started = Date.now()

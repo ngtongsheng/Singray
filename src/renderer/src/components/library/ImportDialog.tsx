@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
+import { splitArtists } from '../../../../shared/parseTitle'
 import { MEDIA_EXTENSIONS, type SearchResult } from '../../../../shared/types'
 import { useAsync } from '../../hooks/useAsync'
 import { useLibrary } from '../../hooks/useLibrary'
@@ -24,8 +25,7 @@ import {
   Segmented,
   Select,
   Stack,
-  Text,
-  Tooltip
+  Text
 } from '../ui'
 
 type SourceMode = 'youtube' | 'file'
@@ -83,7 +83,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
     (data: { title: string; artist: string; language: string }) => {
       resetMeta({
         title: data.title,
-        artists: data.artist ? [data.artist] : [],
+        artists: data.artist ? splitArtists(data.artist) : [],
         language: data.language
       })
     },
@@ -204,7 +204,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
               </Field>
 
               {search.data && (
-                <ScrollArea className="max-h-64 min-h-14 rounded-lg border border-border">
+                <ScrollArea className="h-64 rounded-lg border border-border">
                   <ul className="divide-y divide-border">
                     {search.data.length === 0 && (
                       <li className="px-3 py-4 text-center">
@@ -230,15 +230,15 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                               )}
                             </AspectRatio>
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <Tooltip content={r.title}>
-                              <p className="truncate text-sm">{r.title}</p>
-                            </Tooltip>
+                          <Stack direction="column" gap={1} className="min-w-0 flex-1">
+                            <Text variant="item" className="truncate">
+                              {r.title}
+                            </Text>
                             <Text variant="hint" className="truncate">
                               {r.channel}
                               {r.duration > 0 && ` · ${formatDuration(r.duration)}`}
                             </Text>
-                          </div>
+                          </Stack>
                         </Button>
                       </li>
                     ))}

@@ -85,7 +85,7 @@ export function createMockBridge(): SingrayApi {
       },
       openFolder: () => Promise.resolve(),
       uploadThumb: () => Promise.resolve(),
-      setThumbFromUrl: () => Promise.resolve(),
+      fetchArtworkBytes: () => Promise.resolve(new ArrayBuffer(0)),
       searchArtwork: () => Promise.resolve([])
     },
     lyrics: {
@@ -129,8 +129,7 @@ export function createMockBridge(): SingrayApi {
       listModels: () => Promise.resolve([]),
       enrichProbe: (probe) =>
         Promise.resolve({ title: probe.title, artist: probe.artist ?? '', source: 'heuristic' }),
-      cleanMeta: (input) =>
-        Promise.resolve({ title: input.title, artist: input.artist, source: 'heuristic' }),
+      cleanMeta: (input) => Promise.resolve({ title: input.title, artists: input.artists }),
       cleanLyrics: (input) => Promise.resolve(input.text)
     },
     audio: {

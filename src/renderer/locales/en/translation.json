@@ -87,13 +87,14 @@
     "apply": "Apply",
     "dismiss": "Dismiss",
     "noChanges": "Already clean — no changes suggested.",
-    "thumbnail": "Thumbnail",
-    "thumbUpload": "Upload image",
+    "tabDetails": "Details",
+    "tabThumbnail": "Thumbnail",
+    "thumbClickUpload": "Click to upload from your computer",
+    "thumbReplace": "Replace image",
     "thumbSearch": "Search online",
     "thumbSearchPlaceholder": "Artist and title…",
     "thumbSearching": "Searching…",
-    "thumbNoResults": "No results",
-    "thumbPick": "Use this artwork"
+    "thumbNoResults": "No results"
   },
   "clean": {
     "button": "Clean up with AI",
@@ -183,7 +184,7 @@
     "source": "Source"
   },
   "creator": {
-    "subtitle": "{{artist}} · Lyrics",
+    "lyricsLabel": "Lyrics",
     "align": "Align",
     "aligning": "Aligning…",
     "alignTip": "Auto-time units with forced alignment (whisperx on the vocals stem)",

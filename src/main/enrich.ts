@@ -1,5 +1,5 @@
 import { parseYoutubeTitle } from '../shared/parseTitle'
-import type { EnrichResult, ProbeResult } from '../shared/types'
+import type { CleanMetaResult, EnrichResult, ProbeResult } from '../shared/types'
 import { chat } from './llm'
 
 /**
@@ -77,22 +77,59 @@ export async function enrichProbe(probe: ProbeResult): Promise<EnrichResult> {
   }
 }
 
+const CLEAN_META_PROMPT = `You clean song metadata for a karaoke library. Given the song's current title and a list of its artists (plus the raw original upload title for context, when given), extract the clean song title and clean performer names.
+
+Rules:
+- title: the song name only. Strip decoration such as "Official Music Video", "MV", "Official Audio", "Lyric Video", "(Live)", "【官方MV】", "官方完整版", quality tags (4K, HD), and bracketed translations or romanizations of the same name.
+- artists: one cleaned name per input artist, same order, same count — never merge two artists into one entry, never drop one, never add one. Strip channel suffixes ("- Topic", "Official", "VEVO"). When an artist is written in two scripts, prefer the native/local name: "Khalil Fong (方大同)" → "方大同", "IU (아이유)" → "아이유".
+- Never translate. Keep names and the title in their original language and script.
+- If a field cannot be improved, return it unchanged.
+
+Respond with only a JSON object, no other text: {"title":"...","artists":["...", ...]}`
+
+/** Pulls {title, artists} out of a model reply, tolerating code fences and chatter. */
+function parseCleanMetaReply(reply: string, expectedArtistCount: number): CleanMetaResult {
+  const match = reply.match(/\{[\s\S]*\}/)
+  if (!match) throw new Error('Model reply contained no JSON object.')
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(match[0])
+  } catch {
+    throw new Error('Model reply was not valid JSON.')
+  }
+  const { title, artists } = parsed as { title?: unknown; artists?: unknown }
+  if (typeof title !== 'string' || !title.trim())
+    throw new Error('Model reply was missing a title.')
+  if (!Array.isArray(artists) || artists.some((a) => typeof a !== 'string'))
+    throw new Error('Model reply had a malformed artists list.')
+  const cleaned = (artists as string[]).map((a) => a.trim())
+  if (cleaned.length !== expectedArtistCount)
+    throw new Error('Model reply changed the number of artists.')
+  return { title: title.trim(), artists: cleaned }
+}
+
 /**
  * Edit-meta "Clean up with AI": cleans the song's current values, with the raw
  * upload title as context. No fallback — rejects with a readable message.
  */
 export async function cleanMeta(input: {
   title: string
-  artist: string
+  artists: string[]
   youtubeTitle: string
-}): Promise<EnrichResult> {
-  const payload: Record<string, string> = {
+}): Promise<CleanMetaResult> {
+  const payload: Record<string, unknown> = {
     currentTitle: input.title,
-    currentArtist: input.artist
+    currentArtists: input.artists
   }
   if (input.youtubeTitle) payload.originalUploadTitle = input.youtubeTitle
-  const cleaned = await cleanWithLlm(payload)
-  return { ...cleaned, source: 'llm' }
+  const reply = await chat(
+    [
+      { role: 'system', content: CLEAN_META_PROMPT },
+      { role: 'user', content: JSON.stringify(payload) }
+    ],
+    { temperature: 0, noReasoning: true }
+  )
+  return parseCleanMetaReply(reply, input.artists.length)
 }
 
 const LYRICS_PROMPT = `You clean song lyrics for a karaoke app. Given raw pasted lyrics, return only the singable lyric lines.
