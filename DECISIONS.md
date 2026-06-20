@@ -86,3 +86,15 @@ Audited `pipeline/pipeline.py` (+ `setup.ps1`/`setup.sh`/`ruff.toml`) and verifi
 | **Tabs** | Custom tabs + `motion` underline → `@radix-ui/react-tabs` (stock shadcn muted-pill list). | `motion` underline was the only remaining `motion` dependency on the primitive layer; Radix Tabs handles roving focus + keyboard. `useTabCycle` hook is independent and unchanged. |
 | **Menu** | Radix `Popover` + manual close context → `@radix-ui/react-dropdown-menu`. | `DropdownMenuItem` auto-closes via `onSelect` (no manual `MenuClose` context needed); Radix handles Esc + outside-click. SongCardMenu's card-click-through risk resolved: Trigger does only `e.stopPropagation()` — Radix's own handler still fires and drives open/close. |
 | **Animations** | Custom `pop-in`/`pop-out`/`fade-in`/`fade-out` keyframes removed → `tw-animate-css` + Radix `data-[state]` classes. | `tw-animate-css` provides the `animate-in`/`fade-in-0`/`zoom-in-95` classes stock shadcn source references; custom keyframes were duplicates. |
+
+---
+
+## Round 5 — workflow rules + UI fixes (2026-06-20)
+
+### #55 — worktree-per-task + in-progress discipline
+
+| Choice | Decision | Why |
+|---|---|---|
+| **Worktree location** | Sibling dir `../singray-worktrees/<branch>` (e.g. `git worktree add ../singray-worktrees/feat-19-foo -b feat/19-foo`). | Keeps worktrees out of the primary checkout; simple relative path works on any machine. |
+| **Enforcement** | Doc-rule only in CLAUDE.md — no helper script. | Script adds a file to maintain; the rule is trivially followable from the doc. |
+| **In-Progress timing** | Move to In Progress **before first commit**, not at PR open. | Prevents agents from double-picking an item that another agent has already started but not yet committed. |
