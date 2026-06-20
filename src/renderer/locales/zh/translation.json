@@ -153,7 +153,14 @@
     "record": "录制",
     "recording": "录制中…",
     "recordStartTip": "开始录制（伴奏 + 麦克风，不含导唱）",
-    "recordStopTip": "停止录制并保存"
+    "recordStopTip": "停止录制并保存",
+    "recordPrep": {
+      "aria": "录制准备",
+      "title": "准备录制",
+      "countdown": "倒计时",
+      "none": "无",
+      "start": "开始"
+    }
   },
   "details": {
     "title": "歌曲详情",

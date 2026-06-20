@@ -155,7 +155,14 @@
     "record": "Record",
     "recording": "Recording…",
     "recordStartTip": "Start recording (instrumental + mic, no guide vocal)",
-    "recordStopTip": "Stop recording and save"
+    "recordStopTip": "Stop recording and save",
+    "recordPrep": {
+      "aria": "Prepare to record",
+      "title": "Get ready",
+      "countdown": "Countdown",
+      "none": "None",
+      "start": "Start"
+    }
   },
   "details": {
     "title": "Song details",
