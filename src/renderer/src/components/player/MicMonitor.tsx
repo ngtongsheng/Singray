@@ -28,7 +28,7 @@ function MicMonitor(): React.JSX.Element {
         max={1}
         step={0.01}
         value={micVol}
-        onChange={(e) => setMicVolume(Number(e.target.value))}
+        onChange={setMicVolume}
         title={t('player.micVolTip')}
         className="h-8 w-12"
       />

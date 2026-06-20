@@ -37,8 +37,10 @@ function Select<T extends string>({
         title={title}
         aria-label={ariaLabel}
         className={cn(
-          'flex items-center gap-2 rounded-md border border-border bg-card text-left text-sm outline-none focus-visible:border-primary disabled:opacity-50',
-          uiSize === 'md' ? 'w-full justify-between px-3 py-2' : 'px-2 py-1 text-muted-foreground',
+          'flex items-center gap-2 rounded-md border border-input bg-card text-left text-sm outline-none focus-visible:border-primary disabled:pointer-events-none disabled:opacity-50',
+          uiSize === 'md'
+            ? 'h-9 w-full justify-between px-3 py-2'
+            : 'h-8 px-2 text-muted-foreground',
           className
         )}
       >
@@ -51,14 +53,14 @@ function Select<T extends string>({
         <SelectPrimitive.Content
           position="popper"
           sideOffset={4}
-          className="z-30 max-h-60 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-border bg-card py-1 shadow-raised data-[state=closed]:animate-[pop-out_100ms_ease-in] data-[state=open]:animate-[pop-in_120ms_ease-out]"
+          className="z-30 max-h-60 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-border bg-popover py-1 text-popover-foreground shadow-md data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
         >
           <SelectPrimitive.Viewport>
             {options.map((opt) => (
               <SelectPrimitive.Item
                 key={opt.value}
                 value={opt.value}
-                className="flex w-full cursor-default items-center justify-between gap-2 px-3 py-1.5 text-left text-sm outline-none data-[highlighted]:bg-muted data-[state=checked]:text-primary"
+                className="flex w-full cursor-default items-center justify-between gap-2 rounded-sm px-3 py-1.5 text-left text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[state=checked]:text-primary"
               >
                 <SelectPrimitive.ItemText>{opt.label}</SelectPrimitive.ItemText>
                 <SelectPrimitive.ItemIndicator>

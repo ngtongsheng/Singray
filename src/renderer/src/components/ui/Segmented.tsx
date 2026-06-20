@@ -1,3 +1,4 @@
+import * as ToggleGroupPrimitive from '@radix-ui/react-toggle-group'
 import type { ReactNode } from 'react'
 import { cx } from './cx'
 
@@ -14,7 +15,9 @@ interface SegmentedProps<T extends string> {
   className?: string
 }
 
-/** Button-group radio replacement (no native radios in chrome). */
+/** Button-group radio replacement (no native radios in chrome) — Radix ToggleGroup
+ * gives roving-tabindex arrow-key nav; `type="single"` is kept always-one-selected by
+ * ignoring the deselect-to-empty value Radix emits when the active item is re-clicked. */
 function Segmented<T extends string>({
   value,
   onChange,
@@ -22,33 +25,32 @@ function Segmented<T extends string>({
   className
 }: SegmentedProps<T>): React.JSX.Element {
   return (
-    <div
-      role="radiogroup"
+    <ToggleGroupPrimitive.Root
+      type="single"
+      value={value}
+      onValueChange={(v) => {
+        if (v) onChange(v as T)
+      }}
       className={cx(
-        'inline-flex h-8 items-center gap-0.5 rounded-md border border-border p-0.5',
+        'inline-flex h-9 items-center gap-0.5 rounded-md border border-input p-0.5',
         className
       )}
     >
       {options.map((opt) => (
-        // biome-ignore lint/a11y/useSemanticElements: styled segmented control, not a native radio input (no bare radios in chrome)
-        <button
+        <ToggleGroupPrimitive.Item
           key={opt.value}
-          type="button"
-          role="radio"
-          aria-checked={opt.value === value}
+          value={opt.value}
           title={opt.title}
-          onClick={() => onChange(opt.value)}
           className={cx(
-            'flex h-full items-center justify-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors',
-            opt.value === value
-              ? 'bg-primary/15 text-primary'
-              : 'text-muted-foreground hover:text-foreground'
+            'flex h-full items-center justify-center gap-1.5 rounded-sm px-2.5 text-sm font-medium transition-colors',
+            'data-[state=on]:bg-primary/15 data-[state=on]:text-primary',
+            'data-[state=off]:text-muted-foreground data-[state=off]:hover:text-foreground'
           )}
         >
           {opt.label}
-        </button>
+        </ToggleGroupPrimitive.Item>
       ))}
-    </div>
+    </ToggleGroupPrimitive.Root>
   )
 }
 

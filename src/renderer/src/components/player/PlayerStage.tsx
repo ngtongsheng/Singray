@@ -61,9 +61,7 @@ function PlayerStage(): React.JSX.Element {
         {error ? (
           <Stack direction="column" gap={3} justify="center" align="center" className="h-full">
             <p className="text-destructive">{error}</p>
-            <Button size="md" onClick={onExit}>
-              {t('common.back')}
-            </Button>
+            <Button onClick={onExit}>{t('common.back')}</Button>
           </Stack>
         ) : !engine ? (
           <Stack gap={2} justify="center" className="h-full text-muted-foreground">
@@ -73,7 +71,7 @@ function PlayerStage(): React.JSX.Element {
           <LyricRenderer lyrics={lyrics} clock={clock} onSeek={seek} />
         ) : (
           <Stack justify="center" className="h-full">
-            <Button variant="primary" size="md" onClick={() => onEditLyrics(song)}>
+            <Button variant="primary" onClick={() => onEditLyrics(song)}>
               <Type className="size-4" strokeWidth={1.5} /> {t('player.addLyrics')}
             </Button>
           </Stack>

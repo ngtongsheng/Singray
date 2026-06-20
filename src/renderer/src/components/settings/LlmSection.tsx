@@ -40,7 +40,6 @@ function LlmSection(): React.JSX.Element | null {
                 />
               </IconButton>
               <Button
-                size="md"
                 onClick={() => llmTest.run()}
                 disabled={llmTest.loading}
                 title={t('settings.llmTestTip')}

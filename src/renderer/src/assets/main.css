@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/noto-sans-sc";
 
@@ -19,6 +20,8 @@
   --secondary-foreground: #f2f2f5;
   --muted: #222230;
   --muted-foreground: #a0a0b0;
+  --accent: var(--muted);
+  --accent-foreground: var(--foreground);
   --border: #2e2e3a;
   --input: #2e2e3a;
 
@@ -39,8 +42,8 @@
   --lyric-active: #ffffff;
   --lyric-sung: #ff5a3c;
 
-  /* Shape & elevation */
-  --radius: 8px;
+  /* Shape & elevation — stock shadcn base + scale */
+  --radius: 0.625rem;
 }
 
 @theme inline {
@@ -56,6 +59,8 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-primary: var(--primary);
@@ -72,11 +77,10 @@
   --color-lyric-active: var(--lyric-active);
   --color-lyric-sung: var(--lyric-sung);
 
-  --radius-sm: calc(var(--radius) - 2px);
-  --radius-md: var(--radius);
-  --radius-lg: calc(var(--radius) + 4px);
-
-  --shadow-raised: 0 4px 24px rgb(0 0 0 / 0.45);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 
   --font-sans: "Inter Variable", system-ui, sans-serif;
   --font-lyric: "Noto Sans SC Variable", "Inter Variable", system-ui, sans-serif;
@@ -93,7 +97,6 @@
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
-    font-size: 14px;
     -webkit-font-smoothing: antialiased;
     user-select: none;
   }
@@ -101,45 +104,6 @@
   :focus-visible {
     outline: 1.5px solid var(--primary);
     outline-offset: 1px;
-  }
-}
-
-/* Radix overlay/content enter/exit (driven by data-state on the primitives,
-   replacing the motion springs the hand-rolled overlays used). */
-@keyframes pop-in {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes pop-out {
-  from {
-    opacity: 1;
-    transform: none;
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-}
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-@keyframes fade-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
   }
 }
 
@@ -225,55 +189,4 @@
   .overflow-auto::-webkit-scrollbar-thumb {
     transition: background-color 150ms ease;
   }
-}
-
-/* UI4: de-native range input — flat track with an accent fill up to the current value
-   (via --slider-pct, set by ui/Slider.tsx) and a small circular thumb. */
-.slider {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 16px;
-  background: transparent;
-}
-
-.slider::-webkit-slider-runnable-track {
-  height: 3px;
-  border-radius: 2px;
-  background: linear-gradient(
-    to right,
-    var(--primary) var(--slider-pct),
-    var(--border) var(--slider-pct)
-  );
-}
-
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 12px;
-  height: 12px;
-  margin-top: -4.5px;
-  border-radius: 50%;
-  background: var(--foreground);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
-}
-
-.slider::-moz-range-track {
-  height: 3px;
-  border-radius: 2px;
-  background: var(--border);
-}
-
-.slider::-moz-range-progress {
-  height: 3px;
-  border-radius: 2px;
-  background: var(--primary);
-}
-
-.slider::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  border: none;
-  border-radius: 50%;
-  background: var(--foreground);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
 }

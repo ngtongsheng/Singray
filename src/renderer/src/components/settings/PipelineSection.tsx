@@ -31,7 +31,6 @@ function PipelineSection(): React.JSX.Element | null {
                 }}
               />
               <Button
-                size="md"
                 onClick={() => pipelineTest.run()}
                 disabled={pipelineTest.loading}
                 className="shrink-0"

@@ -89,9 +89,7 @@ function SongDetailsDialog({ song, onClose, onArtistClick }: Props): React.JSX.E
         </Stack>
 
         <DialogFooter>
-          <Button size="md" onClick={onClose}>
-            {t('common.close')}
-          </Button>
+          <Button onClick={onClose}>{t('common.close')}</Button>
         </DialogFooter>
       </Stack>
     </Dialog>

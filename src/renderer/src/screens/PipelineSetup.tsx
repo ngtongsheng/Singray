@@ -25,7 +25,7 @@ function PipelineSetup({ onReady, onSkip }: Props): React.JSX.Element {
           <p className="text-sm text-muted-foreground">{t('settings.setup.firstRunDesc')}</p>
           <PipelineInstaller onReady={onReady} />
           <div>
-            <Button variant="ghost" size="md" onClick={onSkip}>
+            <Button variant="ghost" onClick={onSkip}>
               {t('settings.setup.skip')}
             </Button>
           </div>

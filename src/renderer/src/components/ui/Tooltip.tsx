@@ -19,8 +19,8 @@ function Tooltip({ content, side = 'top', children }: TooltipProps): React.JSX.E
             side={side}
             sideOffset={6}
             className={cn(
-              'z-40 rounded-md border border-border bg-card px-2 py-1 text-foreground text-xs shadow-raised',
-              'data-[state=closed]:animate-[fade-out_100ms_ease-in] data-[state=delayed-open]:animate-[fade-in_120ms_ease-out]'
+              'z-40 rounded-md border border-border bg-popover px-2 py-1 text-popover-foreground text-xs shadow-md',
+              'data-[state=closed]:animate-out data-[state=delayed-open]:animate-in data-[state=closed]:fade-out-0 data-[state=delayed-open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=delayed-open]:zoom-in-95'
             )}
           >
             {content}

@@ -1,6 +1,6 @@
-import { motion } from 'motion/react'
-import { useEffect, useId, useRef } from 'react'
-import { cx } from './cx'
+import * as TabsPrimitive from '@radix-ui/react-tabs'
+import { useEffect } from 'react'
+import { cn } from '../../lib/cn'
 
 export interface Tab<T extends string> {
   id: T
@@ -14,63 +14,33 @@ interface TabsProps<T extends string> {
   className?: string
 }
 
-/** Clickable tab bar with a sliding accent underline (UI6). Arrow keys move focus + selection. */
+/** Stock shadcn tab bar (muted pill list). Radix's roving-tabindex list gives arrow-key nav
+ * for free, replacing the old hand-rolled move()/onKeyDown + motion sliding underline. */
 function Tabs<T extends string>({
   tabs,
   active,
   onChange,
   className
 }: TabsProps<T>): React.JSX.Element {
-  const layoutId = useId()
-  const btnRefs = useRef(new Map<T, HTMLButtonElement>())
-
-  const move = (dir: 1 | -1): void => {
-    const idx = tabs.findIndex((tab) => tab.id === active)
-    const next = tabs[(idx + dir + tabs.length) % tabs.length]
-    if (!next) return
-    onChange(next.id)
-    btnRefs.current.get(next.id)?.focus()
-  }
-
   return (
-    <div role="tablist" className={cx('relative flex gap-1 border-b border-border', className)}>
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          ref={(el) => {
-            if (el) btnRefs.current.set(tab.id, el)
-            else btnRefs.current.delete(tab.id)
-          }}
-          type="button"
-          role="tab"
-          aria-selected={tab.id === active}
-          tabIndex={tab.id === active ? 0 : -1}
-          onClick={() => onChange(tab.id)}
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowRight') {
-              e.preventDefault()
-              move(1)
-            } else if (e.key === 'ArrowLeft') {
-              e.preventDefault()
-              move(-1)
-            }
-          }}
-          className={cx(
-            'relative px-3 py-2 text-sm font-medium transition-colors',
-            tab.id === active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          {tab.label}
-          {tab.id === active && (
-            <motion.div
-              layoutId={`tabs-underline-${layoutId}`}
-              className="absolute inset-x-0 -bottom-px h-0.5 bg-primary"
-              transition={{ type: 'spring', stiffness: 550, damping: 32 }}
-            />
-          )}
-        </button>
-      ))}
-    </div>
+    <TabsPrimitive.Root value={active} onValueChange={(v) => onChange(v as T)}>
+      <TabsPrimitive.List
+        className={cn(
+          'inline-flex h-9 w-fit items-center justify-center rounded-lg bg-muted p-[3px]',
+          className
+        )}
+      >
+        {tabs.map((tab) => (
+          <TabsPrimitive.Trigger
+            key={tab.id}
+            value={tab.id}
+            className="inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium text-muted-foreground transition-colors data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
+            {tab.label}
+          </TabsPrimitive.Trigger>
+        ))}
+      </TabsPrimitive.List>
+    </TabsPrimitive.Root>
   )
 }
 

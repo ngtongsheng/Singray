@@ -31,7 +31,7 @@ function VocalGuide(): React.JSX.Element {
         max={1}
         step={0.01}
         value={vocalVol}
-        onChange={(e) => setVocalVolume(Number(e.target.value))}
+        onChange={setVocalVolume}
         title={t('player.guideVolTip')}
         className="h-8 w-12"
       />

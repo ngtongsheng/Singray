@@ -31,8 +31,8 @@ function Input({
       )}
       <input
         className={cx(
-          'w-full rounded-md border border-border bg-card text-sm placeholder:text-muted-foreground/60',
-          uiSize === 'md' ? 'py-2' : 'h-8',
+          'w-full rounded-md border border-input bg-card text-sm placeholder:text-muted-foreground/60',
+          uiSize === 'md' ? 'h-9 py-1' : 'h-8',
           icon ? 'pl-8' : 'pl-3',
           'pr-3',
           className

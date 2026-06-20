@@ -144,7 +144,6 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
 
         <Stack justify="between" align="center" gap={3}>
           <Button
-            size="md"
             onClick={cleanWithAi}
             disabled={cleaning || !title.trim()}
             title={t('editMeta.cleanTip')}
@@ -157,10 +156,8 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
             {t('editMeta.clean')}
           </Button>
           <Stack gap={3}>
-            <Button size="md" onClick={onClose}>
-              {t('common.cancel')}
-            </Button>
-            <Button variant="primary" size="md" onClick={save} disabled={!title.trim() || saving}>
+            <Button onClick={onClose}>{t('common.cancel')}</Button>
+            <Button variant="primary" onClick={save} disabled={!title.trim() || saving}>
               {t('common.save')}
             </Button>
           </Stack>

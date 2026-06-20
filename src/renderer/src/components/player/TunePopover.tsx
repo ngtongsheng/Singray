@@ -149,7 +149,7 @@ function TunePopover(): React.JSX.Element {
                     max={1}
                     step={0.01}
                     value={micFxAmount}
-                    onChange={(e) => setMicFx(micFxPreset, Number(e.target.value))}
+                    onChange={(v) => setMicFx(micFxPreset, v)}
                     title={t('player.micFxAmountTip')}
                     className="h-8 w-full"
                   />

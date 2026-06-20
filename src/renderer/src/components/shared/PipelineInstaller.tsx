@@ -148,11 +148,11 @@ export default function PipelineInstaller({ onReady }: Props): React.JSX.Element
 
       <Stack gap={2}>
         {installing ? (
-          <Button variant="secondary" size="md" onClick={cancel}>
+          <Button variant="secondary" onClick={cancel}>
             {t('settings.setup.cancel')}
           </Button>
         ) : (
-          <Button size="md" onClick={install}>
+          <Button onClick={install}>
             <Download className="size-4" strokeWidth={1.5} />
             {status.ready ? t('settings.setup.reinstall') : t('settings.setup.install')}
           </Button>

@@ -27,7 +27,7 @@ const SeekBar = memo(function SeekBar({ engine, seekTip }: Props): React.JSX.Ele
         max={engine.duration}
         step={0.25}
         value={position}
-        onChange={(e) => engine.seek(Number(e.target.value))}
+        onChange={engine.seek}
         title={seekTip}
         className="h-11 flex-1"
       />

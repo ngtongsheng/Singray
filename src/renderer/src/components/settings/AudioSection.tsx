@@ -49,7 +49,6 @@ function AudioSection(): React.JSX.Element | null {
                     className="flex-1"
                   />
                   <Button
-                    size="md"
                     onClick={() => testTone(which)}
                     disabled={toneBusy !== null || settings.audioOutputMode === 'single'}
                     title={
