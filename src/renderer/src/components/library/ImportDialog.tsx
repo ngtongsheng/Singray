@@ -115,14 +115,16 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
             {t('import.title')}
           </Text>
 
-          <Segmented<SourceMode>
-            value={mode}
-            onChange={setMode}
-            options={[
-              { value: 'youtube', label: t('import.tabYoutube') },
-              { value: 'file', label: t('import.tabFile') }
-            ]}
-          />
+          <div className="flex justify-center">
+            <Segmented<SourceMode>
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: 'youtube', label: t('import.tabYoutube') },
+                { value: 'file', label: t('import.tabFile') }
+              ]}
+            />
+          </div>
 
           {mode === 'youtube' ? (
             <>
@@ -155,7 +157,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
               </Field>
 
               {search.data && (
-                <ScrollArea className="max-h-64 rounded-lg border border-border">
+                <ScrollArea className="h-64 rounded-lg border border-border">
                   <ul className="divide-y divide-border">
                     {search.data.length === 0 && (
                       <li className="px-3 py-4 text-center">

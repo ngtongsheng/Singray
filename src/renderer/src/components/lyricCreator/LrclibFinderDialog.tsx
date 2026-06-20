@@ -63,7 +63,7 @@ function LrclibFinderDialog({ query, onPick, onClose }: Props): React.JSX.Elemen
 
           {hits !== null && hits.length > 0 && (
             <ScrollArea
-              className="max-h-[50vh]" /* design-allow: 50vh tracks viewport height, no token fits */
+              className="h-[50vh]" /* design-allow: 50vh tracks viewport height, no token fits */
             >
               <ul className="flex flex-col gap-1">
                 {hits.map((h) => (
