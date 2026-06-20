@@ -11,14 +11,15 @@ function MicMonitor(): React.JSX.Element {
   return (
     <Stack
       gap={2}
-      className={`h-11 rounded-md border px-2 ${micMonitor ? 'border-primary' : 'border-border'}`}
+      className={`h-9 rounded-md border p-1.5 ${micMonitor ? 'border-primary' : 'border-border'}`}
     >
       <Toggle
         variant="ghost"
+        size="bare"
         pressed={micMonitor}
         onClick={toggleMicMonitor}
         title={t('player.micMonitorTip')}
-        className="shrink-0 whitespace-nowrap"
+        className="shrink-0 whitespace-nowrap text-sm"
       >
         <Headphones className="size-4" strokeWidth={1.5} />
         {micMonitor ? t('player.micMonitorOn') : t('player.micMonitorOff')}
@@ -30,7 +31,7 @@ function MicMonitor(): React.JSX.Element {
         value={micVol}
         onChange={setMicVolume}
         title={t('player.micVolTip')}
-        className="h-8 w-12"
+        className="h-full w-12"
       />
     </Stack>
   )
