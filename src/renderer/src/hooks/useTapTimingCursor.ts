@@ -1,4 +1,5 @@
 import { useDebouncer } from '@tanstack/react-pacer'
+import { produce } from 'immer'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Lyrics } from '../../../shared/types'
 import { inferEnds } from '../lib/inferEnds'
@@ -128,12 +129,16 @@ export function useTapTimingCursor({
     const a = audioRef.current
     if (!pos || !a) return
     const t = a.currentTime
-    const next = structuredClone(lyrics)
-    const line = next.lines[pos.line]
+    const line = lyrics.lines[pos.line]
     const unit = line?.units[pos.unit]
     if (!line || !unit) return
-    unit.t = t
-    if (pos.unit === 0) line.start = t
+    const next = produce(lyrics, (draft) => {
+      const draftLine = draft.lines[pos.line]
+      const draftUnit = draftLine?.units[pos.unit]
+      if (!draftLine || !draftUnit) return
+      draftUnit.t = t
+      if (pos.unit === 0) draftLine.start = t
+    })
     persist(next)
     setCursor(cursor + 1)
   }, [cursor, flatUnits, lyrics, persist, audioRef])
@@ -141,12 +146,16 @@ export function useTapTimingCursor({
   const undo = useCallback((): void => {
     const pos = flatUnits[cursor - 1]
     if (!pos) return
-    const next = structuredClone(lyrics)
-    const line = next.lines[pos.line]
+    const line = lyrics.lines[pos.line]
     const unit = line?.units[pos.unit]
     if (!line || !unit) return
-    unit.t = null
-    if (pos.unit === 0) line.start = null
+    const next = produce(lyrics, (draft) => {
+      const draftLine = draft.lines[pos.line]
+      const draftUnit = draftLine?.units[pos.unit]
+      if (!draftLine || !draftUnit) return
+      draftUnit.t = null
+      if (pos.unit === 0) draftLine.start = null
+    })
     persist(next)
     setCursor(cursor - 1)
   }, [cursor, flatUnits, lyrics, persist])

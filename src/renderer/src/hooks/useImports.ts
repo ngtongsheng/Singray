@@ -1,3 +1,4 @@
+import { produce } from 'immer'
 import { useEffect, useState } from 'react'
 import type { ImportProgress } from '../../../shared/types'
 
@@ -7,12 +8,12 @@ export function useImports(): Map<string, ImportProgress> {
 
   useEffect(() => {
     return window.singray.import.onProgress((p) => {
-      setProgress((prev) => {
-        const next = new Map(prev)
-        if (p.stage === 'done' || p.stage === 'error') next.delete(p.songId)
-        else next.set(p.songId, p)
-        return next
-      })
+      setProgress((prev) =>
+        produce(prev, (draft) => {
+          if (p.stage === 'done' || p.stage === 'error') draft.delete(p.songId)
+          else draft.set(p.songId, p)
+        })
+      )
     })
   }, [])
 
