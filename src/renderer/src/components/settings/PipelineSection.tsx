@@ -1,14 +1,27 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
+import { Controller, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { z } from 'zod'
 import { useSettingsContext } from '../../context/SettingsContext'
 import { stripIpcError } from '../../lib/stripIpcError'
 import PipelineInstaller from '../shared/PipelineInstaller'
 import { Button, Field, Input, Select, SettingsSection, Stack, Text } from '../ui'
 import SeparationModelSelect from './SeparationModelSelect'
 
+const pipelineSchema = z.object({ pythonPath: z.string().min(1) })
+type PipelineValues = z.infer<typeof pipelineSchema>
+
 function PipelineSection(): React.JSX.Element | null {
   const { t } = useTranslation()
   const { settings, patch, pipelineTest } = useSettingsContext()
+
+  const { control } = useForm<PipelineValues>({
+    resolver: zodResolver(pipelineSchema),
+    defaultValues: { pythonPath: settings?.pythonPath ?? '' },
+    mode: 'onBlur'
+  })
+
   if (!settings) return null
 
   return (
@@ -23,12 +36,20 @@ function PipelineSection(): React.JSX.Element | null {
         <Field label={t('settings.pythonExe')} hint={t('settings.pythonHelp')}>
           <Stack direction="column" gap={2}>
             <Stack gap={2}>
-              <Input
-                defaultValue={settings.pythonPath}
-                onBlur={(e) => {
-                  if (e.target.value.trim() && e.target.value !== settings.pythonPath)
-                    patch({ pythonPath: e.target.value.trim() })
-                }}
+              <Controller
+                name="pythonPath"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={(e) => {
+                      field.onBlur()
+                      const val = e.target.value.trim()
+                      if (val && val !== settings.pythonPath) patch({ pythonPath: val })
+                    }}
+                  />
+                )}
               />
               <Button
                 onClick={() => pipelineTest.run()}

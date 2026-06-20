@@ -13,13 +13,13 @@ export interface MediaProbe {
   setProbeError: (message: string | null) => void
   probed: ProbeResult | null
   setProbed: (probed: ProbeResult | null) => void
-  title: string
-  setTitle: (title: string) => void
-  artist: string
-  setArtist: (artist: string) => void
-  language: Language
-  setLanguage: (language: Language) => void
   loadFile: (path: string) => Promise<void>
+}
+
+export interface MediaProbeOptions {
+  languages: LanguageDef[]
+  /** Called when probe prefills metadata so the caller can own title/artist/language state. */
+  onPrefill: (data: { title: string; artist: string; language: Language }) => void
 }
 
 /**
@@ -27,16 +27,15 @@ export interface MediaProbe {
  * race-guarded against the URL debounce and a file pick landing out of order
  * via a monotonic `probeSeq` (only the latest probe's result is applied).
  */
-export function useMediaProbe(languages: LanguageDef[]): MediaProbe {
+export function useMediaProbe({ languages, onPrefill }: MediaProbeOptions): MediaProbe {
   const [url, setUrl] = useState('')
   const [filePath, setFilePath] = useState<string | null>(null)
   const [probing, setProbing] = useState(false)
   const [probeError, setProbeError] = useState<string | null>(null)
   const [probed, setProbed] = useState<ProbeResult | null>(null)
-  const [title, setTitle] = useState('')
-  const [artist, setArtist] = useState('')
-  const [language, setLanguage] = useState<Language>('unknown')
   const probeSeq = useRef(0)
+  const onPrefillRef = useRef(onPrefill)
+  onPrefillRef.current = onPrefill
 
   /** Shared prefill: probe result → form, with LLM enrichment (heuristic fallback in main). */
   const prefill = useCallback(
@@ -44,11 +43,13 @@ export function useMediaProbe(languages: LanguageDef[]): MediaProbe {
       if (seq !== probeSeq.current) return
       setProbed(result)
       const detected = detectLanguage(result.title, languages)
-      if (detected) setLanguage(detected)
       const enriched = await window.singray.llm.enrichProbe(result)
       if (seq !== probeSeq.current) return
-      setTitle(enriched.title)
-      setArtist(enriched.artist)
+      onPrefillRef.current({
+        title: enriched.title,
+        artist: enriched.artist,
+        language: detected ?? 'unknown'
+      })
     },
     [languages]
   )
@@ -110,12 +111,6 @@ export function useMediaProbe(languages: LanguageDef[]): MediaProbe {
     setProbeError,
     probed,
     setProbed,
-    title,
-    setTitle,
-    artist,
-    setArtist,
-    language,
-    setLanguage,
     loadFile
   }
 }
