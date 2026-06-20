@@ -19,15 +19,21 @@ website streaming setup, but works standalone.
 
 **Library, browse & sing** — grid/list browse, search, open a song, pitch shift, guide vocal toggle
 
-<!-- TODO(video-upload): drag docs/demo/library-and-sing.mp4 into this README's GitHub web editor, replace this line with the resulting https://github.com/user-attachments/assets/... URL, then delete the mp4 from docs/demo/ -->
+![Library, browse & sing](docs/demo/library-and-sing.gif)
+
+<!-- TODO(video-upload): for real video w/ audio+controls, drag the equivalent mp4 (regenerate via scripts/record-demo.mjs-style capture) into this README's GitHub web editor, swap this line for the resulting https://github.com/user-attachments/assets/... URL -->
 
 **Manage a song** — edit title/artist & thumbnail crop, lyric creator text/tap/review steps
 
-<!-- TODO(video-upload): drag docs/demo/manage-song.mp4 into this README's GitHub web editor, replace this line with the resulting https://github.com/user-attachments/assets/... URL, then delete the mp4 from docs/demo/ -->
+![Manage a song](docs/demo/manage-song.gif)
+
+<!-- TODO(video-upload): see note above -->
 
 **Add a song** — search YouTube in-app, real download + GPU stem separation, play the finished song
 
-<!-- TODO(video-upload): drag docs/demo/add-song.mp4 into this README's GitHub web editor, replace this line with the resulting https://github.com/user-attachments/assets/... URL, then delete the mp4 from docs/demo/ -->
+![Add a song](docs/demo/add-song.gif)
+
+<!-- TODO(video-upload): see note above -->
 
 ## Features
 
