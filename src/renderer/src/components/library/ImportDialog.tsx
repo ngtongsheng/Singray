@@ -21,7 +21,8 @@ import {
   Segmented,
   Select,
   Stack,
-  Text
+  Text,
+  Tooltip
 } from '../ui'
 import { cx } from '../ui/cx'
 
@@ -215,7 +216,9 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                             </AspectRatio>
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm">{r.title}</p>
+                            <Tooltip content={r.title}>
+                              <p className="truncate text-sm">{r.title}</p>
+                            </Tooltip>
                             <Text variant="hint" className="truncate">
                               {r.channel}
                               {r.duration > 0 && ` · ${formatDuration(r.duration)}`}

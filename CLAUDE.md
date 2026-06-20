@@ -10,8 +10,8 @@ Personal desktop karaoke app. Electron + React + TS + Tailwind v4, Python pipeli
 
 ## Resume protocol (start of every session)
 1. Check the board: `gh project item-list 1 --owner ngtongsheng` — pick lowest `Priority` (P0 first) among **`Todo` only**. Never auto-pick an `In Progress` item; a human must name it to resume. One issue at a time.
-2. Read the issue body + the matching `DECISIONS.md` section for context.
-3. **Move the issue to `In Progress` on the board before the first commit** (i.e. when implementation starts, not when the PR is opened).
+2. **Move the issue to `In Progress` on the board immediately after picking it — before reading the issue body, SPEC.md, DECISIONS.md, or any other file.** This is the first action, no exceptions.
+3. Read the issue body + the matching `DECISIONS.md` section for context.
 4. **Create a git worktree** for the issue before touching any files: `git worktree add ../singray-worktrees/<branch> -b <branch>` (e.g. `git worktree add ../singray-worktrees/feat-19-foo -b feat/19-foo`). Never implement directly in the primary checkout. Remove the worktree after merge: `git worktree remove ../singray-worktrees/<branch>`.
 5. If a branch for the issue already exists, inspect the working tree (`git status`, recent commits) to see how far it got, then continue it.
 
