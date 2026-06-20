@@ -4,7 +4,17 @@ import { type InstallEvent, type IpcChannel, type IpcMap, MEDIA_EXTENSIONS } fro
 import { cancelInstall, installPipeline, pipelineStatus } from './bootstrap'
 import { cleanLyrics, cleanMeta, enrichProbe } from './enrich'
 import { cancelImport, retryImport, startImport } from './importQueue'
-import { deleteSong, getLyrics, listSongs, openSongFolder, saveLyrics, updateMeta } from './library'
+import {
+  deleteSong,
+  getLyrics,
+  listSongs,
+  openSongFolder,
+  saveLyrics,
+  searchArtwork,
+  setThumbFromUrl,
+  updateMeta,
+  uploadThumb
+} from './library'
 import { listLlmModels, testLlm } from './llm'
 import { findLyrics } from './lyricsFinder'
 import { alignLyrics, listPipelineModels, probe, probeFile, searchYoutube } from './pipeline'
@@ -33,6 +43,9 @@ export function registerIpc(): void {
   })
   handle('library:updateMeta', (_e, id, patch) => updateMeta(id, patch))
   handle('library:openFolder', (_e, id) => openSongFolder(id))
+  handle('library:uploadThumb', (_e, id, bytes) => uploadThumb(id, bytes))
+  handle('library:setThumbFromUrl', (_e, id, url) => setThumbFromUrl(id, url))
+  handle('library:searchArtwork', (_e, query) => searchArtwork(query))
 
   handle('lyrics:get', (_e, id) => getLyrics(id))
   handle('lyrics:save', (_e, id, lyrics) => saveLyrics(id, lyrics))

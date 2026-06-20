@@ -68,6 +68,15 @@ export interface SongListItem extends SongMeta {
   error: string | null
   /** True when original.m4a exists (import finished successfully at some point). */
   ready: boolean
+  /** mtime of thumb.jpg in ms (0 = no thumbnail). Append as ?v= to bust the karaoke:// cache. */
+  thumbVersion: number
+}
+
+/** One artwork hit from the iTunes search API. */
+export interface ArtworkResult {
+  artworkUrl: string
+  trackName: string
+  artistName: string
 }
 
 export interface LyricUnit {
@@ -277,6 +286,12 @@ export interface SingrayApi {
     delete(id: string): Promise<void>
     updateMeta(id: string, patch: Partial<SongMeta>): Promise<SongMeta>
     openFolder(id: string): Promise<void>
+    /** Upload raw image bytes (ArrayBuffer) as the song's thumbnail. */
+    uploadThumb(id: string, bytes: ArrayBuffer): Promise<void>
+    /** Download artwork from a URL and save as the song's thumbnail. */
+    setThumbFromUrl(id: string, url: string): Promise<void>
+    /** Search iTunes for artwork matching the query. */
+    searchArtwork(query: string): Promise<ArtworkResult[]>
   }
   lyrics: {
     get(id: string): Promise<Lyrics | null>
@@ -330,7 +345,8 @@ export interface SingrayApi {
   }
   audio: {
     url(id: string, track: AudioTrack): string
-    thumbUrl(id: string): string
+    /** Returns the karaoke:// URL for a song's thumbnail. Pass thumbVersion to bust the cache. */
+    thumbUrl(id: string, version?: number): string
   }
   recordings: {
     /** Saves a performance recording (R3.REC1) under the song's recordings/ folder; resolves the saved path. */
@@ -372,6 +388,9 @@ export interface IpcMap {
   'library:delete': { args: [id: string]; result: NoResult }
   'library:updateMeta': { args: [id: string, patch: Partial<SongMeta>]; result: SongMeta }
   'library:openFolder': { args: [id: string]; result: NoResult }
+  'library:uploadThumb': { args: [id: string, bytes: ArrayBuffer]; result: NoResult }
+  'library:setThumbFromUrl': { args: [id: string, url: string]; result: NoResult }
+  'library:searchArtwork': { args: [query: string]; result: ArtworkResult[] }
 
   'lyrics:get': { args: [id: string]; result: Lyrics | null }
   'lyrics:save': { args: [id: string, lyrics: Lyrics]; result: NoResult }

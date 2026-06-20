@@ -1,8 +1,8 @@
 import type { Dirent } from 'node:fs'
-import { access, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { access, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { BrowserWindow, shell } from 'electron'
-import type { Lyrics, SongListItem, SongMeta } from '../shared/types'
+import type { ArtworkResult, Lyrics, SongListItem, SongMeta } from '../shared/types'
 import { getSettings } from './settings'
 
 const SONG_ID = /^[a-z0-9-]+$/i
@@ -55,6 +55,13 @@ export async function listSongs(): Promise<SongListItem[]> {
         artist?: string
       }
       const { artist: legacyArtist, ...meta } = raw
+      let thumbVersion = 0
+      try {
+        const info = await stat(join(dir, 'thumb.jpg'))
+        thumbVersion = info.mtimeMs
+      } catch {
+        // no thumb yet
+      }
       songs.push({
         ...meta,
         artists: meta.artists ?? (legacyArtist ? [legacyArtist] : []), // pre-#63 metas have a single `artist` string
@@ -64,7 +71,8 @@ export async function listSongs(): Promise<SongListItem[]> {
         hasLyrics: await exists(join(dir, 'lyrics.json')),
         error: await readImportError(dir),
         ready:
-          (await exists(join(dir, 'original.flac'))) || (await exists(join(dir, 'original.m4a')))
+          (await exists(join(dir, 'original.flac'))) || (await exists(join(dir, 'original.m4a'))),
+        thumbVersion
       })
     } catch {
       // no/corrupt meta.json → not a song folder, skip
@@ -106,6 +114,34 @@ export async function getLyrics(id: string): Promise<Lyrics | null> {
 export async function saveLyrics(id: string, lyrics: Lyrics): Promise<void> {
   await writeFile(join(songDir(id), 'lyrics.json'), JSON.stringify(lyrics, null, 2), 'utf-8')
   notifyLibraryChanged() // hasLyrics is derived from this file
+}
+
+export async function uploadThumb(id: string, bytes: ArrayBuffer): Promise<void> {
+  await writeFile(join(songDir(id), 'thumb.jpg'), Buffer.from(bytes))
+  notifyLibraryChanged()
+}
+
+export async function setThumbFromUrl(id: string, url: string): Promise<void> {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`Artwork download failed: ${res.status}`)
+  const buf = await res.arrayBuffer()
+  await writeFile(join(songDir(id), 'thumb.jpg'), Buffer.from(buf))
+  notifyLibraryChanged()
+}
+
+export async function searchArtwork(query: string): Promise<ArtworkResult[]> {
+  const res = await fetch(
+    `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=12&media=music`
+  )
+  if (!res.ok) return []
+  const data = (await res.json()) as {
+    results: { artworkUrl100: string; trackName: string; artistName: string }[]
+  }
+  return data.results.map((r) => ({
+    artworkUrl: r.artworkUrl100.replace('100x100bb', '600x600bb'),
+    trackName: r.trackName,
+    artistName: r.artistName
+  }))
 }
 
 export { notifyLibraryChanged }

@@ -84,7 +84,14 @@
     "preview": "Suggested clean-up",
     "apply": "Apply",
     "dismiss": "Dismiss",
-    "noChanges": "Already clean — no changes suggested."
+    "noChanges": "Already clean — no changes suggested.",
+    "thumbnail": "Thumbnail",
+    "thumbUpload": "Upload image",
+    "thumbSearch": "Search online",
+    "thumbSearchPlaceholder": "Artist and title…",
+    "thumbSearching": "Searching…",
+    "thumbNoResults": "No results",
+    "thumbPick": "Use this artwork"
   },
   "clean": {
     "button": "Clean up with AI",

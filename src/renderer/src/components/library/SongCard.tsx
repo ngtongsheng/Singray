@@ -81,7 +81,7 @@ const SongCard = memo(function SongCard({ song, importing }: Props): React.JSX.E
       <AspectRatio ratio={16 / 9} className="bg-muted">
         {song.ready && (
           <img
-            src={window.singray.audio.thumbUrl(song.id)}
+            src={window.singray.audio.thumbUrl(song.id, song.thumbVersion)}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
             draggable={false}

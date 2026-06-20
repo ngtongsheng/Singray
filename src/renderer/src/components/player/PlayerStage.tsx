@@ -32,7 +32,7 @@ function PlayerStage(): React.JSX.Element {
     <>
       {/* Blurred artwork under a scrim + bottom fade — lyric contrast independent of art (§10.6). */}
       <img
-        src={window.singray.audio.thumbUrl(song.id)}
+        src={window.singray.audio.thumbUrl(song.id, song.thumbVersion)}
         alt=""
         draggable={false}
         className={`animate-ken-burns absolute inset-0 h-full w-full object-cover blur-2xl ${
