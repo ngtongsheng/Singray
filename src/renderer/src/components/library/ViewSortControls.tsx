@@ -29,7 +29,6 @@ function ViewSortControls(): React.JSX.Element {
       />
       <div className="app-no-drag">
         <Select
-          uiSize="sm"
           value={sort}
           onChange={setSort}
           title={t('library.sort')}

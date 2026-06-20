@@ -85,6 +85,7 @@ function PlayerHeader(): React.JSX.Element {
             className="w-44 overflow-hidden"
             trigger={(open, toggle) => (
               <IconButton
+                size="md"
                 variant="secondary"
                 active={open}
                 onClick={toggle}

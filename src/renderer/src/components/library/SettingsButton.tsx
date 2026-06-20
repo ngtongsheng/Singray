@@ -10,6 +10,7 @@ function SettingsButton(): React.JSX.Element {
 
   return (
     <IconButton
+      size="md"
       onClick={goSettings}
       title={t('library.settings')}
       className="app-no-drag text-muted-foreground hover:text-foreground"
