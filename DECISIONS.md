@@ -4,8 +4,8 @@ Narrative decision history. Round-by-round resolutions, the *why* behind them, a
 gotchas. Work items themselves live as **GitHub Issues** on the project board; this
 file is the prose record that issue comments scatter too thin to hold.
 
-Prior history (Rounds 1–3, MVP) is archived under `docs/` and the legacy
-`BACKLOG.md` Session Log.
+Prior history (Rounds 1–3, MVP) is archived under `docs/history/`, including the
+legacy `BACKLOG.md` Session Log.
 
 ---
 

@@ -12,7 +12,8 @@ download and stem separation. Built to drive a Yamaha AG06 + online singing
 website streaming setup, but works standalone.
 
 > **Status:** active development. See [`SPEC.md`](SPEC.md) for the full
-> design and [`BACKLOG.md`](BACKLOG.md) for current state.
+> design and [GitHub Issues](https://github.com/ngtongsheng/Singray/issues)
+> for current work.
 
 ## Screenshots
 
@@ -48,7 +49,7 @@ _Library · Player · Lyric creator — screenshots coming with the first releas
 
 The app needs a Python pipeline for download + separation. The dev path sets
 this up via `pipeline/setup.ps1`; an app-managed first-run bootstrapper is on
-the roadmap (see `BACKLOG.md` R4.3).
+the roadmap (tracked in [GitHub Issues](https://github.com/ngtongsheng/Singray/issues)).
 
 ## Develop (run from source)
 
