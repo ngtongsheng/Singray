@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, FolderOpen, Play, Square, Trash2 } from 'lucide-react'
+import { ArrowLeft, FolderOpen, Pause, Play, Square, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RecordingItem } from '../../../shared/types'
 import ConfirmDialog from '../components/shared/ConfirmDialog'
 import Titlebar from '../components/shared/Titlebar'
-import { Container, IconButton, ScrollArea, Stack, Text } from '../components/ui'
+import { Container, IconButton, ScrollArea, Slider, Stack, Text } from '../components/ui'
 import { useAppContext } from '../context/AppContext'
 import { useLibrary } from '../hooks/useLibrary'
 
@@ -43,6 +43,10 @@ function Recordings({ songId }: Props): React.JSX.Element {
 
   const [pendingDelete, setPendingDelete] = useState<RecordingItem | null>(null)
   const [playingUrl, setPlayingUrl] = useState<string | null>(null)
+  const [paused, setPaused] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [dragPos, setDragPos] = useState<number | null>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
 
   function togglePlay(rec: RecordingItem): void {
@@ -50,6 +54,8 @@ function Recordings({ songId }: Props): React.JSX.Element {
       audioRef.current?.pause()
       setPlayingUrl(null)
     } else {
+      setCurrentTime(0)
+      setDuration(0)
       setPlayingUrl(rec.url)
       // auto-play fires once src changes via useEffect in <audio>
     }
@@ -59,6 +65,9 @@ function Recordings({ songId }: Props): React.JSX.Element {
     const song = songs.find((s) => s.id === id)
     return song ? `${song.title} — ${song.artist}` : id
   }
+
+  const playingRec = recordings.find((r) => r.url === playingUrl) ?? null
+  const playingSong = playingRec ? songs.find((s) => s.id === playingRec.songId) : undefined
 
   const title = songId
     ? (songs.find((s) => s.id === songId)?.title ?? t('recordings.title'))
@@ -79,7 +88,7 @@ function Recordings({ songId }: Props): React.JSX.Element {
         </Text>
       </Titlebar>
 
-      <Container pb={6}>
+      <Container pb={playingUrl ? 12 : 6}>
         {isPending ? (
           <Text variant="hint" className="py-12 text-center">
             {t('common.loading')}
@@ -141,16 +150,70 @@ function Recordings({ songId }: Props): React.JSX.Element {
         )}
       </Container>
 
-      {/* Hidden audio element for playback */}
-      {playingUrl && (
-        // biome-ignore lint/a11y/useMediaCaption: personal recording playback — no caption track applies
-        <audio
-          ref={audioRef}
-          src={playingUrl}
-          autoPlay
-          onEnded={() => setPlayingUrl(null)}
-          className="hidden"
-        />
+      {playingUrl && playingRec && (
+        <>
+          {/* biome-ignore lint/a11y/useMediaCaption: personal recording playback — no caption track applies */}
+          <audio
+            ref={audioRef}
+            src={playingUrl}
+            autoPlay
+            onEnded={() => setPlayingUrl(null)}
+            onPlay={() => setPaused(false)}
+            onPause={() => setPaused(true)}
+            onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+            onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+            className="hidden"
+          />
+          <Stack
+            align="center"
+            gap={3}
+            className="absolute inset-x-0 bottom-0 z-10 border-t border-border bg-popover px-4 py-3"
+          >
+            <img
+              src={window.singray.audio.thumbUrl(playingRec.songId)}
+              alt=""
+              className="size-10 shrink-0 rounded object-cover"
+              draggable={false}
+            />
+            <Stack direction="column" gap={0} className="w-40 shrink-0 overflow-hidden">
+              <Text as="span" variant="item" className="truncate">
+                {playingSong?.title ?? playingRec.songId}
+              </Text>
+              <Text as="span" variant="hint" className="truncate text-xs">
+                {playingSong?.artist ?? ''}
+              </Text>
+            </Stack>
+            <IconButton
+              title={paused ? t('recordings.play') : t('recordings.pause')}
+              onClick={() => (paused ? audioRef.current?.play() : audioRef.current?.pause())}
+              className="shrink-0 text-muted-foreground hover:text-foreground"
+            >
+              {paused ? (
+                <Play className="size-4" strokeWidth={1.5} />
+              ) : (
+                <Pause className="size-4" strokeWidth={1.5} />
+              )}
+            </IconButton>
+            <Text as="span" variant="hint" className="text-xs tabular-nums">
+              {fmtDuration(dragPos ?? currentTime)}
+            </Text>
+            <Slider
+              min={0}
+              max={duration || 1}
+              step={0.25}
+              value={dragPos ?? currentTime}
+              onChange={setDragPos}
+              onCommit={(v) => {
+                setDragPos(null)
+                if (audioRef.current) audioRef.current.currentTime = v
+              }}
+              className="h-11 flex-1"
+            />
+            <Text as="span" variant="hint" className="text-xs tabular-nums">
+              {fmtDuration(duration)}
+            </Text>
+          </Stack>
+        </>
       )}
 
       {pendingDelete && (
