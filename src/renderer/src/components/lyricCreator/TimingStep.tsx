@@ -130,6 +130,12 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
             </p>
           </Stack>
 
+          <div className="flex gap-4 border-border border-b px-6 py-1.5 text-xs">
+            <span className="text-muted-foreground">— {t('timing.legend.untimed')}</span>
+            <span className="text-warning">0:0.0 {t('timing.legend.partial')}</span>
+            <span className="text-success">0:0.0 {t('timing.legend.done')}</span>
+          </div>
+
           <ScrollArea className="min-h-0 flex-1">
             <Stack direction="column" gap={1} className="pl-6 pr-6 pb-4">
               {lyrics.lines.map((line, li) =>

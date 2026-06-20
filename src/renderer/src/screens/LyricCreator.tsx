@@ -31,6 +31,9 @@ function LyricCreatorView(): React.JSX.Element {
     creatorStep,
     saved,
     setSaved,
+    backGuard,
+    setBackGuard,
+    doBack,
     pending,
     setPending,
     pendingLrc,
@@ -74,6 +77,15 @@ function LyricCreatorView(): React.JSX.Element {
       </Stack>
 
       <AnimatePresence>
+        {backGuard && (
+          <ConfirmDialog
+            title={t('creator.leaveTitle')}
+            body={t('creator.leaveBody')}
+            confirmLabel={t('creator.leave')}
+            onConfirm={doBack}
+            onCancel={() => setBackGuard(false)}
+          />
+        )}
         {cleanPreview !== null && (
           <CleanLyricsDialog
             original={text}

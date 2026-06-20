@@ -190,7 +190,12 @@
     "discard": "Discard timing",
     "stepText": "Text",
     "stepTap": "Tap",
-    "stepReview": "Review"
+    "stepReview": "Review",
+    "leaveTitle": "Leave without saving?",
+    "leaveBody": "Text edits haven't been saved as lyrics yet — leave anyway?",
+    "leave": "Leave",
+    "linesCount": "lines: {{count}}",
+    "flowHint": "Paste → Edit → Timing"
   },
   "timing": {
     "playTip": "Play (Enter)",
@@ -209,7 +214,12 @@
     "hideShortcuts": "Hide shortcuts",
     "clickToSeek": "Click to seek",
     "waveformRendering": "Rendering waveform…",
-    "waveformUnavailable": "Waveform unavailable"
+    "waveformUnavailable": "Waveform unavailable",
+    "legend": {
+      "untimed": "untimed",
+      "partial": "partial",
+      "done": "done"
+    }
   },
   "recordings": {
     "title": "Recordings",
