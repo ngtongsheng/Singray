@@ -36,11 +36,13 @@ function Container({
   ...rest
 }: ContainerProps): React.JSX.Element {
   return (
-    <ScrollArea className={cn('absolute inset-0', className)} {...rest}>
-      <div className={cn('pl-6 pr-6 pt-19', PB[pb])}>
-        {maxWidth ? <div className={MAX_WIDTH[maxWidth]}>{children}</div> : children}
-      </div>
-    </ScrollArea>
+    <div className={cn('absolute inset-0', className)}>
+      <ScrollArea className="h-full" {...rest}>
+        <div className={cn('pl-6 pr-6 pt-19', PB[pb])}>
+          {maxWidth ? <div className={MAX_WIDTH[maxWidth]}>{children}</div> : children}
+        </div>
+      </ScrollArea>
+    </div>
   )
 }
 

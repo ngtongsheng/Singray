@@ -15,9 +15,9 @@ import {
   IconButton,
   Input,
   ScrollArea,
+  Segmented,
   Select,
   Stack,
-  Tabs,
   Text
 } from '../ui'
 import { cx } from '../ui/cx'
@@ -115,13 +115,13 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
             {t('import.title')}
           </Text>
 
-          <Tabs
-            tabs={[
-              { id: 'youtube', label: t('import.tabYoutube') },
-              { id: 'file', label: t('import.tabFile') }
-            ]}
-            active={mode}
+          <Segmented<SourceMode>
+            value={mode}
             onChange={setMode}
+            options={[
+              { value: 'youtube', label: t('import.tabYoutube') },
+              { value: 'file', label: t('import.tabFile') }
+            ]}
           />
 
           {mode === 'youtube' ? (
