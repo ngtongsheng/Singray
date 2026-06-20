@@ -9,6 +9,8 @@ interface SliderProps
   step?: number
   value: number
   onChange: (value: number) => void
+  /** Fired on pointer-up / key-up — use for expensive operations like audio seek. */
+  onCommit?: (value: number) => void
   disabled?: boolean
 }
 
@@ -20,6 +22,7 @@ function Slider({
   step,
   value,
   onChange,
+  onCommit,
   disabled,
   className,
   ...rest
@@ -33,6 +36,10 @@ function Slider({
       onValueChange={(vals) => {
         const v = vals[0]
         if (v !== undefined) onChange(v)
+      }}
+      onValueCommit={(vals) => {
+        const v = vals[0]
+        if (v !== undefined) onCommit?.(v)
       }}
       disabled={disabled}
       className={cn(
