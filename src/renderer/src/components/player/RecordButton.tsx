@@ -6,13 +6,13 @@ import { Toggle } from '../ui'
 /** Only rendered when `engine.canRecord`. */
 function RecordButton(): React.JSX.Element {
   const { t } = useTranslation()
-  const { recording, toggleRecord } = usePlayerContext()
+  const { recording, openRecordPrep, stopRecording } = usePlayerContext()
 
   return (
     <Toggle
       size="md"
       pressed={recording}
-      onClick={toggleRecord}
+      onClick={recording ? stopRecording : openRecordPrep}
       title={recording ? t('player.recordStopTip') : t('player.recordStartTip')}
       className={recording ? 'text-destructive' : ''}
     >

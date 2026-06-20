@@ -70,7 +70,11 @@ interface PlayerContextValue {
   micWarning: string | null
 
   recording: boolean
-  toggleRecord: () => void
+  recordPrepOpen: boolean
+  openRecordPrep: () => void
+  closeRecordPrep: () => void
+  startRecording: () => void
+  stopRecording: () => void
   leadInRemaining: number | null
 }
 
@@ -109,6 +113,7 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
   const [micFxAmount, setMicFxAmount] = useState(0.3)
   const [micWarning, setMicWarning] = useState<string | null>(null)
   const [recording, setRecording] = useState(false)
+  const [recordPrepOpen, setRecordPrepOpen] = useState(false)
   const { settings, patch } = useSettings()
 
   const applyMicReady = useCallback((s: MicBootstrapState) => {
@@ -215,13 +220,20 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
     setVocalOn(next)
   }, [engine])
 
-  const toggleRecord = useCallback(() => {
+  const openRecordPrep = useCallback(() => {
+    if (engine) setRecordPrepOpen(true)
+  }, [engine])
+  const closeRecordPrep = useCallback(() => setRecordPrepOpen(false), [])
+
+  const startRecording = useCallback(() => {
     if (!engine) return
-    if (!engine.recording) {
-      engine.startRecording()
-      setRecording(true)
-      return
-    }
+    engine.startRecording()
+    setRecording(true)
+    setRecordPrepOpen(false)
+  }, [engine])
+
+  const stopRecording = useCallback(() => {
+    if (!engine) return
     setRecording(false)
     void engine.stopRecording().then((blob) => {
       if (blob) void saveRecording(blob)
@@ -309,7 +321,7 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       poke()
-      if (editOpen || detailsOpen) return // dialog owns the keyboard (its own Escape closes it)
+      if (editOpen || detailsOpen || recordPrepOpen) return // dialog owns the keyboard (its own Escape closes it)
       if (e.key === 'Escape') onExit()
       if (e.key === ' ') {
         e.preventDefault()
@@ -323,7 +335,18 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onExit, togglePlay, toggleVocal, stepKey, poke, editOpen, detailsOpen, engine, seek])
+  }, [
+    onExit,
+    togglePlay,
+    toggleVocal,
+    stepKey,
+    poke,
+    editOpen,
+    detailsOpen,
+    recordPrepOpen,
+    engine,
+    seek
+  ])
 
   const value: PlayerContextValue = {
     song,
@@ -376,7 +399,11 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
     setMicFx,
     micWarning,
     recording,
-    toggleRecord,
+    recordPrepOpen,
+    openRecordPrep,
+    closeRecordPrep,
+    startRecording,
+    stopRecording,
     leadInRemaining: leadIn.remaining
   }
 

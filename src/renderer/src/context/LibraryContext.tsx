@@ -109,12 +109,22 @@ export function LibraryProvider({
   const filteredSongs = useMemo(() => {
     const q = query.trim().toLowerCase()
     const list = songs.filter((s) => {
-      if (q && !s.title.toLowerCase().includes(q) && !s.artist.toLowerCase().includes(q))
+      if (
+        q &&
+        !s.title.toLowerCase().includes(q) &&
+        !s.artists.some((a) => a.toLowerCase().includes(q))
+      )
         return false
       if (language && s.language !== language) return false
       if (favoritesOnly && !s.favorite) return false
       if (needsLyricsOnly && s.hasLyrics) return false
-      if (artistFilter !== null && s.artist.trim() !== artistFilter) return false
+      if (artistFilter !== null) {
+        const hasFilter =
+          artistFilter === ''
+            ? s.artists.length === 0
+            : s.artists.some((a) => a.trim() === artistFilter)
+        if (!hasFilter) return false
+      }
       return true
     })
     // 'added' keeps the listing order (addedAt desc from main)
