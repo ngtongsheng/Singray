@@ -8,6 +8,12 @@ export interface SelectOption<T extends string> {
   label: ReactNode
 }
 
+/** Radix's Select.Value always renders the placeholder for value `""` (it can't
+ *  distinguish "no selection" from a real empty-string item), so an option meaning
+ *  "system default" never shows its label. Remap `""` to a sentinel Radix accepts,
+ *  translated back at the value/onChange boundary. */
+const EMPTY_SENTINEL = ' __select_empty__'
+
 interface SelectProps<T extends string> {
   value: T
   onChange: (value: T) => void
@@ -32,7 +38,11 @@ function Select<T extends string>({
   'aria-label': ariaLabel
 }: SelectProps<T>): React.JSX.Element {
   return (
-    <SelectPrimitive.Root value={value} onValueChange={(v) => onChange(v as T)} disabled={disabled}>
+    <SelectPrimitive.Root
+      value={value === '' ? EMPTY_SENTINEL : value}
+      onValueChange={(v) => onChange((v === EMPTY_SENTINEL ? '' : v) as T)}
+      disabled={disabled}
+    >
       <SelectPrimitive.Trigger
         title={title}
         aria-label={ariaLabel}
@@ -59,7 +69,7 @@ function Select<T extends string>({
             {options.map((opt) => (
               <SelectPrimitive.Item
                 key={opt.value}
-                value={opt.value}
+                value={opt.value === '' ? EMPTY_SENTINEL : opt.value}
                 className="flex w-full cursor-default items-center justify-between gap-2 rounded-sm px-3 py-1.5 text-left text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[state=checked]:text-primary"
               >
                 <SelectPrimitive.ItemText>{opt.label}</SelectPrimitive.ItemText>
