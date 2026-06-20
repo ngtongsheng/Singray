@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { Lyrics, SongListItem } from '../../../shared/types'
 import { type MicBootstrapState, useAudioEngine } from '../hooks/useAudioEngine'
 import { useAutoHideBar } from '../hooks/useAutoHideBar'
@@ -139,8 +139,6 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
   const engine = engineState.status === 'ready' ? engineState.engine : null
   const error = engineState.status === 'error' ? engineState.message : null
 
-  /** True until the first play() call or any seek — resets per song. */
-  const playFromStartEligible = useRef(true)
   const leadIn = useLeadInCountdown(engine, lyrics, settings?.countdownLead ?? 0)
 
   // Seed UI prefs from settings + reset per-song state each time we (re)load a song.
@@ -151,7 +149,6 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
     setShowWaveform(settings.showWaveform)
     setShowBars(settings.showBars)
     setRecording(false)
-    playFromStartEligible.current = true
   }, [song.id, settings !== null])
 
   const playing = usePlaybackClock(engine, song)
@@ -209,9 +206,7 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
       leadIn.cancel()
       return
     }
-    const eligible = playFromStartEligible.current && engine.position === 0
-    playFromStartEligible.current = false
-    if (eligible) leadIn.start()
+    if (engine.position === 0) leadIn.start()
     else engine.play()
   }, [engine, leadIn])
 
@@ -313,7 +308,6 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
   const clock = useCallback(() => engine?.displayPosition ?? 0, [engine])
   const seek = useCallback(
     (t: number) => {
-      playFromStartEligible.current = false
       leadIn.cancel()
       engine?.seek(t)
     },

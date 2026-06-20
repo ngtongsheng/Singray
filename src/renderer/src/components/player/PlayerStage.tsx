@@ -43,21 +43,23 @@ function PlayerStage(): React.JSX.Element {
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1/3 bg-gradient-to-b from-background to-transparent" />
       {/* Bars overlay: below the bottom gradient. */}
       {showBars && analyser && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-40 opacity-75">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-60 opacity-75">
           <Soundwave analyser={analyser} playing={playing} />
         </div>
       )}
-      <div className="absolute inset-x-0 bottom-0 z-1 h-1/3 bg-gradient-to-t from-background to-transparent" />
-      {/* Spacer matching the Titlebar (top-9 = 36px + h-10 = 40px). */}
-      <div
-        className="h-[76px] shrink-0" /* design-allow: exact Titlebar height, no scale token matches */
-      />
-      {/* Waveform strip: top strip below the header. */}
-      {showWaveform && peaks && engine && (
-        <div className="relative z-10 h-16 shrink-0">
-          <StageWaveform peaks={peaks} duration={engine.duration} clock={clock} />
-        </div>
-      )}
+      <div className="absolute inset-x-0 bottom-0 z-1 h-1/3 bg-linear-to-t from-background to-transparent" />
+      <Stack direction="column" gap={2} className="shrink-0">
+        {/* Spacer matching the Titlebar (top-9 = 36px + h-10 = 40px). */}
+        <div
+          className="h-[76px] shrink-0" /* design-allow: exact Titlebar height, no scale token matches */
+        />
+        {/* Waveform strip: top strip below the header. */}
+        {showWaveform && peaks && engine && (
+          <div className="relative z-10 h-16 shrink-0">
+            <StageWaveform peaks={peaks} duration={engine.duration} clock={clock} />
+          </div>
+        )}
+      </Stack>
       {leadInRemaining !== null && <CountdownOverlay seconds={leadInRemaining} />}
       {/* Content area: lyrics / loading / error — fills remaining height. */}
       <div className="relative z-0 min-h-0 flex-1">

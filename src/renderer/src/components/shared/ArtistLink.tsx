@@ -1,6 +1,7 @@
 import { clsx as cx } from 'clsx'
 import { Fragment, memo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Text } from '../ui'
 
 interface Props {
   artists: string[]
@@ -15,14 +16,18 @@ const ArtistLink = memo(function ArtistLink({
   className
 }: Props): React.JSX.Element {
   const { t } = useTranslation()
-  const wrapperClass = cx('truncate text-left text-muted-foreground text-xs', className)
+  const wrapperClass = cx('truncate text-left', className)
 
   if (artists.length === 0) {
-    return <span className={wrapperClass}>{t('common.unknown')}</span>
+    return (
+      <Text as="span" variant="hint" className={wrapperClass}>
+        {t('common.unknown')}
+      </Text>
+    )
   }
 
   return (
-    <span className={wrapperClass}>
+    <Text as="span" variant="hint" className={wrapperClass}>
       {artists.map((artist, i) => (
         <Fragment key={artist}>
           {i > 0 && ', '}
@@ -39,7 +44,7 @@ const ArtistLink = memo(function ArtistLink({
           </button>
         </Fragment>
       ))}
-    </span>
+    </Text>
   )
 })
 

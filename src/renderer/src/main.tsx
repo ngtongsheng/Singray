@@ -16,7 +16,7 @@ import { createMockBridge } from './lib/mockBridge'
 import { queryClient } from './lib/queryClient'
 
 enableMapSet()
-scan({ enabled: import.meta.env.DEV })
+scan({ enabled: import.meta.env.DEV && import.meta.env.VITE_NO_SCAN !== '1' })
 
 if (import.meta.env.DEV && !window.singray) {
   // Browser dev (localhost:5173): no Electron preload, so window.singray is

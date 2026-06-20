@@ -11,7 +11,7 @@ const STRIP_KEY: Partial<Record<ImportStage, string>> = {
   convert: 'stage.convert'
 }
 
-/** Pinned bottom strip showing the active/most-relevant import job's progress. */
+/** Bottom strip showing the active/most-relevant import job's progress. */
 function ImportStatusStrip(): React.JSX.Element | null {
   const { t } = useTranslation()
   const { songs, imports } = useLibraryContext()
@@ -33,7 +33,7 @@ function ImportStatusStrip(): React.JSX.Element | null {
   const { job, title, moreCount, queued } = importStrip
   const stripKey = STRIP_KEY[job.stage]
   return (
-    <StatusStrip pinned progress={job.progress}>
+    <StatusStrip className="flex-none" progress={job.progress}>
       <span className="text-muted-foreground">
         {stripKey ? t(stripKey) : job.stage} · {title}
       </span>

@@ -77,12 +77,17 @@ function LyricRenderer({ lyrics, clock, onSeek, showGradient = true }: Props): R
     let prevCur = -2 // force initial styling pass
     let raf = 0
 
+    // The bottom mask fades the last 120px to transparent, so that strip never
+    // reads as occupied — bias the target up by half of it or the current line
+    // looks centered on the math but low to the eye.
+    const centerBias = showGradient ? 60 : 0
+
     const center = (cur: number): void => {
       const view = viewRef.current
       const col = colRef.current
       const el = lineEls.current[Math.max(cur, 0)]
       if (!view || !col || !el) return
-      const y = view.clientHeight / 2 - (el.offsetTop + el.offsetHeight / 2)
+      const y = view.clientHeight / 2 - centerBias - (el.offsetTop + el.offsetHeight / 2)
       col.style.transform = `translateY(${y}px)`
     }
 
@@ -163,7 +168,7 @@ function LyricRenderer({ lyrics, clock, onSeek, showGradient = true }: Props): R
       cancelAnimationFrame(raf)
       ro.disconnect()
     }
-  }, [meta, clock])
+  }, [meta, clock, showGradient])
 
   const cjk = lyrics.language === 'zh' || lyrics.language === 'ja' || lyrics.language === 'ko'
 

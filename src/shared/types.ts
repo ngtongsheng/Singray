@@ -157,6 +157,12 @@ export interface EnrichResult {
   source: 'llm' | 'heuristic'
 }
 
+/** Cleaned title/artists from "Clean up with AI" on an existing (possibly multi-artist) song. */
+export interface CleanMetaResult {
+  title: string
+  artists: string[]
+}
+
 /** Result of a successful LLM round-trip test (R3.1). */
 export interface LlmTestResult {
   model: string
@@ -288,8 +294,8 @@ export interface SingrayApi {
     openFolder(id: string): Promise<void>
     /** Upload raw image bytes (ArrayBuffer) as the song's thumbnail. */
     uploadThumb(id: string, bytes: ArrayBuffer): Promise<void>
-    /** Download artwork from a URL and save as the song's thumbnail. */
-    setThumbFromUrl(id: string, url: string): Promise<void>
+    /** Downloads artwork bytes from a URL for local preview/crop; does not touch the saved thumbnail. */
+    fetchArtworkBytes(url: string): Promise<ArrayBuffer>
     /** Search iTunes for artwork matching the query. */
     searchArtwork(query: string): Promise<ArtworkResult[]>
   }
@@ -339,7 +345,11 @@ export interface SingrayApi {
     /** Cleans probe metadata for import prefill; falls back to the heuristic parser, never rejects. */
     enrichProbe(probe: ProbeResult): Promise<EnrichResult>
     /** "Clean up with AI" on an existing song; rejects with a readable message. */
-    cleanMeta(input: { title: string; artist: string; youtubeTitle: string }): Promise<EnrichResult>
+    cleanMeta(input: {
+      title: string
+      artists: string[]
+      youtubeTitle: string
+    }): Promise<CleanMetaResult>
     /** Cleans pasted lyrics (strip section tags/credits, normalize breaks); rejects readably (R3.6). */
     cleanLyrics(input: { text: string; language: string }): Promise<string>
   }
@@ -389,7 +399,7 @@ export interface IpcMap {
   'library:updateMeta': { args: [id: string, patch: Partial<SongMeta>]; result: SongMeta }
   'library:openFolder': { args: [id: string]; result: NoResult }
   'library:uploadThumb': { args: [id: string, bytes: ArrayBuffer]; result: NoResult }
-  'library:setThumbFromUrl': { args: [id: string, url: string]; result: NoResult }
+  'library:fetchArtworkBytes': { args: [url: string]; result: ArrayBuffer }
   'library:searchArtwork': { args: [query: string]; result: ArtworkResult[] }
 
   'lyrics:get': { args: [id: string]; result: Lyrics | null }
@@ -404,8 +414,8 @@ export interface IpcMap {
   }
   'llm:enrichProbe': { args: [probe: ProbeResult]; result: EnrichResult }
   'llm:cleanMeta': {
-    args: [input: { title: string; artist: string; youtubeTitle: string }]
-    result: EnrichResult
+    args: [input: { title: string; artists: string[]; youtubeTitle: string }]
+    result: CleanMetaResult
   }
   'llm:cleanLyrics': { args: [input: { text: string; language: string }]; result: string }
 

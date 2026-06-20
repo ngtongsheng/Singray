@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { RecordingItem } from '../../../shared/types'
 import ConfirmDialog from '../components/shared/ConfirmDialog'
+import TitleArtist from '../components/shared/TitleArtist'
 import Titlebar from '../components/shared/Titlebar'
 import { Container, IconButton, Segmented, Slider, Stack, Text } from '../components/ui'
 import { useAppContext } from '../context/AppContext'
@@ -26,7 +27,7 @@ function fmtTimestamp(iso: string, locale: string): string {
 
 function Recordings({ songId }: Props): React.JSX.Element {
   const { t, i18n } = useTranslation()
-  const { goBack } = useAppContext()
+  const { goBack, goLibrary } = useAppContext()
   const qc = useQueryClient()
   const { songs } = useLibrary()
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
@@ -70,9 +71,8 @@ function Recordings({ songId }: Props): React.JSX.Element {
   const playingRec = recordings.find((r) => r.url === playingUrl) ?? null
   const playingSong = playingRec ? songs.find((s) => s.id === playingRec.songId) : undefined
 
-  const title = songId
-    ? (songs.find((s) => s.id === songId)?.title ?? t('recordings.title'))
-    : t('recordings.title')
+  const recordingSong = songId ? songs.find((s) => s.id === songId) : undefined
+  const title = recordingSong?.title ?? t('recordings.title')
 
   const sorted = sortOrder === 'newest' ? [...recordings].reverse() : recordings
 
@@ -88,9 +88,18 @@ function Recordings({ songId }: Props): React.JSX.Element {
             >
               <ArrowLeft className="size-4" strokeWidth={1.5} />
             </IconButton>
-            <Text as="h1" variant="title">
-              {title}
-            </Text>
+            {recordingSong ? (
+              <TitleArtist
+                title={recordingSong.title}
+                label={<Text variant="hint">{t('recordings.title')}</Text>}
+                artists={recordingSong.artists}
+                onArtistClick={goLibrary}
+              />
+            ) : (
+              <Text as="h1" variant="title">
+                {title}
+              </Text>
+            )}
           </Stack>
           <Segmented
             className="app-no-drag"

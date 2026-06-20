@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Input, Stack } from '../ui'
@@ -8,10 +8,11 @@ interface Props {
   onChange: (artists: string[]) => void
   /** Distinct artist names already in the library, for the type-ahead dropdown. */
   suggestions: string[]
+  disabled?: boolean
 }
 
 /** Multi-select artist input (#63): chips + free text, with existing-artist suggestions. */
-function ArtistChips({ value, onChange, suggestions }: Props): React.JSX.Element {
+function ArtistChips({ value, onChange, suggestions, disabled }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const [text, setText] = useState('')
 
@@ -46,7 +47,8 @@ function ArtistChips({ value, onChange, suggestions }: Props): React.JSX.Element
                 type="button"
                 onClick={() => remove(artist)}
                 title={t('common.remove', { label: artist })}
-                className="text-muted-foreground hover:text-foreground"
+                disabled={disabled}
+                className="text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
               >
                 <X className="size-3" strokeWidth={1.5} />
               </button>
@@ -68,6 +70,8 @@ function ArtistChips({ value, onChange, suggestions }: Props): React.JSX.Element
           }}
           onBlur={() => add(text)}
           placeholder={t('common.addArtist')}
+          disabled={disabled}
+          trailing={disabled && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
         />
         {matches.length > 0 && (
           <div className="absolute top-full z-10 w-full pt-1">

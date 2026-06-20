@@ -22,3 +22,11 @@ export function parseYoutubeTitle(raw: string): { artist: string; title: string 
 
   return { artist: '', title: cleaned }
 }
+
+/** Splits a combined artist credit ("Bruno Mars, Anderson .Paak, Silk Sonic") into separate names. */
+export function splitArtists(raw: string): string[] {
+  return raw
+    .split(/\s*,\s*|\s*&\s*|\s+(?:feat\.?|ft\.?|featuring)\s+|\s+[xX]\s+|\s*\/\s*/)
+    .map((a) => a.trim())
+    .filter(Boolean)
+}

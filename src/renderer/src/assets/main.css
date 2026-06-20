@@ -49,6 +49,10 @@
 @theme inline {
   --color-*: initial;
 
+  /* True neutrals for scrims/overlays (Dialog, SongCard badges, ControlBar, PlayerStage) — not brand colors, so kept outside the token wipe above. */
+  --color-black: #000;
+  --color-white: #fff;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -143,4 +147,11 @@
 
 .animate-ken-burns.paused {
   animation-play-state: paused;
+}
+
+/* Radix ScrollArea wraps the viewport's children in an unstyleable
+   display:table div, sizing it to content instead of the viewport — long
+   text inside (e.g. truncated list rows) never sees a constrained width. */
+[data-radix-scroll-area-viewport] > div {
+  display: block !important;
 }

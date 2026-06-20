@@ -575,7 +575,7 @@ Both fonts bundled locally (offline app, no Google Fonts CDN). Type scale: 12 / 
 
 **Lyric creator** — two-pane focus mode (no nav chrome): transport bar pinned top with big readable timecode (tabular), current line huge center with per-unit state colors (sung = accent, current = white + underline caret, pending = dim), line list below at 40% opacity except current. Keyboard cheat-sheet strip pinned bottom (matches your reference screenshot's hint panel), dismissible.
 
-**Player** — fullscreen, blurred `thumb.jpg` background under a 55% black scrim + bottom gradient to `--background` (lyric contrast always ≥4.5:1 regardless of artwork). Lyrics centered column, max-width 28ch (CJK) / 60ch (Latin). Control bar auto-hides after 3s idle, reappears on mouse move/any hotkey; guide-vocal toggle shows clear on/off state with icon + label (not color alone). Break countdown: three dots draining with the audio clock.
+**Player** — fullscreen, blurred `thumb.jpg` background under an 80% black scrim + bottom gradient to `--background` (lyric contrast always ≥4.5:1 regardless of artwork, even a pure-white thumbnail). Lyrics centered column, max-width 28ch (CJK) / 60ch (Latin). Control bar auto-hides after 3s idle, reappears on mouse move/any hotkey; guide-vocal toggle shows clear on/off state with icon + label (not color alone). Break countdown: three dots draining with the audio clock.
 
 **Settings** — single scrolling form, grouped fieldsets (Library / Pipeline / Audio routing), helper text under each field, "Test" buttons inline with their field.
 

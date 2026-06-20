@@ -6,12 +6,12 @@ import { cleanLyrics, cleanMeta, enrichProbe } from './enrich'
 import { cancelImport, retryImport, startImport } from './importQueue'
 import {
   deleteSong,
+  fetchArtworkBytes,
   getLyrics,
   listSongs,
   openSongFolder,
   saveLyrics,
   searchArtwork,
-  setThumbFromUrl,
   updateMeta,
   uploadThumb
 } from './library'
@@ -44,7 +44,7 @@ export function registerIpc(): void {
   handle('library:updateMeta', (_e, id, patch) => updateMeta(id, patch))
   handle('library:openFolder', (_e, id) => openSongFolder(id))
   handle('library:uploadThumb', (_e, id, bytes) => uploadThumb(id, bytes))
-  handle('library:setThumbFromUrl', (_e, id, url) => setThumbFromUrl(id, url))
+  handle('library:fetchArtworkBytes', (_e, url) => fetchArtworkBytes(url))
   handle('library:searchArtwork', (_e, query) => searchArtwork(query))
 
   handle('lyrics:get', (_e, id) => getLyrics(id))

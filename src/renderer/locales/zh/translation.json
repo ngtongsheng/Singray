@@ -86,13 +86,14 @@
     "apply": "应用",
     "dismiss": "忽略",
     "noChanges": "已经很干净，无需修改。",
-    "thumbnail": "封面",
-    "thumbUpload": "上传图片",
+    "tabDetails": "信息",
+    "tabThumbnail": "封面",
+    "thumbClickUpload": "点击从本机上传",
+    "thumbReplace": "更换图片",
     "thumbSearch": "在线搜索",
     "thumbSearchPlaceholder": "歌手和歌名…",
     "thumbSearching": "搜索中…",
-    "thumbNoResults": "未找到结果",
-    "thumbPick": "使用此封面"
+    "thumbNoResults": "未找到结果"
   },
   "clean": {
     "button": "AI 清理",
@@ -180,7 +181,7 @@
     "source": "来源"
   },
   "creator": {
-    "subtitle": "{{artist}} · 歌词",
+    "lyricsLabel": "歌词",
     "align": "对齐",
     "aligning": "对齐中…",
     "alignTip": "用强制对齐自动打轴（whisperx 跑人声音轨）",

@@ -7,6 +7,7 @@
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",
+    "dev:noscan": "set VITE_NO_SCAN=1 && electron-vite dev",
     "start": "electron-vite preview",
     "check": "biome check . && npm run typecheck && node scripts/check-design.mjs",
     "check:fix": "biome check --write .",

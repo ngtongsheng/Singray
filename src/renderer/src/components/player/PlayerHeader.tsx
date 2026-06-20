@@ -5,13 +5,13 @@ import {
   Info,
   Mic,
   MoreVertical,
-  Music2,
   Pencil,
   Type
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { usePlayerContext } from '../../context/PlayerContext'
-import ArtistLink from '../shared/ArtistLink'
+import SettingsButton from '../library/SettingsButton'
+import TitleArtist from '../shared/TitleArtist'
 import { Button, IconButton, Menu, MenuItem, Stack, Text } from '../ui'
 
 /** Titlebar row: back + title/artist (left), stage toggles + edit actions + more menu (right). */
@@ -44,19 +44,16 @@ function PlayerHeader(): React.JSX.Element {
         >
           <ArrowLeft className="size-4" strokeWidth={1.5} />
         </IconButton>
-        <Stack direction="column" gap={0} className="min-w-0">
-          <span className="flex items-center gap-1 text-muted-foreground text-xs">
-            <Music2 className="size-3" strokeWidth={1.5} /> {t('player.nowPlaying')}
-          </span>
-          <Text as="h1" variant="subtitle" className="truncate">
-            {song.title}
-          </Text>
-          <ArtistLink
-            artists={song.artists}
-            onClick={onArtistClick}
-            className="app-no-drag shrink-0"
-          />
-        </Stack>
+        <TitleArtist
+          title={song.title}
+          label={
+            <Text as="span" variant="hint">
+              {t('player.nowPlaying')}
+            </Text>
+          }
+          artists={song.artists}
+          onArtistClick={onArtistClick}
+        />
       </Stack>
       {!error && (
         <Stack gap={3}>
@@ -118,6 +115,7 @@ function PlayerHeader(): React.JSX.Element {
               <Info className="size-3.5" strokeWidth={1.5} /> {t('player.songDetails')}
             </MenuItem>
           </Menu>
+          <SettingsButton />
         </Stack>
       )}
     </Stack>

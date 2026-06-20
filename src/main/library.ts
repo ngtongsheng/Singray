@@ -121,12 +121,10 @@ export async function uploadThumb(id: string, bytes: ArrayBuffer): Promise<void>
   notifyLibraryChanged()
 }
 
-export async function setThumbFromUrl(id: string, url: string): Promise<void> {
+export async function fetchArtworkBytes(url: string): Promise<ArrayBuffer> {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Artwork download failed: ${res.status}`)
-  const buf = await res.arrayBuffer()
-  await writeFile(join(songDir(id), 'thumb.jpg'), Buffer.from(buf))
-  notifyLibraryChanged()
+  return res.arrayBuffer()
 }
 
 export async function searchArtwork(query: string): Promise<ArtworkResult[]> {
