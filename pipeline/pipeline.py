@@ -437,7 +437,7 @@ def _align_tokens(vocals: Path, text: str, lang: str) -> list[dict]:
 
 
 def cmd_align(args: argparse.Namespace) -> int:
-    """Forced alignment: lyric text vs vocals.m4a → token timestamps (SPEC §6.6)."""
+    """Forced alignment: lyric text vs the vocals stem → token timestamps (SPEC §6.6)."""
     try:
         song_dir = Path(args.song)
         vocals = next(
@@ -514,8 +514,6 @@ def cmd_list_models(args: argparse.Namespace) -> int:
 
 def cmd_clear_models(args: argparse.Namespace) -> int:
     """Remove all downloaded models from the models directory."""
-    import shutil
-
     if MODELS_DIR.exists():
         shutil.rmtree(MODELS_DIR)
         MODELS_DIR.mkdir(exist_ok=True)
@@ -550,7 +548,7 @@ def main() -> int:
     process.set_defaults(func=cmd_process)
 
     align = sub.add_parser("align", help="forced-align lyric text against the vocals stem")
-    align.add_argument("--song", required=True, help="song directory (vocals.m4a + meta.json)")
+    align.add_argument("--song", required=True, help="song directory (vocals stem + meta.json)")
     align.add_argument("--text", required=True, help="path to a UTF-8 lyric text file")
     align.set_defaults(func=cmd_align)
 
