@@ -15,10 +15,9 @@ website streaming setup, but works standalone.
 > design and [GitHub Issues](https://github.com/ngtongsheng/Singray/issues)
 > for current work.
 
-## Screenshots
+## Demo
 
-<!-- Drop PNGs in docs/screenshots/ and reference them here. -->
-_Library · Player · Lyric creator — screenshots coming with the first release._
+[▶ Watch demo video](https://github.com/ngtongsheng/Singray/releases/download/v0.1.0/singray-demo2.mp4) — library browse · add song · karaoke player with synced lyrics · recordings (v0.1.0, ~35 s, 1.1 MB MP4)
 
 ## Features
 
