@@ -1,31 +1,44 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, X } from 'lucide-react'
-import { useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { z } from 'zod'
 import { useSettingsContext } from '../../context/SettingsContext'
 import { Button, IconButton, Input, SettingsSection, Stack, Text } from '../ui'
+
+const addLangSchema = z.object({
+  code: z.string().min(1),
+  label: z.string().min(1)
+})
+type AddLangValues = z.infer<typeof addLangSchema>
 
 function LanguagesSection(): React.JSX.Element | null {
   const { t } = useTranslation()
   const { settings, patch } = useSettingsContext()
-  const [newCode, setNewCode] = useState('')
-  const [newLabel, setNewLabel] = useState('')
+
+  const { control, handleSubmit, setError, reset, formState } = useForm<AddLangValues>({
+    resolver: zodResolver(addLangSchema),
+    defaultValues: { code: '', label: '' },
+    mode: 'onChange'
+  })
+
   if (!settings) return null
-
-  const newCodeClean = newCode.trim().toLowerCase()
-  const codeTaken = settings.languages.some((l) => l.code === newCodeClean)
-
-  const addLanguage = (): void => {
-    if (!newCodeClean || !newLabel.trim() || codeTaken) return
-    void patch({
-      languages: [...settings.languages, { code: newCodeClean, label: newLabel.trim() }]
-    })
-    setNewCode('')
-    setNewLabel('')
-  }
 
   const removeLanguage = (code: string): void => {
     void patch({ languages: settings.languages.filter((l) => l.code !== code) })
   }
+
+  const onAdd = handleSubmit((data) => {
+    const cleanCode = data.code.trim().toLowerCase()
+    if (settings.languages.some((l) => l.code === cleanCode)) {
+      setError('code', { message: t('settings.codeTaken', { code: cleanCode }) })
+      return
+    }
+    void patch({
+      languages: [...settings.languages, { code: cleanCode, label: data.label.trim() }]
+    })
+    reset()
+  })
 
   return (
     <SettingsSection title={t('settings.languages')}>
@@ -49,30 +62,40 @@ function LanguagesSection(): React.JSX.Element | null {
         ))}
         <Stack gap={2}>
           <div className="w-24">
-            <Input
-              value={newCode}
-              onChange={(e) => setNewCode(e.target.value)}
-              placeholder="ja"
-              aria-label={t('settings.langCode')}
+            <Controller
+              name="code"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="ja"
+                  aria-label={t('settings.langCode')}
+                />
+              )}
             />
           </div>
-          <Input
-            value={newLabel}
-            onChange={(e) => setNewLabel(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') addLanguage()
-            }}
-            placeholder="日本語"
-            aria-label={t('settings.langLabel')}
+          <Controller
+            name="label"
+            control={control}
+            render={({ field }) => (
+              <Input
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void onAdd(e)
+                }}
+                placeholder="日本語"
+                aria-label={t('settings.langLabel')}
+              />
+            )}
           />
           <Button
-            onClick={addLanguage}
-            disabled={!newCodeClean || !newLabel.trim() || codeTaken}
-            title={
-              codeTaken
-                ? t('settings.codeTaken', { code: newCodeClean })
-                : t('settings.addLanguageTip')
-            }
+            onClick={onAdd}
+            disabled={!formState.isValid}
+            title={formState.errors.code?.message ?? t('settings.addLanguageTip')}
             className="shrink-0"
           >
             <Plus className="size-4" strokeWidth={1.5} /> {t('settings.add')}

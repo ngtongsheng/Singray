@@ -1,9 +1,19 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, Sparkles } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { z } from 'zod'
 import type { Language, SongListItem } from '../../../../shared/types'
 import { useSettings } from '../../hooks/useSettings'
 import { Button, Dialog, Field, Input, Select, Stack, Text } from '../ui'
+
+const editMetaSchema = z.object({
+  title: z.string().min(1),
+  artist: z.string(),
+  language: z.string()
+})
+type EditMetaValues = z.infer<typeof editMetaSchema>
 
 interface Props {
   song: SongListItem
@@ -12,22 +22,22 @@ interface Props {
 
 function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
   const { t } = useTranslation()
-  const [title, setTitle] = useState(song.title)
-  const [artist, setArtist] = useState(song.artist)
-  const [language, setLanguage] = useState<Language>(song.language)
   const { settings } = useSettings()
   const languages = settings?.languages ?? []
   const [saving, setSaving] = useState(false)
   const [cleaning, setCleaning] = useState(false)
   const [cleanError, setCleanError] = useState<string | null>(null)
   const [preview, setPreview] = useState<{ title: string; artist: string } | null>(null)
-  const titleRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    titleRef.current?.focus()
-  }, [])
+  const { control, handleSubmit, setValue, watch, formState } = useForm<EditMetaValues>({
+    resolver: zodResolver(editMetaSchema),
+    defaultValues: { title: song.title, artist: song.artist, language: song.language },
+    mode: 'onChange'
+  })
 
-  // The song's current language stays selectable even if it was removed from Settings.
+  const titleVal = watch('title')
+  const artistVal = watch('artist')
+
   const options = useMemo(() => {
     const opts = [...languages]
     if (!opts.some((l) => l.code === song.language) && song.language !== 'unknown')
@@ -43,8 +53,8 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
     setPreview(null)
     try {
       const result = await window.singray.llm.cleanMeta({
-        title: title.trim(),
-        artist: artist.trim(),
+        title: titleVal.trim(),
+        artist: artistVal.trim(),
         youtubeTitle: song.youtubeTitle
       })
       setPreview({ title: result.title, artist: result.artist })
@@ -59,31 +69,29 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
 
   const applyPreview = (): void => {
     if (!preview) return
-    setTitle(preview.title)
-    if (preview.artist) setArtist(preview.artist)
+    setValue('title', preview.title)
+    if (preview.artist) setValue('artist', preview.artist)
     setPreview(null)
   }
 
-  // Applying would change nothing → tell the user it's already clean instead.
   const previewIsNoop =
     preview !== null &&
-    preview.title === title.trim() &&
-    (preview.artist || artist.trim()) === artist.trim()
+    preview.title === titleVal.trim() &&
+    (preview.artist || artistVal.trim()) === artistVal.trim()
 
-  const save = async (): Promise<void> => {
-    if (!title.trim()) return
+  const onSubmit = handleSubmit(async (data) => {
     setSaving(true)
     try {
       await window.singray.library.updateMeta(song.id, {
-        title: title.trim(),
-        artist: artist.trim(),
-        language
+        title: data.title.trim(),
+        artist: data.artist.trim(),
+        language: data.language as Language
       })
       onClose()
     } finally {
       setSaving(false)
     }
-  }
+  })
 
   return (
     <Dialog label={t('editMeta.aria')} width="md" onClose={onClose}>
@@ -95,16 +103,39 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
 
           <Stack direction="column" gap={3}>
             <Field label={t('common.title')}>
-              <Input ref={titleRef} value={title} onChange={(e) => setTitle(e.target.value)} />
+              <Controller
+                name="title"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    autoFocus
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                  />
+                )}
+              />
             </Field>
             <Field label={t('common.artist')}>
-              <Input value={artist} onChange={(e) => setArtist(e.target.value)} />
+              <Controller
+                name="artist"
+                control={control}
+                render={({ field }) => (
+                  <Input value={field.value} onChange={field.onChange} onBlur={field.onBlur} />
+                )}
+              />
             </Field>
             <Field label={t('common.language')}>
-              <Select
-                value={language}
-                onChange={setLanguage}
-                options={options.map((l) => ({ value: l.code, label: l.label }))}
+              <Controller
+                name="language"
+                control={control}
+                render={({ field }) => (
+                  <Select<string>
+                    value={field.value}
+                    onChange={field.onChange}
+                    options={options.map((l) => ({ value: l.code, label: l.label }))}
+                  />
+                )}
               />
             </Field>
           </Stack>
@@ -145,7 +176,7 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
         <Stack justify="between" align="center" gap={3}>
           <Button
             onClick={cleanWithAi}
-            disabled={cleaning || !title.trim()}
+            disabled={cleaning || !titleVal?.trim()}
             title={t('editMeta.cleanTip')}
           >
             {cleaning ? (
@@ -157,7 +188,7 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
           </Button>
           <Stack gap={3}>
             <Button onClick={onClose}>{t('common.cancel')}</Button>
-            <Button variant="primary" onClick={save} disabled={!title.trim() || saving}>
+            <Button variant="primary" onClick={onSubmit} disabled={!formState.isValid || saving}>
               {t('common.save')}
             </Button>
           </Stack>

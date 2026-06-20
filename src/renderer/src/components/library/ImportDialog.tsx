@@ -1,6 +1,9 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { FolderOpen, Loader2, Search } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { z } from 'zod'
 import { MEDIA_EXTENSIONS, type SearchResult } from '../../../../shared/types'
 import { useAsync } from '../../hooks/useAsync'
 import { useMediaProbe } from '../../hooks/useMediaProbe'
@@ -22,11 +25,18 @@ import {
 } from '../ui'
 import { cx } from '../ui/cx'
 
+type SourceMode = 'youtube' | 'file'
+
+const importMetaSchema = z.object({
+  title: z.string().min(1),
+  artist: z.string(),
+  language: z.string()
+})
+type ImportMetaValues = z.infer<typeof importMetaSchema>
+
 interface Props {
   onClose: () => void
 }
-
-type SourceMode = 'youtube' | 'file'
 
 function formatDuration(sec: number): string {
   if (!sec) return ''
@@ -39,13 +49,32 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const { settings } = useSettings()
   const languages = settings?.languages ?? []
-  const probe = useMediaProbe(languages)
   const [submitting, setSubmitting] = useState(false)
   const [query, setQuery] = useState('')
   const search = useAsync((q: string) => window.singray.import.search(q), { resetOnRun: true })
   const [mode, setMode] = useState<SourceMode>('youtube')
   const [dragOver, setDragOver] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
+
+  const {
+    control,
+    handleSubmit,
+    reset: resetMeta,
+    watch
+  } = useForm<ImportMetaValues>({
+    resolver: zodResolver(importMetaSchema),
+    defaultValues: { title: '', artist: '', language: 'unknown' },
+    mode: 'onChange'
+  })
+
+  const onPrefill = useCallback(
+    (data: { title: string; artist: string; language: string }) => {
+      resetMeta(data)
+    },
+    [resetMeta]
+  )
+
+  const probe = useMediaProbe({ languages, onPrefill })
 
   useEffect(() => {
     searchRef.current?.focus()
@@ -89,15 +118,15 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
     void loadFile(path)
   }
 
-  const submit = async (): Promise<void> => {
-    if (!probe.probed || !probe.title.trim()) return
+  const onSubmit = handleSubmit(async (data) => {
+    if (!probe.probed) return
     setSubmitting(true)
     try {
       await window.singray.import.start({
         url: probe.filePath ? '' : probe.url.trim(),
-        title: probe.title.trim(),
-        artist: probe.artist.trim(),
-        language: probe.language,
+        title: data.title.trim(),
+        artist: data.artist.trim(),
+        language: data.language,
         youtubeTitle: probe.probed.title,
         ...(probe.filePath ? { filePath: probe.filePath } : {})
       })
@@ -105,7 +134,9 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
     } finally {
       setSubmitting(false)
     }
-  }
+  })
+
+  const titleVal = watch('title')
 
   return (
     <Dialog label={t('import.title')} width="2xl" onClose={onClose}>
@@ -263,21 +294,39 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
               </Stack>
               <Stack direction="column" gap={3} className="flex-1">
                 <Field label={t('common.title')}>
-                  <Input value={probe.title} onChange={(e) => probe.setTitle(e.target.value)} />
+                  <Controller
+                    name="title"
+                    control={control}
+                    render={({ field }) => (
+                      <Input value={field.value} onChange={field.onChange} onBlur={field.onBlur} />
+                    )}
+                  />
                 </Field>
                 <Field label={t('common.artist')}>
-                  <Input value={probe.artist} onChange={(e) => probe.setArtist(e.target.value)} />
+                  <Controller
+                    name="artist"
+                    control={control}
+                    render={({ field }) => (
+                      <Input value={field.value} onChange={field.onChange} onBlur={field.onBlur} />
+                    )}
+                  />
                 </Field>
                 <Field label={t('common.language')}>
-                  <Select
-                    value={probe.language}
-                    onChange={probe.setLanguage}
-                    options={[
-                      ...languages.map((l) => ({ value: l.code, label: l.label })),
-                      ...(languages.some((l) => l.code === 'unknown')
-                        ? []
-                        : [{ value: 'unknown', label: t('common.unknown') }])
-                    ]}
+                  <Controller
+                    name="language"
+                    control={control}
+                    render={({ field }) => (
+                      <Select<string>
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={[
+                          ...languages.map((l) => ({ value: l.code, label: l.label })),
+                          ...(languages.some((l) => l.code === 'unknown')
+                            ? []
+                            : [{ value: 'unknown', label: t('common.unknown') }])
+                        ]}
+                      />
+                    )}
                   />
                 </Field>
               </Stack>
@@ -289,8 +338,8 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
           <Button onClick={onClose}>{t('common.cancel')}</Button>
           <Button
             variant="primary"
-            onClick={submit}
-            disabled={!probe.probed || !probe.title.trim() || submitting}
+            onClick={onSubmit}
+            disabled={!probe.probed || !titleVal?.trim() || submitting}
           >
             {t('import.add')}
           </Button>
