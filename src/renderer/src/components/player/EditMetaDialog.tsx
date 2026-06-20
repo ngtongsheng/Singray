@@ -5,12 +5,14 @@ import { Controller, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import type { Language, SongListItem } from '../../../../shared/types'
+import { useLibrary } from '../../hooks/useLibrary'
 import { useSettings } from '../../hooks/useSettings'
+import ArtistChips from '../shared/ArtistChips'
 import { Button, Dialog, Field, Input, Select, Stack, Text } from '../ui'
 
 const editMetaSchema = z.object({
   title: z.string().min(1),
-  artist: z.string(),
+  artists: z.array(z.string()),
   language: z.string()
 })
 type EditMetaValues = z.infer<typeof editMetaSchema>
@@ -23,6 +25,11 @@ interface Props {
 function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const { settings } = useSettings()
+  const { songs } = useLibrary()
+  const artistSuggestions = useMemo(
+    () => [...new Set(songs.flatMap((s) => s.artists))].sort((a, b) => a.localeCompare(b)),
+    [songs]
+  )
   const languages = settings?.languages ?? []
   const [saving, setSaving] = useState(false)
   const [cleaning, setCleaning] = useState(false)
@@ -31,12 +38,12 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
 
   const { control, handleSubmit, setValue, watch, formState } = useForm<EditMetaValues>({
     resolver: zodResolver(editMetaSchema),
-    defaultValues: { title: song.title, artist: song.artist, language: song.language },
+    defaultValues: { title: song.title, artists: song.artists, language: song.language },
     mode: 'onChange'
   })
 
   const titleVal = watch('title')
-  const artistVal = watch('artist')
+  const artistsVal = watch('artists')
 
   const options = useMemo(() => {
     const opts = [...languages]
@@ -47,6 +54,8 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
     return opts
   }, [languages, song.language, t])
 
+  const primaryArtist = artistsVal[0]?.trim() ?? ''
+
   const cleanWithAi = async (): Promise<void> => {
     setCleaning(true)
     setCleanError(null)
@@ -54,7 +63,7 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
     try {
       const result = await window.singray.llm.cleanMeta({
         title: titleVal.trim(),
-        artist: artistVal.trim(),
+        artist: primaryArtist,
         youtubeTitle: song.youtubeTitle
       })
       setPreview({ title: result.title, artist: result.artist })
@@ -70,21 +79,22 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
   const applyPreview = (): void => {
     if (!preview) return
     setValue('title', preview.title)
-    if (preview.artist) setValue('artist', preview.artist)
+    // AI cleanup only knows the primary artist — replaces the whole list with it.
+    if (preview.artist) setValue('artists', [preview.artist])
     setPreview(null)
   }
 
   const previewIsNoop =
     preview !== null &&
     preview.title === titleVal.trim() &&
-    (preview.artist || artistVal.trim()) === artistVal.trim()
+    (preview.artist || primaryArtist) === primaryArtist
 
   const onSubmit = handleSubmit(async (data) => {
     setSaving(true)
     try {
       await window.singray.library.updateMeta(song.id, {
         title: data.title.trim(),
-        artist: data.artist.trim(),
+        artists: data.artists,
         language: data.language as Language
       })
       onClose()
@@ -118,10 +128,14 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
             </Field>
             <Field label={t('common.artist')}>
               <Controller
-                name="artist"
+                name="artists"
                 control={control}
                 render={({ field }) => (
-                  <Input value={field.value} onChange={field.onChange} onBlur={field.onBlur} />
+                  <ArtistChips
+                    value={field.value}
+                    onChange={field.onChange}
+                    suggestions={artistSuggestions}
+                  />
                 )}
               />
             </Field>

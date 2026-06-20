@@ -13,6 +13,8 @@
     "unknown": "未知",
     "title": "标题",
     "artist": "歌手",
+    "addArtist": "添加歌手…",
+    "remove": "移除 {{label}}",
     "language": "语言",
     "back": "返回曲库",
     "backEsc": "返回曲库（Esc）"
@@ -151,7 +153,14 @@
     "record": "录制",
     "recording": "录制中…",
     "recordStartTip": "开始录制（伴奏 + 麦克风，不含导唱）",
-    "recordStopTip": "停止录制并保存"
+    "recordStopTip": "停止录制并保存",
+    "recordPrep": {
+      "aria": "录制准备",
+      "title": "准备录制",
+      "countdown": "倒计时",
+      "none": "无",
+      "start": "开始"
+    }
   },
   "details": {
     "title": "歌曲详情",
@@ -186,7 +195,12 @@
     "discard": "丢弃时间轴",
     "stepText": "文本",
     "stepTap": "打轴",
-    "stepReview": "预览"
+    "stepReview": "预览",
+    "leaveTitle": "未保存，确认离开？",
+    "leaveBody": "当前文字尚未保存为歌词，仍要离开？",
+    "leave": "离开",
+    "linesCount": "共 {{count}} 行",
+    "flowHint": "粘贴 → 编辑 → 打轴"
   },
   "timing": {
     "playTip": "播放（回车）",
@@ -205,7 +219,12 @@
     "hideShortcuts": "隐藏快捷键",
     "clickToSeek": "点击跳转",
     "waveformRendering": "波形渲染中…",
-    "waveformUnavailable": "波形不可用"
+    "waveformUnavailable": "波形不可用",
+    "legend": {
+      "untimed": "未打轴",
+      "partial": "部分",
+      "done": "完成"
+    }
   },
   "recordings": {
     "title": "录音",
@@ -278,13 +297,15 @@
     "stemFormatHelp": "新导入歌曲的音轨格式。FLAC 避免分离后再次有损编码；已有歌曲不受影响。",
     "probedIn": "{{secs}} 秒内探测到《{{title}}》",
     "llm": "AI 助手",
+    "llmProvider": "服务商",
     "llmBaseUrl": "服务地址 (Base URL)",
     "llmModel": "模型",
-    "llmApiKey": "API 密钥（可选）",
-    "llmTestTip": "发送一个小提示词，检查地址、模型和密钥",
+    "llmModelPick": "选择模型…",
+    "llmApiKey": "API 密钥",
+    "llmTestTip": "发送一个小提示词，检查服务商、模型和密钥",
     "llmOk": "{{secs}} 秒内回复“{{reply}}”",
-    "llmModelsError": "无法加载模型列表 — 请手动输入模型名称",
-    "llmHelp": "用于元数据清理和歌词工具。兼容 Ollama（默认地址）或任何 OpenAI 兼容接口。",
+    "modelRetry": "重试",
+    "llmHelp": "用于元数据清理和歌词工具。兼容 Ollama（本地）或任何带 API 密钥的云端服务商。",
     "audio": "音频路由",
     "outputMode": "输出模式",
     "modeSingle": "单路 — 全部输出到一个设备",
@@ -307,6 +328,11 @@
     "micDeviceHelp": "用于自我监听和录音的麦克风。在此保存；在播放器中每首歌启用。",
     "micEnable": "在播放器中启用麦克风",
     "micEnableHelp": "开启后，打开歌曲时自动启动麦克风。关闭可跳过 getUserMedia 权限提示。",
-    "inputN": "输入 {{id}}"
+    "inputN": "输入 {{id}}",
+    "countdownLead": "前导倒计时",
+    "countdownLeadHelp": "从头播放歌曲时，在第一个歌词字之前显示的倒计时秒数。",
+    "countdownLeadOff": "关闭",
+    "countdownLead3": "3 秒（默认）",
+    "countdownLead5": "5 秒"
   }
 }

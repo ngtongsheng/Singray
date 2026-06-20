@@ -51,9 +51,13 @@ export async function listSongs(): Promise<SongListItem[]> {
     if (!entry.isDirectory()) continue
     const dir = join(getSettings().libraryDir, entry.name)
     try {
-      const meta = JSON.parse(await readFile(join(dir, 'meta.json'), 'utf-8')) as SongMeta
+      const raw = JSON.parse(await readFile(join(dir, 'meta.json'), 'utf-8')) as SongMeta & {
+        artist?: string
+      }
+      const { artist: legacyArtist, ...meta } = raw
       songs.push({
         ...meta,
+        artists: meta.artists ?? (legacyArtist ? [legacyArtist] : []), // pre-#63 metas have a single `artist` string
         sings: meta.sings ?? [], // pre-R1.5 metas have no sings array
         sourceFile: meta.sourceFile ?? null, // pre-R3.7 metas have no sourceFile
         id: entry.name, // folder name is the id authority

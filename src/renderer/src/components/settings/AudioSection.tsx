@@ -11,6 +11,18 @@ function AudioSection(): React.JSX.Element | null {
   return (
     <SettingsSection title={t('settings.audio')}>
       <Stack direction="column" gap={4}>
+        <Field label={t('settings.countdownLead')} hint={t('settings.countdownLeadHelp')}>
+          <Select<'0' | '3' | '5'>
+            value={String(settings.countdownLead ?? 3) as '0' | '3' | '5'}
+            onChange={(v) => patch({ countdownLead: Number(v) })}
+            options={[
+              { value: '0', label: t('settings.countdownLeadOff') },
+              { value: '3', label: t('settings.countdownLead3') },
+              { value: '5', label: t('settings.countdownLead5') }
+            ]}
+            className="w-full"
+          />
+        </Field>
         <Field label={t('settings.outputMode')} hint={t('settings.modeHelp')}>
           <Select
             value={settings.audioOutputMode}

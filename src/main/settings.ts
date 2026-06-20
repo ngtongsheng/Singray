@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
-import { MicFxPresetSchema } from '../shared/schemas'
+import { LlmProviderSchema, MicFxPresetSchema } from '../shared/schemas'
 import type { Settings } from '../shared/types'
 
 function defaults(): Settings {
@@ -21,6 +21,7 @@ function defaults(): Settings {
       { code: 'en', label: 'English' }
     ],
     uiLanguage: '',
+    llmProvider: 'ollama',
     llmBaseUrl: 'http://localhost:11434/v1',
     llmModel: '',
     llmApiKey: '',
@@ -31,7 +32,8 @@ function defaults(): Settings {
     micMonitor: true,
     micVolume: 1,
     micFxPreset: 'off',
-    micFxAmount: 0.3
+    micFxAmount: 0.3,
+    countdownLead: 3
   }
 }
 
@@ -54,6 +56,12 @@ export function getSettings(): Settings {
     !MicFxPresetSchema.safeParse(stored.micFxPreset).success
   ) {
     delete stored.micFxPreset
+  }
+  if (
+    stored.llmProvider !== undefined &&
+    !LlmProviderSchema.safeParse(stored.llmProvider).success
+  ) {
+    delete stored.llmProvider
   }
   cache = { ...defaults(), ...stored }
   return cache

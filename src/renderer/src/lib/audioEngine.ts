@@ -464,6 +464,7 @@ export class AudioEngine {
   private gainMicStr: GainNode | null = null
   private fxNodesMon: AudioNode[] = []
   private fxNodesStr: AudioNode[] = []
+  private _micAnalyser: AnalyserNode | null = null
   private _micMonitor = true
   private _micVolume = 1
   private _micFxPreset: MicFxPreset = 'off'
@@ -473,6 +474,10 @@ export class AudioEngine {
 
   get micEnabled(): boolean {
     return this.micStream !== null
+  }
+  /** Tapped off micFxOut (post-FX, pre monitor/record gain) — live for the pre-record level meter (R5.65). */
+  get micAnalyser(): AnalyserNode | null {
+    return this._micAnalyser
   }
   get micMonitor(): boolean {
     return this._micMonitor
@@ -557,6 +562,9 @@ export class AudioEngine {
       // Monitor context: one FX chain (→ micFxOut) fanning out to the monitor
       // leg (toggle-gated → speakers) and the record leg (always on → recordDest).
       this.micFxOut = this.ctx.createGain()
+      this._micAnalyser = this.ctx.createAnalyser()
+      this._micAnalyser.fftSize = 1024
+      this.micFxOut.connect(this._micAnalyser)
       this.gainMicMon = this.ctx.createGain()
       this.gainMicMon.gain.value = this._micMonitor ? this._micVolume * MIC_MONITOR_BOOST : 0
       this.micFxOut.connect(this.gainMicMon)
@@ -633,7 +641,13 @@ export class AudioEngine {
     }
     this.teardownFxLeg(this.fxNodesMon)
     this.teardownFxLeg(this.fxNodesStr)
-    for (const node of [this.micFxOut, this.gainMicMon, this.gainMicRec, this.gainMicStr]) {
+    for (const node of [
+      this.micFxOut,
+      this.gainMicMon,
+      this.gainMicRec,
+      this.gainMicStr,
+      this._micAnalyser
+    ]) {
       try {
         node?.disconnect()
       } catch {
@@ -646,6 +660,7 @@ export class AudioEngine {
     this.gainMicMon = null
     this.gainMicRec = null
     this.gainMicStr = null
+    this._micAnalyser = null
     this.fxNodesMon = []
     this.fxNodesStr = []
   }

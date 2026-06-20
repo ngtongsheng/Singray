@@ -50,9 +50,9 @@ function SongDetailsDialog({ song, onClose, onArtistClick }: Props): React.JSX.E
               {song.title}
             </Text>
             <ArtistLink
-              artist={song.artist}
-              onClick={() => {
-                onArtistClick(song.artist)
+              artists={song.artists}
+              onClick={(artist) => {
+                onArtistClick(artist)
                 onClose()
               }}
               className="text-sm"

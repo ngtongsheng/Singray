@@ -37,8 +37,8 @@ function PlayerHeader(): React.JSX.Element {
             {song.title}
           </Text>
           <ArtistLink
-            artist={song.artist}
-            onClick={() => onArtistClick(song.artist)}
+            artists={song.artists}
+            onClick={onArtistClick}
             className="app-no-drag shrink-0"
           />
         </Stack>

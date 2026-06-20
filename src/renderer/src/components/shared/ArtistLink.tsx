@@ -1,33 +1,45 @@
-import type { MouseEventHandler } from 'react'
-import { memo } from 'react'
+import { Fragment, memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cx } from '../ui/cx'
 
 interface Props {
-  artist: string
-  onClick: MouseEventHandler<HTMLButtonElement>
+  artists: string[]
+  onClick: (artist: string) => void
   className?: string
 }
 
-/** Artist name rendered as a hover-underline link button (title row, card, dialog). */
+/** Artist name(s) rendered as hover-underline link buttons, comma-separated (title row, card, dialog). */
 const ArtistLink = memo(function ArtistLink({
-  artist,
+  artists,
   onClick,
   className
 }: Props): React.JSX.Element {
   const { t } = useTranslation()
+  const wrapperClass = cx('truncate text-left text-muted-foreground text-xs', className)
+
+  if (artists.length === 0) {
+    return <span className={wrapperClass}>{t('common.unknown')}</span>
+  }
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={t('library.viewArtist', { name: artist })}
-      className={cx(
-        'truncate text-left text-muted-foreground text-xs hover:text-foreground hover:underline',
-        className
-      )}
-    >
-      {artist}
-    </button>
+    <span className={wrapperClass}>
+      {artists.map((artist, i) => (
+        <Fragment key={artist}>
+          {i > 0 && ', '}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onClick(artist)
+            }}
+            title={t('library.viewArtist', { name: artist })}
+            className="hover:text-foreground hover:underline"
+          >
+            {artist}
+          </button>
+        </Fragment>
+      ))}
+    </span>
   )
 })
 

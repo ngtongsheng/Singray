@@ -36,7 +36,14 @@ export function initI18n(lng: string): void {
     resources,
     lng,
     fallbackLng: 'en',
-    interpolation: { escapeValue: false }
+    interpolation: { escapeValue: false },
+    // ponytail: dev-only; noop in prod
+    ...(import.meta.env.DEV && {
+      saveMissing: true,
+      missingKeyHandler: (_lngs: readonly string[], _ns: string, key: string) => {
+        console.warn(`[i18n] missing key: ${key}`)
+      }
+    })
   })
 }
 

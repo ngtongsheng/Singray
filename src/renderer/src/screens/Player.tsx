@@ -4,6 +4,7 @@ import ControlBar from '../components/player/ControlBar'
 import EditMetaDialog from '../components/player/EditMetaDialog'
 import PlayerHeader from '../components/player/PlayerHeader'
 import PlayerStage from '../components/player/PlayerStage'
+import PreRecordDialog from '../components/player/PreRecordDialog'
 import SongDetailsDialog from '../components/player/SongDetailsDialog'
 import Titlebar from '../components/shared/Titlebar'
 import { PlayerProvider, usePlayerContext } from '../context/PlayerContext'
@@ -21,8 +22,19 @@ function Player({ song }: Props): React.JSX.Element {
 }
 
 function PlayerView(): React.JSX.Element {
-  const { song, barVisible, editOpen, closeEditMeta, detailsOpen, closeDetails, onArtistClick } =
-    usePlayerContext()
+  const {
+    song,
+    barVisible,
+    editOpen,
+    closeEditMeta,
+    detailsOpen,
+    closeDetails,
+    onArtistClick,
+    engine,
+    recordPrepOpen,
+    closeRecordPrep,
+    startRecording
+  } = usePlayerContext()
 
   return (
     <div className="relative h-full">
@@ -38,6 +50,9 @@ function PlayerView(): React.JSX.Element {
           {editOpen && <EditMetaDialog song={song} onClose={closeEditMeta} />}
           {detailsOpen && (
             <SongDetailsDialog song={song} onClose={closeDetails} onArtistClick={onArtistClick} />
+          )}
+          {recordPrepOpen && engine && (
+            <PreRecordDialog engine={engine} onStart={startRecording} onClose={closeRecordPrep} />
           )}
         </AnimatePresence>
         <ControlBar />

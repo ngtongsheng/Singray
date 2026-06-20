@@ -1,14 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { FolderOpen, Loader2, Search } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { MEDIA_EXTENSIONS, type SearchResult } from '../../../../shared/types'
 import { useAsync } from '../../hooks/useAsync'
+import { useLibrary } from '../../hooks/useLibrary'
 import { useMediaProbe } from '../../hooks/useMediaProbe'
 import { useSettings } from '../../hooks/useSettings'
 import { stripIpcError } from '../../lib/stripIpcError'
+import ArtistChips from '../shared/ArtistChips'
 import {
   AspectRatio,
   Button,
@@ -21,7 +23,8 @@ import {
   Segmented,
   Select,
   Stack,
-  Text
+  Text,
+  Tooltip
 } from '../ui'
 import { cx } from '../ui/cx'
 
@@ -29,7 +32,7 @@ type SourceMode = 'youtube' | 'file'
 
 const importMetaSchema = z.object({
   title: z.string().min(1),
-  artist: z.string(),
+  artists: z.array(z.string()),
   language: z.string()
 })
 type ImportMetaValues = z.infer<typeof importMetaSchema>
@@ -52,6 +55,11 @@ function formatDuration(sec: number): string {
 function ImportDialog({ onClose }: Props): React.JSX.Element {
   const { t } = useTranslation()
   const { settings } = useSettings()
+  const { songs } = useLibrary()
+  const artistSuggestions = useMemo(
+    () => [...new Set(songs.flatMap((s) => s.artists))].sort((a, b) => a.localeCompare(b)),
+    [songs]
+  )
   const languages = settings?.languages ?? []
   const [submitting, setSubmitting] = useState(false)
   const [query, setQuery] = useState('')
@@ -67,13 +75,17 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
     watch
   } = useForm<ImportMetaValues>({
     resolver: zodResolver(importMetaSchema),
-    defaultValues: { title: '', artist: '', language: 'unknown' },
+    defaultValues: { title: '', artists: [], language: 'unknown' },
     mode: 'onChange'
   })
 
   const onPrefill = useCallback(
     (data: { title: string; artist: string; language: string }) => {
-      resetMeta(data)
+      resetMeta({
+        title: data.title,
+        artists: data.artist ? [data.artist] : [],
+        language: data.language
+      })
     },
     [resetMeta]
   )
@@ -129,7 +141,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
       await window.singray.import.start({
         url: probe.filePath ? '' : probe.url.trim(),
         title: data.title.trim(),
-        artist: data.artist.trim(),
+        artists: data.artists,
         language: data.language,
         youtubeTitle: probe.probed.title,
         ...(probe.filePath ? { filePath: probe.filePath } : {})
@@ -219,7 +231,9 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                             </AspectRatio>
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm">{r.title}</p>
+                            <Tooltip content={r.title}>
+                              <p className="truncate text-sm">{r.title}</p>
+                            </Tooltip>
                             <Text variant="hint" className="truncate">
                               {r.channel}
                               {r.duration > 0 && ` · ${formatDuration(r.duration)}`}
@@ -319,10 +333,14 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                 </Field>
                 <Field label={t('common.artist')}>
                   <Controller
-                    name="artist"
+                    name="artists"
                     control={control}
                     render={({ field }) => (
-                      <Input value={field.value} onChange={field.onChange} onBlur={field.onBlur} />
+                      <ArtistChips
+                        value={field.value}
+                        onChange={field.onChange}
+                        suggestions={artistSuggestions}
+                      />
                     )}
                   />
                 </Field>

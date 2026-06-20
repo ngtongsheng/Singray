@@ -25,6 +25,9 @@ function parsedEmpty(text: string): boolean {
 interface LyricCreatorContextValue {
   song: SongListItem
   onBack: () => void
+  backGuard: boolean
+  setBackGuard: (v: boolean) => void
+  doBack: () => void
   creatorStep: CreatorStep
   setCreatorStep: (next: CreatorStep) => void
   text: string
@@ -69,7 +72,8 @@ interface ProviderProps {
 export function LyricCreatorProvider({ song, children }: ProviderProps): React.JSX.Element {
   const { t } = useTranslation()
   const { goPlayer } = useAppContext()
-  const onBack = useCallback(() => goPlayer(song), [goPlayer, song])
+  const [backGuard, setBackGuard] = useState(false)
+  const doBack = useCallback(() => goPlayer(song), [goPlayer, song])
   const [creatorStep, setCreatorStepDirect] = useState<CreatorStep>('text')
   const [text, setText] = useState('')
   const [saved, setSaved] = useState<Lyrics | null>(null)
@@ -96,6 +100,16 @@ export function LyricCreatorProvider({ song, children }: ProviderProps): React.J
     () => saved?.lines.some((l) => l.start !== null || l.units.some((u) => u.t !== null)) ?? false,
     [saved]
   )
+
+  const isDirty = useMemo(
+    () => text.trim() !== '' && text !== (saved ? lyricsToText(saved) : ''),
+    [text, saved]
+  )
+
+  const onBack = useCallback(() => {
+    if (isDirty) setBackGuard(true)
+    else goPlayer(song)
+  }, [isDirty, goPlayer, song])
 
   const save = useCallback(
     async (result: BuildResult, landOn: CreatorStep): Promise<void> => {
@@ -232,13 +246,16 @@ export function LyricCreatorProvider({ song, children }: ProviderProps): React.J
   // Stable reference so LrclibFinderDialog's fetch effect doesn't refire on unrelated
   // re-renders (e.g. alignError/lrcError changes) while it's open.
   const finderQuery = useMemo(
-    () => ({ title: song.title, artist: song.artist, durationSec: song.durationSec }),
-    [song.title, song.artist, song.durationSec]
+    () => ({ title: song.title, artist: song.artists.join(', '), durationSec: song.durationSec }),
+    [song.title, song.artists, song.durationSec]
   )
 
   const value: LyricCreatorContextValue = {
     song,
     onBack,
+    backGuard,
+    setBackGuard,
+    doBack,
     creatorStep,
     setCreatorStep,
     text,
