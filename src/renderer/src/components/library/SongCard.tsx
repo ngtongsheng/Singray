@@ -134,14 +134,7 @@ const SongCard = memo(function SongCard({ song, importing }: Props): React.JSX.E
         <Text variant="item" title={song.title}>
           {song.title}
         </Text>
-        <ArtistLink
-          artist={song.artist}
-          onClick={(e) => {
-            e.stopPropagation()
-            onArtistClick(song.artist)
-          }}
-          className="min-w-0 max-w-full"
-        />
+        <ArtistLink artists={song.artists} onClick={onArtistClick} className="min-w-0 max-w-full" />
       </CardContent>
     </Card>
   )

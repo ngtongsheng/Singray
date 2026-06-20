@@ -106,6 +106,16 @@ Audited `pipeline/pipeline.py` (+ `setup.ps1`/`setup.sh`/`ruff.toml`) and verifi
 | **Root cause** | Not the audio-routing logic (`setSink`/`enableMic` already treated `''` as "omit constraint" correctly) — it was `@radix-ui/react-select`'s `Select.Value`, which hardcodes `shouldShowPlaceholder(value) => value === '' \|\| value === undefined`. Any `Select.Item` with `value=""` can never render its label in the trigger; Radix can't tell "selected the empty-string item" apart from "nothing selected". | Found by building the app and screenshotting Settings — all three System Default options (monitor/stream/mic) showed a blank trigger, never the label, regardless of the underlying setting. |
 | **Fix** | `ui/Select.tsx` remaps `''` to an internal sentinel for Radix only, translated back at the `value`/`onChange` boundary. Settings/IPC/audio-engine code is untouched — it was already correct. | Keeps the fix to one generic primitive instead of special-casing every call site that uses `''` as a "default" sentinel. |
 
+### #71 — lead-in countdown to first lyric word
+
+| Choice | Decision | Why |
+|---|---|---|
+| **Silence padding = scheduling delay, not audio splice** | Delay `engine.play()` by `(lead - onset)` wall-clock seconds when onset < lead. No audio buffer is edited; the gap is real-time silence before the engine starts. | Matches spec's "scheduling, not editing the audio file" — simplest implementation that satisfies the requirement. |
+| **Eligibility tracking** | `playFromStartEligible` ref (reset per song, cleared by any seek or first play). CountdownOverlay fires only when the ref is true AND `engine.position === 0`. | Gate excludes: resume-after-pause (ref consumed on first play), seek-then-play (seek clears ref), re-play after song ends (position no longer 0). |
+| **Arrow-key seeks route through context `seek()`** | Moved `seek` callback definition above the keyboard effect; ArrowLeft/Right now call `seek(position ± 5)` instead of `engine?.seek(...)`. | Ensures keyboard seeks also clear `playFromStartEligible` and cancel any active pad countdown, consistent with all other seek paths. |
+| **CountdownOverlay in shared/**, not player/ | `src/renderer/src/components/shared/CountdownOverlay.tsx` — pure presentational, usable by #65 prep dialog without importing from player/ namespace. | Issue asked to reuse overlay with #65; placing it in shared/ avoids a circular or cross-namespace import later. |
+| **No countdown overlay for #65 yet** | #65 (pre-record prep dialog) is still open; it can import `CountdownOverlay` directly when built. No wiring done in this PR. | Scope boundary: #71 builds the component, #65 integrates it. |
+
 ### #85 — release-please: fix repo permission, hold until Round 5 closes
 
 | Choice | Decision | Why |
@@ -113,3 +123,14 @@ Audited `pipeline/pipeline.py` (+ `setup.ps1`/`setup.sh`/`ruff.toml`) and verifi
 | **Repo permission** | Flipped `Settings → Actions → General → Workflow permissions → "Allow GitHub Actions to create and approve pull requests"` on (`can_approve_pull_request_reviews: true`). | This, not the trigger, was the actual cause of the failed run (#85): Actions couldn't open the release-PR at all. |
 | **Trigger stays `push: branches: [main]`** | Considered switching to `milestone: types: [closed]`, reverted. | One-release-per-merge is the flow we want long-term; gating the trigger itself would've meant rebuilding it later. |
 | **Gate job added instead** | New `gate` job checks whether the Round 5 milestone is open (`gh api repos/.../milestones?state=all`) and sets `proceed`; `release-please` job now has `needs: gate` + `if: needs.gate.outputs.proceed == 'true'`. | Holds every release (including v1.0) until Round 5 actually finishes, per [[v1-release-on-round5-close]]. Once Round 5 closes the milestone permanently reports `closed`, so the gate is a permanent pass-through — no further change needed for v1.0 onward to release on every merge. |
+
+### #61 — AI Assist provider presets + strict model dropdown
+
+| Choice | Decision | Why |
+|---|---|---|
+| **Cloud base URLs are fixed, not user-editable** | `llmBaseUrl` in Settings now only applies to Ollama; OpenAI/Anthropic/Gemini/OpenRouter each resolve to a hardcoded base URL in `llm.ts` (`PROVIDER_DEFAULTS`), hidden from the UI. | The issue asked for presets specifically to remove free-typed endpoint config for cloud providers; a hidden fixed URL per preset is what "preset" means here — only Ollama (local, variable port/host) still needs the field. |
+| **Anthropic `/v1/models` reuses the existing `{data:[{id}]}` zod schema** | Same `ListModelsResponseSchema` as the OpenAI-compatible path, just different headers (`x-api-key` + `anthropic-version` instead of `Authorization: Bearer`). | Anthropic's models-list response happens to have the identical shape; a second near-duplicate schema would've been pure duplication. |
+| **Anthropic `max_tokens` hardcoded to 4096** | No UI control for it; picked generous enough to not truncate the lyric-cleanup prompt (the longest-running call through `chat()`). | Anthropic's Messages API requires `max_tokens` (OpenAI-compat doesn't); this is a personal app, not metered, so generous-and-fixed beats a new setting. |
+| **Gemini model list filtered to `supportedGenerationMethods.includes('generateContent')`** | Gemini's `/v1beta/models` also returns embedding-only models; un-filtered they'd show up as chat model choices and fail at call time. | Keeps the strict dropdown actually strict — every listed model must work for the chat/test call. |
+
+Verified live against real Anthropic/Gemini endpoints with a throwaway key (both correctly returned and parsed real `401`/"API key not valid" errors); Ollama path unchanged. OpenAI/OpenRouter share Ollama's OpenAI-compatible code path, not separately live-tested.

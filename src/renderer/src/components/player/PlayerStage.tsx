@@ -1,6 +1,7 @@
 import { Loader2, Type } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { usePlayerContext } from '../../context/PlayerContext'
+import CountdownOverlay from '../shared/CountdownOverlay'
 import LyricRenderer from '../shared/LyricRenderer'
 import { Button, Stack } from '../ui'
 import Soundwave from './Soundwave'
@@ -23,7 +24,8 @@ function PlayerStage(): React.JSX.Element {
     clock,
     seek,
     onExit,
-    onEditLyrics
+    onEditLyrics,
+    leadInRemaining
   } = usePlayerContext()
 
   return (
@@ -56,6 +58,7 @@ function PlayerStage(): React.JSX.Element {
           <StageWaveform peaks={peaks} duration={engine.duration} clock={clock} />
         </div>
       )}
+      {leadInRemaining !== null && <CountdownOverlay seconds={leadInRemaining} />}
       {/* Content area: lyrics / loading / error — fills remaining height. */}
       <div className="relative z-0 min-h-0 flex-1">
         {error ? (

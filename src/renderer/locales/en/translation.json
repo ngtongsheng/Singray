@@ -13,6 +13,8 @@
     "unknown": "Unknown",
     "title": "Title",
     "artist": "Artist",
+    "addArtist": "Add artist…",
+    "remove": "Remove {{label}}",
     "language": "Language",
     "back": "Back to library",
     "backEsc": "Back to library (Esc)"
@@ -153,7 +155,14 @@
     "record": "Record",
     "recording": "Recording…",
     "recordStartTip": "Start recording (instrumental + mic, no guide vocal)",
-    "recordStopTip": "Stop recording and save"
+    "recordStopTip": "Stop recording and save",
+    "recordPrep": {
+      "aria": "Prepare to record",
+      "title": "Get ready",
+      "countdown": "Countdown",
+      "none": "None",
+      "start": "Start"
+    }
   },
   "details": {
     "title": "Song details",
@@ -292,13 +301,15 @@
     "stemFormatHelp": "Format for newly imported stems. FLAC avoids a second lossy encode after separation; existing songs are untouched.",
     "probedIn": "Probed \"{{title}}\" in {{secs}}s",
     "llm": "AI assist",
+    "llmProvider": "Provider",
     "llmBaseUrl": "Base URL",
     "llmModel": "Model",
-    "llmApiKey": "API key (optional)",
-    "llmTestTip": "Send a tiny prompt to check URL, model and key",
+    "llmModelPick": "Pick a model…",
+    "llmApiKey": "API key",
+    "llmTestTip": "Send a tiny prompt to check provider, model and key",
     "llmOk": "Replied \"{{reply}}\" in {{secs}}s",
-    "llmModelsError": "Could not load model list — type a model name manually",
-    "llmHelp": "Used for metadata cleanup and lyric tools. Works with Ollama (default URL) or any OpenAI-compatible endpoint.",
+    "modelRetry": "Retry",
+    "llmHelp": "Used for metadata cleanup and lyric tools. Works with Ollama (local) or a cloud provider with an API key.",
     "audio": "Audio routing",
     "outputMode": "Output mode",
     "modeSingle": "Single — everything to one device",
@@ -321,6 +332,11 @@
     "micDeviceHelp": "Microphone for self-monitoring and recording. Saved here; activated per song in the player.",
     "micEnable": "Enable mic in player",
     "micEnableHelp": "When on, the mic graph starts automatically when you open a song. Disable to skip getUserMedia permission prompt.",
-    "inputN": "Input {{id}}"
+    "inputN": "Input {{id}}",
+    "countdownLead": "Lead-in countdown",
+    "countdownLeadHelp": "Seconds of countdown before the first lyric word when starting a song from the beginning.",
+    "countdownLeadOff": "Off",
+    "countdownLead3": "3 seconds (default)",
+    "countdownLead5": "5 seconds"
   }
 }

@@ -246,8 +246,8 @@ export function LyricCreatorProvider({ song, children }: ProviderProps): React.J
   // Stable reference so LrclibFinderDialog's fetch effect doesn't refire on unrelated
   // re-renders (e.g. alignError/lrcError changes) while it's open.
   const finderQuery = useMemo(
-    () => ({ title: song.title, artist: song.artist, durationSec: song.durationSec }),
-    [song.title, song.artist, song.durationSec]
+    () => ({ title: song.title, artist: song.artists.join(', '), durationSec: song.durationSec }),
+    [song.title, song.artists, song.durationSec]
   )
 
   const value: LyricCreatorContextValue = {

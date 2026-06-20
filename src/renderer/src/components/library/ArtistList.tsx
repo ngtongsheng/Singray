@@ -11,8 +11,8 @@ function ArtistList(): React.JSX.Element {
   const artists = useMemo(() => {
     const counts = new Map<string, number>()
     for (const s of songs) {
-      const name = s.artist.trim()
-      counts.set(name, (counts.get(name) ?? 0) + 1)
+      const names = s.artists.length ? s.artists.map((a) => a.trim()) : ['']
+      for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1)
     }
     return [...counts.entries()]
       .map(([name, count]) => ({ name, count }))
