@@ -71,9 +71,9 @@ export default function PipelineInstaller({ onReady }: Props): React.JSX.Element
       {ok ? (
         <CheckCircle2 className="size-3.5 text-success" />
       ) : (
-        <XCircle className="size-3.5 text-danger" />
+        <XCircle className="size-3.5 text-destructive" />
       )}
-      <span className="text-text-dim">
+      <span className="text-muted-foreground">
         {label}: {detail}
       </span>
     </span>
@@ -110,7 +110,7 @@ export default function PipelineInstaller({ onReady }: Props): React.JSX.Element
       </Text>
 
       {(installing || events.size > 0) && (
-        <ul className="flex flex-col gap-1.5 rounded-control border border-border p-3">
+        <ul className="flex flex-col gap-1.5 rounded-md border border-border p-3">
           {STEPS.map((step) => {
             const ev = events.get(step)
             const st = ev?.status
@@ -119,17 +119,19 @@ export default function PipelineInstaller({ onReady }: Props): React.JSX.Element
                 {st === 'done' ? (
                   <CheckCircle2 className="size-3.5 shrink-0 text-success" />
                 ) : st === 'error' ? (
-                  <XCircle className="size-3.5 shrink-0 text-danger" />
+                  <XCircle className="size-3.5 shrink-0 text-destructive" />
                 ) : st === 'start' || st === 'progress' ? (
-                  <Loader2 className="size-3.5 shrink-0 animate-spin text-accent" />
+                  <Loader2 className="size-3.5 shrink-0 animate-spin text-primary" />
                 ) : (
-                  <Circle className="size-3.5 shrink-0 text-text-dim/40" />
+                  <Circle className="size-3.5 shrink-0 text-muted-foreground/40" />
                 )}
-                <span className={st ? 'text-text' : 'text-text-dim/60'}>
+                <span className={st ? 'text-foreground' : 'text-muted-foreground/60'}>
                   {t(`settings.setup.${STEP_KEY[step]}`)}
                 </span>
                 {ev?.status === 'progress' && ev.pct !== undefined && (
-                  <span className="text-text-dim tabular-nums">{Math.round(ev.pct * 100)}%</span>
+                  <span className="text-muted-foreground tabular-nums">
+                    {Math.round(ev.pct * 100)}%
+                  </span>
                 )}
               </li>
             )

@@ -119,12 +119,14 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
                   <Stack
                     direction="column"
                     gap={2}
-                    className="rounded-card border border-border bg-surface p-3"
+                    className="rounded-lg border border-border bg-card p-3"
                   >
                     <Text variant="hint">{t('editMeta.preview')}</Text>
                     <p className="text-sm">
                       {preview.title}
-                      {preview.artist && <span className="text-text-dim"> · {preview.artist}</span>}
+                      {preview.artist && (
+                        <span className="text-muted-foreground"> · {preview.artist}</span>
+                      )}
                     </p>
                     <Stack gap={2}>
                       <Button variant="primary" size="sm" onClick={applyPreview}>

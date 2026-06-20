@@ -21,7 +21,7 @@ const SeekBar = memo(function SeekBar({ engine, seekTip }: Props): React.JSX.Ele
   const position = usePlaybackPosition(engine)
   return (
     <>
-      <span className="text-sm text-text-dim tabular-nums">{fmt(position)}</span>
+      <span className="text-sm text-muted-foreground tabular-nums">{fmt(position)}</span>
       <Slider
         min={0}
         max={engine.duration}
@@ -31,7 +31,7 @@ const SeekBar = memo(function SeekBar({ engine, seekTip }: Props): React.JSX.Ele
         title={seekTip}
         className="h-11 flex-1"
       />
-      <span className="text-sm text-text-dim tabular-nums">{fmt(engine.duration)}</span>
+      <span className="text-sm text-muted-foreground tabular-nums">{fmt(engine.duration)}</span>
     </>
   )
 })

@@ -21,18 +21,18 @@ function StatusStrip({
   return (
     <div
       className={cx(
-        'relative border-border border-t bg-surface px-6 py-1.5',
+        'relative border-border border-t bg-card px-6 py-1.5',
         pinned && 'absolute inset-x-0 bottom-0 z-20',
         className
       )}
     >
       {progress !== undefined && (
         <div
-          className="absolute top-0 left-0 h-0.5 bg-accent transition-[width] duration-300" // design-allow: width isn't in Tailwind's transition-property presets
+          className="absolute top-0 left-0 h-0.5 bg-primary transition-[width] duration-300" // design-allow: width isn't in Tailwind's transition-property presets
           style={{ width: `${progress * 100}%` }}
         />
       )}
-      <Stack gap={2} align="center" className="h-full text-text-dim text-xs">
+      <Stack gap={2} align="center" className="h-full text-muted-foreground text-xs">
         {children}
       </Stack>
     </div>

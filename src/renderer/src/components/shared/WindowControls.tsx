@@ -5,7 +5,7 @@ import { Stack } from '../ui'
 import { cx } from '../ui/cx'
 
 const BTN =
-  'app-no-drag flex h-full w-11 items-center justify-center text-text-dim transition-colors hover:bg-surface-2 hover:text-text'
+  'app-no-drag flex h-full w-11 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'
 
 /** Custom caption buttons (NAV1): replace the dropped native min/max/close overlay. */
 function WindowControls(): React.JSX.Element {
@@ -43,7 +43,7 @@ function WindowControls(): React.JSX.Element {
         type="button"
         aria-label={t('common.close')}
         onClick={() => window.singray.window.close()}
-        className={cx(BTN, 'hover:bg-danger hover:text-text')}
+        className={cx(BTN, 'hover:bg-destructive hover:text-foreground')}
       >
         <X className="size-4" strokeWidth={1.5} />
       </button>

@@ -45,3 +45,12 @@ shadcn/react-query PR exercises release-please + branch protection).
 
 ### Carry-over
 - `R3.REC2` Recordings view (only open item from Round 3) → migrate to an Issue.
+
+### shadcn foundation — built #14 (2026-06-20), deviations from the row above
+
+| Choice | Decision | Why |
+|---|---|---|
+| **Staging** | **Big-bang, not per-screen.** Destructive token rename + all consumers + Radix primitives + all 4 screens in one PR (#14), closing **#15–18** with it. | The renamed tokens can't coexist with old `bg-bg`/`text-text` classes, so a partial rename is never green. One atomic rename commit keeps `npm run check` green; per-screen staging was impossible once the rename is destructive. |
+| **Primitives** | **Replaced in place** (same prop APIs) so the ~50 consumers didn't churn. Popover went from a presentational panel to the Radix trigger/anchor/content model — Menu, TunePopover, LlmModelCombobox rewired; `PlayerContext` exposes `setTuneOpen` (was `toggleTune`/`tuneRef`); `usePopoverClose` deleted. | Radix gives the a11y (focus-trap/return on Dialog, roving focus + typeahead on Select, collision portals on Popover) the hand-rolled versions lacked, without a prop-API break across screens. |
+| **Combobox** | **No cmdk.** Landed as editable `Input` + Radix `Popover` suggestion list (the one consumer, LlmModelCombobox, is type-or-pick-arbitrary). | cmdk's search-inside-popover focus model would turn an always-visible settings field into a worse two-step UX; the unused dep + `Command` primitive were dropped to avoid dead code. Re-add cmdk if a non-editable command-palette combobox ever appears. |
+| **Motion** | Radix overlays use small CSS `data-[state]` keyframes (pop/fade) instead of the old `motion` springs. | Radix portals don't compose with the `AnimatePresence` spring presets cheaply; the brand look is unchanged, only the easing differs. |

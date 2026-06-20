@@ -31,7 +31,7 @@ function PlayerView(): React.JSX.Element {
       </Titlebar>
 
       <div
-        className={`absolute inset-0 flex flex-col overflow-hidden bg-bg ${barVisible ? '' : 'cursor-none'}`}
+        className={`absolute inset-0 flex flex-col overflow-hidden bg-background ${barVisible ? '' : 'cursor-none'}`}
       >
         <PlayerStage />
         <AnimatePresence>

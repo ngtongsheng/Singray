@@ -7,8 +7,8 @@ const VARIANT: Record<TextVariant, string> = {
   title: 'font-semibold text-base',
   subtitle: 'truncate font-semibold text-sm',
   item: 'truncate font-medium text-sm',
-  hint: 'text-text-dim text-xs',
-  error: 'text-danger text-xs'
+  hint: 'text-muted-foreground text-xs',
+  error: 'text-destructive text-xs'
 }
 
 interface TextProps extends ComponentPropsWithoutRef<'span'> {

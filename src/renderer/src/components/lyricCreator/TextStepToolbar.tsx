@@ -38,7 +38,7 @@ function TextStepToolbar(): React.JSX.Element {
           onClick={openFinder}
           disabled={!loaded || aligning}
           title={t('finder.findTip')}
-          className="font-medium text-text-dim hover:text-text"
+          className="font-medium text-muted-foreground hover:text-foreground"
         >
           <Search className="size-4" strokeWidth={1.5} /> {t('finder.find')}
         </Button>
@@ -46,7 +46,7 @@ function TextStepToolbar(): React.JSX.Element {
           onClick={() => fileRef.current?.click()}
           disabled={!loaded || aligning}
           title={t('creator.importLrcTip')}
-          className="font-medium text-text-dim hover:text-text"
+          className="font-medium text-muted-foreground hover:text-foreground"
         >
           <FileDown className="size-4" strokeWidth={1.5} /> {t('creator.importLrc')}
         </Button>
@@ -54,7 +54,7 @@ function TextStepToolbar(): React.JSX.Element {
           onClick={onClean}
           disabled={!loaded || parsedEmpty(text) || cleaning || aligning}
           title={t('clean.tip')}
-          className="font-medium text-text-dim hover:text-text"
+          className="font-medium text-muted-foreground hover:text-foreground"
         >
           {cleaning ? (
             <>
@@ -70,7 +70,7 @@ function TextStepToolbar(): React.JSX.Element {
           onClick={onAlign}
           disabled={!loaded || parsedEmpty(text) || aligning}
           title={t('creator.alignTip')}
-          className="font-medium text-text-dim hover:text-text"
+          className="font-medium text-muted-foreground hover:text-foreground"
         >
           {aligning ? (
             <>

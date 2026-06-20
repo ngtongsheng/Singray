@@ -25,7 +25,7 @@ function Segmented<T extends string>({
     <div
       role="radiogroup"
       className={cx(
-        'inline-flex h-8 items-center gap-0.5 rounded-control border border-border p-0.5',
+        'inline-flex h-8 items-center gap-0.5 rounded-md border border-border p-0.5',
         className
       )}
     >
@@ -40,7 +40,9 @@ function Segmented<T extends string>({
           onClick={() => onChange(opt.value)}
           className={cx(
             'flex h-full items-center justify-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors',
-            opt.value === value ? 'bg-accent/15 text-accent' : 'text-text-dim hover:text-text'
+            opt.value === value
+              ? 'bg-primary/15 text-primary'
+              : 'text-muted-foreground hover:text-foreground'
           )}
         >
           {opt.label}

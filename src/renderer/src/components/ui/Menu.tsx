@@ -1,38 +1,40 @@
 import type { MouseEvent, ReactNode } from 'react'
 import { createContext, useCallback, useContext, useState } from 'react'
-import { usePopoverClose } from '../../hooks/usePopoverClose'
-import { cx } from './cx'
-import Popover from './Popover'
+import { cn } from '../../lib/cn'
+import { Popover, PopoverAnchor, PopoverContent } from './Popover'
 
 const MenuClose = createContext<() => void>(() => {})
 
 interface MenuProps {
   /** Render the trigger; wire `toggle` to its onClick (it stops propagation). */
   trigger: (open: boolean, toggle: (e: MouseEvent) => void) => ReactNode
+  /** Corner the menu grows from; maps to Radix align (right→end, left→start). */
   origin: string
-  /** Popover position + panel padding. */
+  /** Panel sizing/padding (positioning is handled by Radix). */
   className: string
   children: ReactNode
 }
 
-/** Dropdown menu: outside click + Esc close, items close on select. */
+/** Dropdown menu (Radix Popover): outside-click + Esc close, items close on select. */
 function Menu({ trigger, origin, className, children }: MenuProps): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const close = useCallback(() => setOpen(false), [])
-  const rootRef = usePopoverClose(open, close)
+  const align = origin.includes('right') ? 'end' : origin.includes('left') ? 'start' : 'center'
 
   return (
-    <div ref={rootRef} className="relative">
-      {trigger(open, (e) => {
-        e.stopPropagation()
-        setOpen(!open)
-      })}
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverAnchor asChild>
+        {trigger(open, (e) => {
+          e.stopPropagation()
+          setOpen(!open)
+        })}
+      </PopoverAnchor>
       <MenuClose.Provider value={close}>
-        <Popover open={open} origin={origin} className={className}>
+        <PopoverContent align={align} sideOffset={4} className={cn('py-1', className)}>
           {children}
-        </Popover>
+        </PopoverContent>
       </MenuClose.Provider>
-    </div>
+    </Popover>
   )
 }
 
@@ -52,9 +54,9 @@ export function MenuItem({ danger, onSelect, children }: MenuItemProps): React.J
         close()
         onSelect()
       }}
-      className={cx(
-        'flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-surface-2',
-        danger && 'text-danger'
+      className={cn(
+        'flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted',
+        danger && 'text-destructive'
       )}
     >
       {children}

@@ -1,7 +1,18 @@
 import { Minus, Plus, SlidersHorizontal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { usePlayerContext } from '../../context/PlayerContext'
-import { Button, Grid, IconButton, Popover, Slider, Stack, Text, Toggle } from '../ui'
+import {
+  Button,
+  Grid,
+  IconButton,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Slider,
+  Stack,
+  Text,
+  Toggle
+} from '../ui'
 
 const TEMPO_PRESETS = [0.75, 0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.25]
 const MIC_FX_PRESETS = ['room', 'hall', 'echo', 'karaoke'] as const
@@ -11,8 +22,7 @@ function TunePopover(): React.JSX.Element {
   const { t } = useTranslation()
   const {
     tuneOpen,
-    toggleTune,
-    tuneRef,
+    setTuneOpen,
     keyVal,
     stepKey,
     tempoVal,
@@ -24,12 +34,20 @@ function TunePopover(): React.JSX.Element {
   } = usePlayerContext()
 
   return (
-    <div className="relative" ref={tuneRef}>
-      <Popover
-        open={tuneOpen}
-        origin="bottom right"
-        className="right-0 bottom-full -translate-y-2 w-max p-3"
-      >
+    <Popover open={tuneOpen} onOpenChange={setTuneOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          size="lg"
+          active={
+            tuneOpen || tempoVal !== 1 || keyVal !== 0 || (micActive && micFxPreset !== 'off')
+          }
+          title={t('player.tuneTip')}
+          className="app-no-drag tabular-nums"
+        >
+          <SlidersHorizontal className="size-4" strokeWidth={1.5} />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent side="top" align="end" sideOffset={8} className="w-max p-3">
         <Stack direction="column" gap={3}>
           <Stack direction="column" gap={2}>
             <Text as="span" variant="hint">
@@ -38,8 +56,8 @@ function TunePopover(): React.JSX.Element {
             <Stack
               gap={1}
               justify="between"
-              className={`h-11 w-full rounded-control border px-2 ${
-                keyVal !== 0 ? 'border-accent text-accent' : 'border-border text-text-dim'
+              className={`h-11 w-full rounded-md border px-2 ${
+                keyVal !== 0 ? 'border-primary text-primary' : 'border-border text-muted-foreground'
               }`}
             >
               <IconButton
@@ -76,7 +94,7 @@ function TunePopover(): React.JSX.Element {
               <Button
                 size="bare"
                 onClick={() => changeTempo(1)}
-                className="px-2 py-0.5 text-text-dim text-xs hover:text-text"
+                className="px-2 py-0.5 text-muted-foreground text-xs hover:text-foreground"
               >
                 {t('common.reset')}
               </Button>
@@ -107,7 +125,7 @@ function TunePopover(): React.JSX.Element {
                   <Button
                     size="bare"
                     onClick={() => setMicFx('off', micFxAmount)}
-                    className="px-2 py-0.5 text-text-dim text-xs hover:text-text"
+                    className="px-2 py-0.5 text-muted-foreground text-xs hover:text-foreground"
                   >
                     {t('common.reset')}
                   </Button>
@@ -140,18 +158,8 @@ function TunePopover(): React.JSX.Element {
             </>
           )}
         </Stack>
-      </Popover>
-      <Button
-        size="lg"
-        active={tuneOpen || tempoVal !== 1 || keyVal !== 0 || (micActive && micFxPreset !== 'off')}
-        onClick={toggleTune}
-        aria-expanded={tuneOpen}
-        title={t('player.tuneTip')}
-        className="tabular-nums"
-      >
-        <SlidersHorizontal className="size-4" strokeWidth={1.5} />
-      </Button>
-    </div>
+      </PopoverContent>
+    </Popover>
   )
 }
 

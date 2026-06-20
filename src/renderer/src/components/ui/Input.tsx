@@ -31,7 +31,7 @@ function Input({
       )}
       <input
         className={cx(
-          'w-full rounded-control border border-border bg-surface text-sm placeholder:text-text-dim/60',
+          'w-full rounded-md border border-border bg-card text-sm placeholder:text-muted-foreground/60',
           uiSize === 'md' ? 'py-2' : 'h-8',
           icon ? 'pl-8' : 'pl-3',
           'pr-3',

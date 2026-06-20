@@ -428,33 +428,48 @@ Result: audience = voice + instrumental; your AG06 phones = voice (hardware dire
 
 **"Dark stage"** — immersive dark theme (only theme), warm coral/orange accent taken from your reference apps, content-first. Library feels like a music app; player feels like a stage: everything recedes except lyrics.
 
-### 10.2 Design tokens (Tailwind v4 `@theme`)
+### 10.2 Design tokens (Tailwind v4, shadcn vars)
+
+Raw shadcn-named vars on `:root` hold the brand hex; `@theme inline` maps them to
+`--color-*` so Tailwind generates `bg-background`/`text-foreground`/etc. The
+`--color-*: initial` wipe keeps Tailwind's default palette out — only these tokens
+compile. Same brand values as the original `--color-*` set, renamed in #14.
 
 ```css
-/* Color — semantic tokens, never raw hex in components */
---color-bg:            #0E0E12;   /* app background */
---color-surface:       #17171D;   /* cards, panels */
---color-surface-2:     #222230;   /* raised: dialogs, hover */
---color-border:        #2E2E3A;   /* visible dividers on dark */
---color-text:          #F2F2F5;   /* primary text, ≥4.5:1 everywhere */
---color-text-dim:      #A0A0B0;   /* secondary, ≥3:1 */
---color-accent:        #FF5A3C;   /* coral — buttons, active states, sung lyrics */
---color-accent-soft:   #FF8A3C;   /* gradient partner, progress */
---color-success:       #3ECF8E;
---color-danger:        #F4504C;
+/* shadcn surfaces / text — never raw hex in components */
+--background: #0E0E12;        /* app background (was --color-bg) */
+--card / --popover: #17171D;  /* cards, panels (was --color-surface) */
+--secondary / --muted: #222230; /* raised: dialogs, hover (was --color-surface-2) */
+--border / --input: #2E2E3A;  /* visible dividers on dark */
+--foreground: #F2F2F5;        /* primary text, ≥4.5:1 everywhere (was --color-text) */
+--muted-foreground: #A0A0B0;  /* secondary, ≥3:1 (was --color-text-dim) */
+
+/* shadcn brand */
+--primary / --ring: #FF5A3C;  /* coral — buttons, active states, sung lyrics (was --color-accent) */
+--primary-foreground: #F2F2F5;
+--destructive: #F4504C;       /* (was --color-danger) */
+
+/* Brand extras with no shadcn slot (kept as custom utilities) */
+--accent-soft: #FF8A3C;       /* gradient partner, progress, primary hover */
+--success: #3ECF8E;  --warning: #F5B942;
 
 /* Lyric-specific */
---color-lyric-pending: #E8E8EE;   /* unsung text */
---color-lyric-active:  #FFFFFF;   /* current line base */
---color-lyric-sung:    #FF5A3C;   /* wipe fill (gradient to --color-accent-soft) */
+--lyric-pending: #E8E8EE;   /* unsung text */
+--lyric-active:  #FFFFFF;   /* current line base */
+--lyric-sung:    #FF5A3C;   /* wipe fill (gradient to --accent-soft) */
 
-/* Shape & elevation — one consistent scale */
---radius-card: 12px;  --radius-control: 8px;
+/* Shape & elevation — radius scale: rounded-md (8px) controls, rounded-lg (12px) cards */
+--radius: 8px;  /* @theme inline derives --radius-sm/md/lg */
 --shadow-raised: 0 4px 24px rgb(0 0 0 / 0.45);
 
 /* Spacing: 4/8 rhythm only (4,8,12,16,24,32,48) */
-/* z-index scale: 0 / 10 (sticky bar) / 20 (dropdown) / 40 (dialog) / 100 (player overlay) */
+/* z-index scale: 0 / 10 (sticky bar) / 30 (popover/select) / 40 (dialog/tooltip) / 100 (player overlay) */
 ```
+
+Primitives (`components/ui/`) are shadcn/Radix: `cn()` (clsx + tailwind-merge) +
+`cva`; Dialog/Select/Popover/Tooltip on Radix for focus-trap + roving focus +
+collision-aware portals. `ui/` is exempt from the design-gate arbitrary-value rule
+(Radix needs `w-[var(--radix-*)]`, `data-[state=…]`).
 
 ### 10.3 Typography
 
@@ -471,7 +486,7 @@ Both fonts bundled locally (offline app, no Google Fonts CDN). Type scale: 12 / 
 - **lucide-react** only — one stroke family (1.5px), no emoji-as-icon anywhere.
 - Controls: minimum 36px hit targets (desktop+mouse; 44px for player's auto-hide bar since it's glanced at while singing).
 - Every interactive element: visible hover + pressed + focus-visible ring (2px accent); app is keyboard-heavy by design.
-- Buttons: one primary (accent fill) per screen; secondary = outline on `--color-border`; destructive = `--color-danger` and physically separated.
+- Buttons: one primary (accent fill) per screen; secondary = outline on `--border`; destructive = `--destructive` and physically separated.
 
 ### 10.5 Motion
 
@@ -487,17 +502,17 @@ Both fonts bundled locally (offline app, no Google Fonts CDN). Type scale: 12 / 
 
 **Library** — top bar (the titlebar): app name, search input (autofocus on `/`), Add Song primary button. Filter chips row under bar. Card: 16:9 thumb with bottom gradient scrim, title (1 line, ellipsis + tooltip), artist dim, ♥ top-right on hover, status badge bottom-left. Grid `repeat(auto-fill, minmax(220px, 1fr))`. Import progress: slim accent strip under top bar with stage label + percent. Empty state: centered mic icon + "Paste a YouTube link to add your first song" + Add button.
 
-**Import dialog** — modal over 50% black scrim, thumb preview left, fields right; labels above inputs (never placeholder-only), error text under field in `--color-danger`.
+**Import dialog** — modal over 50% black scrim, thumb preview left, fields right; labels above inputs (never placeholder-only), error text under field in `--destructive`.
 
 **Lyric creator** — two-pane focus mode (no nav chrome): transport bar pinned top with big readable timecode (tabular), current line huge center with per-unit state colors (sung = accent, current = white + underline caret, pending = dim), line list below at 40% opacity except current. Keyboard cheat-sheet strip pinned bottom (matches your reference screenshot's hint panel), dismissible.
 
-**Player** — fullscreen, blurred `thumb.jpg` background under a 55% black scrim + bottom gradient to `--color-bg` (lyric contrast always ≥4.5:1 regardless of artwork). Lyrics centered column, max-width 28ch (CJK) / 60ch (Latin). Control bar auto-hides after 3s idle, reappears on mouse move/any hotkey; guide-vocal toggle shows clear on/off state with icon + label (not color alone). Break countdown: three dots draining with the audio clock.
+**Player** — fullscreen, blurred `thumb.jpg` background under a 55% black scrim + bottom gradient to `--background` (lyric contrast always ≥4.5:1 regardless of artwork). Lyrics centered column, max-width 28ch (CJK) / 60ch (Latin). Control bar auto-hides after 3s idle, reappears on mouse move/any hotkey; guide-vocal toggle shows clear on/off state with icon + label (not color alone). Break countdown: three dots draining with the audio clock.
 
 **Settings** — single scrolling form, grouped fieldsets (Library / Pipeline / Audio routing), helper text under each field, "Test" buttons inline with their field.
 
 ### 10.7 Hard rules (from UX review pass)
 
-1. Contrast: all text pairs ≥4.5:1 on dark surfaces (verify accent-on-dark for small text; use `--color-accent-soft` for text-sized accent if needed).
+1. Contrast: all text pairs ≥4.5:1 on dark surfaces (verify accent-on-dark for small text; use `--accent-soft` for text-sized accent if needed).
 2. No information by color alone — status badges carry text, vocal toggle carries label.
 3. Library grid virtualizes at >100 songs (simple `content-visibility: auto` first; react-window only if it janks).
 4. Player render loop: rAF reads audio clock, writes transform/clip only — zero layout work per frame.

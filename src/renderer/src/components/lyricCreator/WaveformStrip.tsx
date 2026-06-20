@@ -158,7 +158,7 @@ function WaveformStrip({ songId, audioRef, stamps, onSeek }: Props): React.JSX.E
         <canvas ref={baseRef} className="absolute inset-0 size-full" />
         <canvas ref={overlayRef} className="absolute inset-0 size-full" />
         {!peaks && (
-          <span className="absolute inset-0 flex items-center justify-center text-text-dim/60 text-xs">
+          <span className="absolute inset-0 flex items-center justify-center text-muted-foreground/60 text-xs">
             {failed ? t('timing.waveformUnavailable') : t('timing.waveformRendering')}
           </span>
         )}

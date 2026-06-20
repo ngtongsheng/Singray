@@ -40,18 +40,18 @@ function CleanLyricsDialog({ original, cleaned, onApply, onClose }: Props): Reac
             </Text>
           </Stack>
           <div
-            className="h-[55vh] overflow-y-auto whitespace-pre-wrap rounded-card border border-border bg-surface p-3 font-lyric text-sm leading-6" /* design-allow: 55vh tracks viewport height, no token fits */
+            className="h-[55vh] overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-card p-3 font-lyric text-sm leading-6" /* design-allow: 55vh tracks viewport height, no token fits */
           >
             {diff.map((op, i) => (
               <div
                 // biome-ignore lint/suspicious/noArrayIndexKey: static preview snapshot
                 key={i}
                 className={cx(
-                  op.type === 'removed' && 'text-danger line-through',
+                  op.type === 'removed' && 'text-destructive line-through',
                   op.type === 'added' && 'text-success'
                 )}
               >
-                <span className="inline-block w-4 select-none text-text-dim/50">
+                <span className="inline-block w-4 select-none text-muted-foreground/50">
                   {op.type === 'removed' ? '−' : op.type === 'added' ? '+' : ''}
                 </span>
                 {op.line}

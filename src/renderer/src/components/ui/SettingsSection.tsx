@@ -10,7 +10,7 @@ interface Props {
 /** Bordered fieldset group for a settings page section. */
 function SettingsSection({ title, children, className }: Props): React.JSX.Element {
   return (
-    <fieldset className={cx('rounded-card border border-border p-4', className)}>
+    <fieldset className={cx('rounded-lg border border-border p-4', className)}>
       <legend className="px-1 font-medium text-sm">{title}</legend>
       {children}
     </fieldset>

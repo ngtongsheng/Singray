@@ -33,7 +33,7 @@ function lineTimestamp(line: LyricLine): string {
 
 function lineTimestampClass(line: LyricLine): string {
   const timed = line.units.filter((u) => u.t !== null).length
-  if (timed === 0) return 'text-text-dim'
+  if (timed === 0) return 'text-muted-foreground'
   return timed === line.units.length ? 'text-success' : 'text-warning'
 }
 
@@ -97,8 +97,8 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
           onMouseUp={(e) => e.currentTarget.blur()}
           className="flex-1"
         />
-        <span className="text-sm text-text-dim tabular-nums">{fmt(duration)}</span>
-        <span className="rounded-control border border-border px-2 py-1 text-sm text-text-dim tabular-nums">
+        <span className="text-sm text-muted-foreground tabular-nums">{fmt(duration)}</span>
+        <span className="rounded-md border border-border px-2 py-1 text-sm text-muted-foreground tabular-nums">
           {RATES[rateIdx]}×
         </span>
       </Stack>
@@ -119,7 +119,7 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
                       idx < cursor
                         ? 'text-lyric-sung'
                         : idx === cursor
-                          ? 'border-accent border-b-2 text-lyric-active'
+                          ? 'border-primary border-b-2 text-lyric-active'
                           : 'text-lyric-pending/50'
                     }
                   >
@@ -138,7 +138,7 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
             {lyrics.lines.map((line, li) =>
               line.units.length === 0 ? (
                 // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable while timing
-                <div key={li} className="px-3 py-1 text-text-dim/40 tracking-widest">
+                <div key={li} className="px-3 py-1 text-muted-foreground/40 tracking-widest">
                   · · ·
                 </div>
               ) : (
@@ -152,7 +152,7 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
                     jumpToLine(li)
                     e.currentTarget.blur()
                   }}
-                  className={`flex w-full items-baseline gap-3 rounded-control px-3 py-1 text-left font-lyric text-base hover:bg-surface ${
+                  className={`flex w-full items-baseline gap-3 rounded-md px-3 py-1 text-left font-lyric text-base hover:bg-card ${
                     li === currentLine && !done ? '' : 'opacity-40'
                   }`}
                 >
@@ -175,15 +175,15 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
           <span className="font-medium text-success">{t('timing.done')}</span>
         ) : (
           <>
-            <span className="text-text-dim">
+            <span className="text-muted-foreground">
               {stamps.length}/{flatUnits.length}
             </span>
-            <span className="font-medium text-accent">{progressPct}%</span>
+            <span className="font-medium text-primary">{progressPct}%</span>
           </>
         )}
       </StatusStrip>
       {/* Keyboard shortcuts (permanent — no dismiss button) */}
-      <Stack className="border-border border-t bg-surface px-6 py-2 text-text-dim text-xs">
+      <Stack className="border-border border-t bg-card px-6 py-2 text-muted-foreground text-xs">
         <Stack gap={5}>
           {review ? (
             <Hint k="Space / Enter" label={t('timing.hintPlay')} />
@@ -208,7 +208,7 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
 function Hint({ k, label }: { k: string; label: string }): React.JSX.Element {
   return (
     <span className="flex items-center gap-1.5">
-      <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-sans">{k}</kbd>
+      <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-sans">{k}</kbd>
       {label}
     </span>
   )

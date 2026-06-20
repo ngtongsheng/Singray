@@ -11,7 +11,7 @@ function MicMonitor(): React.JSX.Element {
   return (
     <Stack
       gap={2}
-      className={`h-11 rounded-control border px-2 ${micMonitor ? 'border-accent' : 'border-border'}`}
+      className={`h-11 rounded-md border px-2 ${micMonitor ? 'border-primary' : 'border-border'}`}
     >
       <Toggle
         variant="ghost"

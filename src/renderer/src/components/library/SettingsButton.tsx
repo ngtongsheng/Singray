@@ -12,7 +12,7 @@ function SettingsButton(): React.JSX.Element {
     <IconButton
       onClick={goSettings}
       title={t('library.settings')}
-      className="app-no-drag text-text-dim hover:text-text"
+      className="app-no-drag text-muted-foreground hover:text-foreground"
     >
       <SettingsIcon className="size-4" strokeWidth={1.5} />
     </IconButton>

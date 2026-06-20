@@ -1,8 +1,7 @@
+import * as SelectPrimitive from '@radix-ui/react-select'
 import { Check, ChevronDown } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useEffect, useRef, useState } from 'react'
-import { cx } from './cx'
-import Popover from './Popover'
+import { cn } from '../../lib/cn'
 
 export interface SelectOption<T extends string> {
   value: T
@@ -21,7 +20,7 @@ interface SelectProps<T extends string> {
   'aria-label'?: string
 }
 
-/** Custom popover-based select (UI1): no native dropdown chrome, full keyboard nav. */
+/** Radix Select: native a11y (typeahead, roving focus, ARIA) keyed to the brand tokens. */
 function Select<T extends string>({
   value,
   onChange,
@@ -32,110 +31,45 @@ function Select<T extends string>({
   title,
   'aria-label': ariaLabel
 }: SelectProps<T>): React.JSX.Element {
-  const [open, setOpen] = useState(false)
-  const [highlight, setHighlight] = useState(0)
-  const rootRef = useRef<HTMLDivElement>(null)
-  const current = options.find((o) => o.value === value)
-
-  useEffect(() => {
-    if (!open) return
-    setHighlight(
-      Math.max(
-        0,
-        options.findIndex((o) => o.value === value)
-      )
-    )
-    const onDown = (e: MouseEvent): void => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    window.addEventListener('mousedown', onDown)
-    window.addEventListener('keydown', onKey)
-    return () => {
-      window.removeEventListener('mousedown', onDown)
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [open, options, value])
-
-  const select = (opt: SelectOption<T> | undefined): void => {
-    if (!opt) return
-    onChange(opt.value)
-    setOpen(false)
-  }
-
-  const onKeyDown = (e: React.KeyboardEvent): void => {
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault()
-        if (!open) setOpen(true)
-        else setHighlight((h) => Math.min(h + 1, options.length - 1))
-        break
-      case 'ArrowUp':
-        e.preventDefault()
-        if (!open) setOpen(true)
-        else setHighlight((h) => Math.max(h - 1, 0))
-        break
-      case 'Enter':
-      case ' ':
-        e.preventDefault()
-        if (open) select(options[highlight])
-        else setOpen(true)
-        break
-    }
-  }
-
   return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
+    <SelectPrimitive.Root value={value} onValueChange={(v) => onChange(v as T)} disabled={disabled}>
+      <SelectPrimitive.Trigger
         title={title}
         aria-label={ariaLabel}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        disabled={disabled}
-        onClick={() => setOpen((o) => !o)}
-        onKeyDown={onKeyDown}
-        className={cx(
-          'flex items-center gap-2 rounded-control border border-border bg-surface text-left text-sm disabled:opacity-50',
-          uiSize === 'md' ? 'w-full justify-between px-3 py-2' : 'px-2 py-1 text-text-dim',
+        className={cn(
+          'flex items-center gap-2 rounded-md border border-border bg-card text-left text-sm outline-none focus-visible:border-primary disabled:opacity-50',
+          uiSize === 'md' ? 'w-full justify-between px-3 py-2' : 'px-2 py-1 text-muted-foreground',
           className
         )}
       >
-        <span className="truncate">{current?.label ?? ''}</span>
-        <ChevronDown className="size-4 shrink-0 opacity-60" strokeWidth={1.5} />
-      </button>
-      <Popover
-        open={open}
-        origin="top"
-        className={cx(
-          'top-full translate-y-1 max-h-60 overflow-y-auto py-1',
-          uiSize === 'md' ? 'inset-x-0' : 'right-0 min-w-40'
-        )}
-      >
-        <div role="listbox">
-          {options.map((opt, i) => (
-            <button
-              key={opt.value}
-              type="button"
-              role="option"
-              aria-selected={opt.value === value}
-              onMouseEnter={() => setHighlight(i)}
-              onClick={() => select(opt)}
-              className={cx(
-                'flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm',
-                i === highlight ? 'bg-surface-2' : '',
-                opt.value === value ? 'text-accent' : ''
-              )}
-            >
-              <span className="truncate">{opt.label}</span>
-              {opt.value === value && <Check className="size-3.5 shrink-0" strokeWidth={2} />}
-            </button>
-          ))}
-        </div>
-      </Popover>
-    </div>
+        <SelectPrimitive.Value className="truncate" />
+        <SelectPrimitive.Icon asChild>
+          <ChevronDown className="size-4 shrink-0 opacity-60" strokeWidth={1.5} />
+        </SelectPrimitive.Icon>
+      </SelectPrimitive.Trigger>
+      <SelectPrimitive.Portal>
+        <SelectPrimitive.Content
+          position="popper"
+          sideOffset={4}
+          className="z-30 max-h-60 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-border bg-card py-1 shadow-raised data-[state=closed]:animate-[pop-out_100ms_ease-in] data-[state=open]:animate-[pop-in_120ms_ease-out]"
+        >
+          <SelectPrimitive.Viewport>
+            {options.map((opt) => (
+              <SelectPrimitive.Item
+                key={opt.value}
+                value={opt.value}
+                className="flex w-full cursor-default items-center justify-between gap-2 px-3 py-1.5 text-left text-sm outline-none data-[highlighted]:bg-muted data-[state=checked]:text-primary"
+              >
+                <SelectPrimitive.ItemText>{opt.label}</SelectPrimitive.ItemText>
+                <SelectPrimitive.ItemIndicator>
+                  <Check className="size-3.5 shrink-0" strokeWidth={2} />
+                </SelectPrimitive.ItemIndicator>
+              </SelectPrimitive.Item>
+            ))}
+          </SelectPrimitive.Viewport>
+        </SelectPrimitive.Content>
+      </SelectPrimitive.Portal>
+    </SelectPrimitive.Root>
   )
 }
 

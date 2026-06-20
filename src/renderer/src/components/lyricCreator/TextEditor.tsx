@@ -16,7 +16,7 @@ function TextEditor(): React.JSX.Element {
           disabled={!loaded}
           spellCheck={false}
           placeholder={t('creator.placeholder')}
-          className="outline-none min-h-0 flex-1 resize-none overflow-y-auto bg-surface p-6 font-lyric text-base leading-7 placeholder:text-text-dim/40"
+          className="outline-none min-h-0 flex-1 resize-none overflow-y-auto bg-card p-6 font-lyric text-base leading-7 placeholder:text-muted-foreground/40"
         />
       </Stack>
       <div className="border-border border-t px-6 py-2">

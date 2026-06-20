@@ -31,7 +31,7 @@ function LanguagesSection(): React.JSX.Element | null {
     <SettingsSection title={t('settings.languages')}>
       <Stack direction="column" gap={2}>
         {settings.languages.map((l) => (
-          <Stack key={l.code} gap={3} className="rounded-control border border-border px-3 py-1.5">
+          <Stack key={l.code} gap={3} className="rounded-md border border-border px-3 py-1.5">
             <Text as="span" variant="hint" className="w-12 tabular-nums">
               {l.code}
             </Text>
@@ -41,7 +41,7 @@ function LanguagesSection(): React.JSX.Element | null {
               size="xs"
               onClick={() => removeLanguage(l.code)}
               title={t('settings.remove', { label: l.label })}
-              className="text-text-dim hover:text-text"
+              className="text-muted-foreground hover:text-foreground"
             >
               <X className="size-3.5" strokeWidth={1.5} />
             </IconButton>

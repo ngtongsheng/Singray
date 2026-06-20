@@ -28,11 +28,11 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
       tabIndex={0}
       onClick={onActivate}
       onKeyDown={onKeyActivate}
-      className={`group rounded-card border border-border bg-surface px-3 py-2 transition-colors hover:border-text-dim/40 ${
+      className={`group rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:border-muted-foreground/40 ${
         openable ? 'cursor-pointer' : ''
       }`}
     >
-      <div className="relative flex aspect-video w-24 shrink-0 items-center justify-center overflow-hidden rounded-control bg-surface-2">
+      <div className="relative flex aspect-video w-24 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
         {song.ready && (
           <img
             src={window.singray.audio.thumbUrl(song.id)}
@@ -41,10 +41,10 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
             draggable={false}
           />
         )}
-        {importing && <Loader2 className="size-4 animate-spin text-text-dim" />}
+        {importing && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
         {failed && (
           <span title={song.error ?? t('card.importInterrupted')}>
-            <AlertTriangle className="size-4 text-danger" />
+            <AlertTriangle className="size-4 text-destructive" />
           </span>
         )}
       </div>
@@ -61,11 +61,7 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
         />
       </div>
       {!song.hasLyrics && !failed && !importing && (
-        <Text
-          as="span"
-          variant="hint"
-          className="shrink-0 rounded-control bg-surface-2 px-2 py-0.5"
-        >
+        <Text as="span" variant="hint" className="shrink-0 rounded-md bg-muted px-2 py-0.5">
           {t('card.needsLyrics')}
         </Text>
       )}
@@ -75,7 +71,7 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
           size="sm"
           onClick={retry}
           title={t('card.retryTip')}
-          className="shrink-0 text-danger"
+          className="shrink-0 text-destructive"
         >
           <RotateCcw className="size-4" strokeWidth={1.5} />
         </IconButton>
@@ -87,7 +83,7 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
         className="shrink-0"
       >
         <Heart
-          className={`size-4 ${song.favorite ? 'fill-accent text-accent' : 'text-text-dim hover:text-text'}`}
+          className={`size-4 ${song.favorite ? 'fill-primary text-primary' : 'text-muted-foreground hover:text-foreground'}`}
           strokeWidth={1.5}
         />
       </IconButton>
@@ -95,13 +91,13 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
         song={song}
         onDelete={requestDelete}
         origin="top right"
-        className="top-full right-0 translate-y-1 w-40 overflow-hidden py-1"
+        className="w-40 overflow-hidden"
         trigger={(_open, toggle) => (
           <IconButton
             variant="bare"
             onClick={toggle}
             title={t('card.moreActions')}
-            className="shrink-0 text-text-dim hover:text-text"
+            className="shrink-0 text-muted-foreground hover:text-foreground"
           >
             <MoreHorizontal className="size-4" strokeWidth={1.5} />
           </IconButton>

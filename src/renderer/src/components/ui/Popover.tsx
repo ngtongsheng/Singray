@@ -1,36 +1,29 @@
-import { AnimatePresence, motion } from 'motion/react'
-import type { ReactNode } from 'react'
-import { useMotionPresets } from '../../lib/motionPresets'
-import { cx } from './cx'
+import * as PopoverPrimitive from '@radix-ui/react-popover'
+import type { ComponentProps } from 'react'
+import { cn } from '../../lib/cn'
 
-interface PopoverProps {
-  open: boolean
-  /** transform-origin (e.g. 'bottom right') — the corner the popover grows from. */
-  origin: string
-  /** Position + padding, relative to the nearest `relative` ancestor. */
-  className: string
-  children: ReactNode
-}
+/** Anchored floating panel (Radix): outside-click + Esc close + collision flipping. */
+export const Popover = PopoverPrimitive.Root
+export const PopoverTrigger = PopoverPrimitive.Trigger
+export const PopoverAnchor = PopoverPrimitive.Anchor
 
-/** Anchored floating panel with the shared spring; caller owns open state. */
-function Popover({ open, origin, className, children }: PopoverProps): React.JSX.Element {
-  const { popover } = useMotionPresets()
+export function PopoverContent({
+  className,
+  align = 'center',
+  sideOffset = 6,
+  ...props
+}: ComponentProps<typeof PopoverPrimitive.Content>): React.JSX.Element {
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          {...popover}
-          style={{ transformOrigin: origin }}
-          className={cx(
-            'absolute z-20 rounded-control border border-border bg-surface shadow-raised',
-            className
-          )}
-        >
-          {children}
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <PopoverPrimitive.Portal>
+      <PopoverPrimitive.Content
+        align={align}
+        sideOffset={sideOffset}
+        className={cn(
+          'z-30 rounded-md border border-border bg-card shadow-raised outline-none data-[state=closed]:animate-[pop-out_100ms_ease-in] data-[state=open]:animate-[pop-in_120ms_ease-out]',
+          className
+        )}
+        {...props}
+      />
+    </PopoverPrimitive.Portal>
   )
 }
-
-export default Popover

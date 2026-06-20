@@ -22,7 +22,7 @@ const ArtistLink = memo(function ArtistLink({
       onClick={onClick}
       title={t('library.viewArtist', { name: artist })}
       className={cx(
-        'truncate text-left text-text-dim text-xs hover:text-text hover:underline',
+        'truncate text-left text-muted-foreground text-xs hover:text-foreground hover:underline',
         className
       )}
     >

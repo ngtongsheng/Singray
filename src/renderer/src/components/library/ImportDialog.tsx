@@ -134,7 +134,9 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                       onKeyDown={(e) => e.key === 'Enter' && runSearch()}
                       placeholder={t('import.searchPlaceholder')}
                       trailing={
-                        search.loading && <Loader2 className="size-4 animate-spin text-text-dim" />
+                        search.loading && (
+                          <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                        )
                       }
                     />
                     <IconButton
@@ -151,7 +153,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
               </Field>
 
               {search.data && (
-                <ul className="max-h-64 divide-y divide-border overflow-y-auto rounded-card border border-border">
+                <ul className="max-h-64 divide-y divide-border overflow-y-auto rounded-lg border border-border">
                   {search.data.length === 0 && (
                     <li className="px-3 py-4 text-center">
                       <Text variant="hint">{t('import.noResults')}</Text>
@@ -163,9 +165,9 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                         variant="bare"
                         size="bare"
                         onClick={() => pickResult(r)}
-                        className="flex w-full items-center gap-3 px-2 py-2 text-left hover:bg-surface"
+                        className="flex w-full items-center gap-3 px-2 py-2 text-left hover:bg-card"
                       >
-                        <div className="aspect-video w-24 shrink-0 overflow-hidden rounded bg-surface">
+                        <div className="aspect-video w-24 shrink-0 overflow-hidden rounded bg-card">
                           {r.thumbnailUrl && (
                             <img
                               src={r.thumbnailUrl}
@@ -194,7 +196,9 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                     onChange={(e) => probe.setUrl(e.target.value)}
                     placeholder="https://www.youtube.com/watch?v=…"
                     trailing={
-                      probe.probing && <Loader2 className="size-4 animate-spin text-text-dim" />
+                      probe.probing && (
+                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                      )
                     }
                   />
                   {probe.probeError && <Text variant="error">{probe.probeError}</Text>}
@@ -207,8 +211,8 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
               gap={2}
               align="center"
               className={cx(
-                'rounded-card border-2 border-dashed p-6 text-center transition-colors',
-                dragOver ? 'border-accent bg-accent/5' : 'border-border'
+                'rounded-lg border-2 border-dashed p-6 text-center transition-colors',
+                dragOver ? 'border-primary bg-primary/5' : 'border-border'
               )}
               onDragOver={(e) => {
                 e.preventDefault()
@@ -227,14 +231,14 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
                 </Text>
               )}
               {probe.probeError && <Text variant="error">{probe.probeError}</Text>}
-              {probe.probing && <Loader2 className="size-4 animate-spin text-text-dim" />}
+              {probe.probing && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
             </Stack>
           )}
 
           {probe.probed && (
             <Stack gap={4}>
               <Stack direction="column" gap={2} className="w-56 shrink-0">
-                <div className="aspect-video overflow-hidden rounded-card bg-surface">
+                <div className="aspect-video overflow-hidden rounded-lg bg-card">
                   {probe.probed.thumbnailUrl && (
                     <img
                       src={probe.probed.thumbnailUrl}

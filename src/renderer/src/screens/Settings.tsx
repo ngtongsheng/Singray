@@ -22,7 +22,7 @@ function SettingsView(): React.JSX.Element {
   const { t } = useTranslation()
   const { settings, onBack } = useSettingsContext()
 
-  if (!settings) return <div className="p-6 text-text-dim">{t('common.loading')}</div>
+  if (!settings) return <div className="p-6 text-muted-foreground">{t('common.loading')}</div>
 
   return (
     <div className="relative h-full">
@@ -30,7 +30,7 @@ function SettingsView(): React.JSX.Element {
         <IconButton
           onClick={onBack}
           title={t('common.backEsc')}
-          className="app-no-drag text-text-dim hover:text-text"
+          className="app-no-drag text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" strokeWidth={1.5} />
         </IconButton>

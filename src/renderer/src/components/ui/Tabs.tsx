@@ -57,14 +57,14 @@ function Tabs<T extends string>({
           }}
           className={cx(
             'relative px-3 py-2 text-sm font-medium transition-colors',
-            tab.id === active ? 'text-text' : 'text-text-dim hover:text-text'
+            tab.id === active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
           )}
         >
           {tab.label}
           {tab.id === active && (
             <motion.div
               layoutId={`tabs-underline-${layoutId}`}
-              className="absolute inset-x-0 -bottom-px h-0.5 bg-accent"
+              className="absolute inset-x-0 -bottom-px h-0.5 bg-primary"
               transition={{ type: 'spring', stiffness: 550, damping: 32 }}
             />
           )}

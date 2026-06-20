@@ -22,7 +22,7 @@ function PipelineSetup({ onReady, onSkip }: Props): React.JSX.Element {
       </Titlebar>
       <Container pb={10} maxWidth="lg">
         <Stack direction="column" gap={6}>
-          <p className="text-sm text-text-dim">{t('settings.setup.firstRunDesc')}</p>
+          <p className="text-sm text-muted-foreground">{t('settings.setup.firstRunDesc')}</p>
           <PipelineInstaller onReady={onReady} />
           <div>
             <Button variant="ghost" size="md" onClick={onSkip}>
