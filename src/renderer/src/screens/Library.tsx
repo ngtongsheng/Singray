@@ -108,7 +108,7 @@ function LibraryView(): React.JSX.Element {
             title={t('library.deleteTitle')}
             body={t('library.deleteBody', {
               title: pendingDelete.title,
-              artist: pendingDelete.artist
+              artist: pendingDelete.artists.join(', ')
             })}
             confirmLabel={t('common.delete')}
             onConfirm={confirmDelete}

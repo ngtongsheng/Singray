@@ -54,13 +54,7 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
           <Text variant="item" title={song.title}>
             {song.title}
           </Text>
-          <ArtistLink
-            artist={song.artist}
-            onClick={(e) => {
-              e.stopPropagation()
-              onArtistClick(song.artist)
-            }}
-          />
+          <ArtistLink artists={song.artists} onClick={onArtistClick} />
         </div>
         {!song.hasLyrics && !failed && !importing && (
           <Text as="span" variant="hint" className="shrink-0 rounded-md bg-muted px-2 py-0.5">

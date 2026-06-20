@@ -13,6 +13,8 @@
     "unknown": "Unknown",
     "title": "Title",
     "artist": "Artist",
+    "addArtist": "Add artist…",
+    "remove": "Remove {{label}}",
     "language": "Language",
     "back": "Back to library",
     "backEsc": "Back to library (Esc)"

@@ -13,6 +13,8 @@
     "unknown": "未知",
     "title": "标题",
     "artist": "歌手",
+    "addArtist": "添加歌手…",
+    "remove": "移除 {{label}}",
     "language": "语言",
     "back": "返回曲库",
     "backEsc": "返回曲库（Esc）"

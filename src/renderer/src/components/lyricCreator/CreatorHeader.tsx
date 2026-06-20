@@ -24,7 +24,7 @@ function CreatorHeader(): React.JSX.Element {
             {song.title}
           </Text>
           <Text variant="hint" className="hidden truncate sm:inline">
-            {t('creator.subtitle', { artist: song.artist })}
+            {t('creator.subtitle', { artist: song.artists.join(', ') })}
           </Text>
         </Stack>
       </Stack>

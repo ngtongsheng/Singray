@@ -39,15 +39,15 @@ const settings: Settings = {
   micFxAmount: 0.3
 }
 
-function song(id: string, title: string, artist: string, language: string): SongListItem {
+function song(id: string, title: string, artists: string[], language: string): SongListItem {
   return {
     schemaVersion: 1,
     id,
     title,
-    artist,
+    artists,
     language,
     youtubeUrl: `https://youtu.be/${id}`,
-    youtubeTitle: `${artist} - ${title}`,
+    youtubeTitle: `${artists.join(', ')} - ${title}`,
     durationSec: 215,
     addedAt: '2026-06-01T12:00:00.000Z',
     favorite: false,
@@ -65,8 +65,8 @@ function song(id: string, title: string, artist: string, language: string): Song
 }
 
 const songs: SongListItem[] = [
-  song('demo00001', 'Bohemian Rhapsody', 'Queen', 'en'),
-  song('demo00002', '月亮代表我的心', '邓丽君', 'zh')
+  song('demo00001', 'Bohemian Rhapsody', ['Queen'], 'en'),
+  song('demo00002', '月亮代表我的心', ['邓丽君'], 'zh')
 ]
 
 const reject = (): Promise<never> =>

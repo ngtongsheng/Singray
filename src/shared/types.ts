@@ -41,7 +41,7 @@ export interface SongMeta {
   schemaVersion: 1
   id: string
   title: string
-  artist: string
+  artists: string[]
   language: Language
   youtubeUrl: string
   youtubeTitle: string
@@ -196,7 +196,7 @@ export type ImportProgress =
 export interface ImportRequest {
   url: string
   title: string
-  artist: string
+  artists: string[]
   language: Language
   /** Raw YouTube title, kept in meta.json for future re-enrichment. */
   youtubeTitle: string

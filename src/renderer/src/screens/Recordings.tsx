@@ -57,7 +57,7 @@ function Recordings({ songId }: Props): React.JSX.Element {
 
   function songTitle(id: string): string {
     const song = songs.find((s) => s.id === id)
-    return song ? `${song.title} — ${song.artist}` : id
+    return song ? `${song.title} — ${song.artists.join(', ')}` : id
   }
 
   const title = songId
