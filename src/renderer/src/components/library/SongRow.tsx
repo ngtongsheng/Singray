@@ -28,7 +28,7 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
       tabIndex={0}
       onClick={onActivate}
       onKeyDown={onKeyActivate}
-      className={`group rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:border-muted-foreground/40 ${
+      className={`group rounded-lg border border-border bg-card p-3 transition-colors hover:border-muted-foreground/40 ${
         openable ? 'cursor-pointer' : ''
       }`}
     >
