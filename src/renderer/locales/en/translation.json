@@ -292,7 +292,7 @@
     "audio": "Audio routing",
     "outputMode": "Output mode",
     "modeSingle": "Single — everything to one device",
-    "modeDual": "Dual — monitor + stream mixes (Phase 4)",
+    "modeDual": "Dual — monitor + stream mixes",
     "modeHelp": "Dual sends instrumental-only to the stream device while your monitor keeps the guide vocal.",
     "monitorDevice": "Monitor device (your headphones / AG06)",
     "streamDevice": "Stream device (virtual cable to the singing site)",
