@@ -20,12 +20,15 @@ website streaming setup, but works standalone.
 ## Demo
 
 **Library, browse & sing** — grid/list browse, search, open a song, pitch shift, guide vocal toggle
+
 https://github.com/user-attachments/assets/6c56b56b-8c38-4758-b8ac-f2607033e0b4
 
 **Manage a song** — edit title/artist & thumbnail crop, lyric creator text/tap/review steps
+
 https://github.com/user-attachments/assets/d13bfa66-9cbe-43f2-be29-2a5d288462e4
 
 **Add a song** — search YouTube in-app, real download + GPU stem separation, play the finished song
+
 https://github.com/user-attachments/assets/a1ebf3a9-7a0b-401e-b031-5af6756087f0
 
 ## Features
