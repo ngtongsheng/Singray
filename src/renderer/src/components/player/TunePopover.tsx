@@ -27,11 +27,9 @@ function TunePopover(): React.JSX.Element {
     stepKey,
     tempoVal,
     changeTempo,
-    vocalOn,
     vocalVol,
     setVocalVolume,
     micActive,
-    micMonitor,
     micVol,
     setMicVolume,
     micFxPreset,
@@ -120,26 +118,22 @@ function TunePopover(): React.JSX.Element {
             </Grid>
           </Stack>
 
-          {vocalOn && (
-            <>
-              <div className="h-px bg-border" />
-              <Stack direction="column" gap={2}>
-                <Text as="span" variant="hint">
-                  {t('player.guideVol')}
-                </Text>
-                <Slider
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={vocalVol}
-                  onChange={setVocalVolume}
-                  className="h-8 w-full"
-                />
-              </Stack>
-            </>
-          )}
+          <div className="h-px bg-border" />
+          <Stack direction="column" gap={2}>
+            <Text as="span" variant="hint">
+              {t('player.guideVol')}
+            </Text>
+            <Slider
+              min={0}
+              max={1}
+              step={0.01}
+              value={vocalVol}
+              onChange={setVocalVolume}
+              className="h-8 w-full"
+            />
+          </Stack>
 
-          {micActive && micMonitor && (
+          {micActive && (
             <>
               <div className="h-px bg-border" />
               <Stack direction="column" gap={2}>
