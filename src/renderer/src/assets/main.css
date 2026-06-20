@@ -22,8 +22,8 @@
   --muted-foreground: #a0a0b0;
   --accent: var(--muted);
   --accent-foreground: var(--foreground);
-  --border: #2e2e3a;
-  --input: #2e2e3a;
+  --border: #45455a;
+  --input: #45455a;
 
   /* shadcn brand */
   --primary: #ff5a3c;
@@ -105,17 +105,6 @@
     outline: 1.5px solid var(--primary);
     outline-offset: 1px;
   }
-}
-
-/* Player control bar: sits on black/80 gradient — dark tokens vanish.
-   Override surface tokens to white/opacity so all controls auto-adapt. */
-.player-bar {
-  --border: rgb(255 255 255 / 0.2);
-  --input: rgb(255 255 255 / 0.2);
-  --card: rgb(255 255 255 / 0.08);
-  --secondary: rgb(255 255 255 / 0.1);
-  --muted: rgb(255 255 255 / 0.06);
-  --accent: rgb(255 255 255 / 0.06);
 }
 
 /* Frameless window (R2.1): the titlebar is the drag region; interactive

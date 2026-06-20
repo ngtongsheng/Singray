@@ -28,7 +28,7 @@ function ControlBar(): React.JSX.Element | null {
       <Stack
         direction="column"
         gap={2}
-        className="player-bar bg-gradient-to-t from-black/80 to-transparent px-6 pt-12 pb-5"
+        className="bg-gradient-to-t from-black/80 to-transparent px-6 pt-12 pb-5"
       >
         {micWarning && (
           <Text variant="error">{t('player.micWarning', { message: micWarning })}</Text>
