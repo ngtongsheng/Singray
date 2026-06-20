@@ -1,18 +1,20 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import type { SongListItem } from '../../../shared/types'
 
+export const LIBRARY_KEY = ['library'] as const
+
 /** Library listing, kept fresh via the main process `library:changed` event. */
-export function useLibrary(): { songs: SongListItem[]; refresh: () => void } {
-  const [songs, setSongs] = useState<SongListItem[]>([])
-
-  const refresh = useCallback(() => {
-    window.singray.library.list().then(setSongs)
-  }, [])
-
+export function useLibrary(): { songs: SongListItem[] } {
+  const qc = useQueryClient()
+  const { data: songs = [] } = useQuery({
+    queryKey: LIBRARY_KEY,
+    queryFn: () => window.singray.library.list()
+  })
   useEffect(() => {
-    refresh()
-    return window.singray.onLibraryChanged(refresh)
-  }, [refresh])
-
-  return { songs, refresh }
+    return window.singray.onLibraryChanged(() => {
+      qc.invalidateQueries({ queryKey: LIBRARY_KEY })
+    })
+  }, [qc])
+  return { songs }
 }

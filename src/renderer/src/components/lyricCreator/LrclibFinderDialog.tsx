@@ -1,5 +1,5 @@
+import { useQuery } from '@tanstack/react-query'
 import { Loader2, Music } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LrclibHit, LrclibQuery } from '../../../../shared/types'
 import { Button, DialogFooter, ScrollArea, Stack, Text } from '../ui'
@@ -21,22 +21,21 @@ function fmtDur(sec: number): string {
 /** LRCLIB lyric finder (R3.5): fetches candidates on open; caller decides synced vs plain. */
 function LrclibFinderDialog({ query, onPick, onClose }: Props): React.JSX.Element {
   const { t } = useTranslation()
-  const [hits, setHits] = useState<LrclibHit[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let live = true
-    window.singray.lyrics
-      .findLyrics(query)
-      .then((r) => live && setHits(r))
-      .catch(
-        (e: Error) =>
-          live && setError(e.message.replace(/^Error invoking remote method[^:]*: Error: /, ''))
-      )
-    return () => {
-      live = false
-    }
-  }, [query])
+  const {
+    data: hits,
+    error: rawError,
+    isPending
+  } = useQuery({
+    queryKey: ['lrclib', query.title, query.artist, query.durationSec],
+    queryFn: () => window.singray.lyrics.findLyrics(query),
+    staleTime: 1000 * 60 * 5
+  })
+  const error =
+    rawError instanceof Error
+      ? rawError.message.replace(/^Error invoking remote method[^:]*: Error: /, '')
+      : rawError
+        ? String(rawError)
+        : null
 
   return (
     <Dialog label={t('finder.title')} width="md" onClose={onClose}>
@@ -51,17 +50,17 @@ function LrclibFinderDialog({ query, onPick, onClose }: Props): React.JSX.Elemen
             </Text>
           </Stack>
 
-          {hits === null && !error && (
+          {isPending && (
             <Stack justify="center" gap={2} className="py-10 text-muted-foreground text-sm">
               <Loader2 className="size-4 animate-spin" strokeWidth={2} /> {t('finder.searching')}
             </Stack>
           )}
           {error && <p className="py-8 text-center text-destructive text-sm">{error}</p>}
-          {hits !== null && hits.length === 0 && !error && (
+          {hits !== undefined && hits.length === 0 && !error && (
             <p className="py-10 text-center text-muted-foreground text-sm">{t('finder.empty')}</p>
           )}
 
-          {hits !== null && hits.length > 0 && (
+          {hits !== undefined && hits.length > 0 && (
             <ScrollArea
               className="h-[50vh]" /* design-allow: 50vh tracks viewport height, no token fits */
             >

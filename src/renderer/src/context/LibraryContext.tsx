@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ImportProgress, Language, Settings, SongListItem } from '../../../shared/types'
 import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
+import { useSettings } from '../hooks/useSettings'
 import { useAppContext } from './AppContext'
 
 export type SortMode = 'added' | 'mostSung' | 'recentSung'
@@ -58,6 +59,7 @@ export function LibraryProvider({
 }: ProviderProps): React.JSX.Element {
   const { goPlayer } = useAppContext()
   const { songs } = useLibrary()
+  const { settings, patch } = useSettings()
   const imports = useImports()
   const [query, setQuery] = useState('')
   const [language, setLanguage] = useState<Language | null>(null)
@@ -65,14 +67,10 @@ export function LibraryProvider({
   const [needsLyricsOnly, setNeedsLyricsOnly] = useState(false)
   const [sort, setSort] = useState<SortMode>('added')
   const [section, setSection] = useState<Section>('songs')
-  const [view, setView] = useState<LibraryViewMode>('grid')
+  const [view, setView] = useState<LibraryViewMode>(settings?.libraryView ?? 'grid')
   const [artistFilter, setArtistFilter] = useState<string | null>(initialArtistFilter ?? null)
   const [pendingDelete, setPendingDelete] = useState<SongListItem | null>(null)
   const [showImport, setShowImport] = useState(false)
-
-  useEffect(() => {
-    window.singray.settings.get().then((s) => setView(s.libraryView))
-  }, [])
 
   // ART2: navigating in from a song's artist name re-applies the filter even
   // though Library stays mounted (App.tsx key is constant).
@@ -82,10 +80,13 @@ export function LibraryProvider({
     setSection('songs')
   }, [initialArtistFilter])
 
-  const setViewMode = useCallback((v: LibraryViewMode) => {
-    setView(v)
-    void window.singray.settings.set({ libraryView: v })
-  }, [])
+  const setViewMode = useCallback(
+    (v: LibraryViewMode) => {
+      setView(v)
+      void patch({ libraryView: v })
+    },
+    [patch]
+  )
 
   const clearArtistFilter = useCallback(() => setArtistFilter(null), [])
 
