@@ -311,6 +311,11 @@
     "micDeviceHelp": "Microphone for self-monitoring and recording. Saved here; activated per song in the player.",
     "micEnable": "Enable mic in player",
     "micEnableHelp": "When on, the mic graph starts automatically when you open a song. Disable to skip getUserMedia permission prompt.",
-    "inputN": "Input {{id}}"
+    "inputN": "Input {{id}}",
+    "countdownLead": "Lead-in countdown",
+    "countdownLeadHelp": "Seconds of countdown before the first lyric word when starting a song from the beginning.",
+    "countdownLeadOff": "Off",
+    "countdownLead3": "3 seconds (default)",
+    "countdownLead5": "5 seconds"
   }
 }

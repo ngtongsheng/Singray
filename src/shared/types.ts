@@ -128,6 +128,8 @@ export interface Settings {
   micFxPreset: MicFxPreset
   /** R3.MIC3: wet/dry 0..1. */
   micFxAmount: number
+  /** Lead-in countdown seconds before the first lyric word on play-from-start (0 = off). */
+  countdownLead: number
 }
 
 /** Cleaned title/artist from metadata enrichment (R3.2). */
