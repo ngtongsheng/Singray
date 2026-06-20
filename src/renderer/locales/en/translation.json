@@ -24,6 +24,7 @@
     "download": "Downloading",
     "separate": "Separating",
     "separateLong": "Separating vocals",
+    "separateLongHint": "may take a few minutes",
     "convert": "Converting"
   },
   "library": {
@@ -37,6 +38,8 @@
     "sortMostSung": "Most sung",
     "sortRecentSung": "Recently sung",
     "emptyHint": "Paste a YouTube link to add your first song",
+    "emptyPipelineHint": "First time? Set up the pipeline in",
+    "emptyPipelineLink": "Settings → Pipeline",
     "noMatch": "No songs match.",
     "moreQueued": "· {{count}} more queued",
     "deleteTitle": "Delete song?",
@@ -232,6 +235,7 @@
   "recordings": {
     "title": "Recordings",
     "empty": "No recordings yet — start recording in the player.",
+    "emptyHint": "Open a song in the player, enable the mic, then press Record.",
     "delete": "Delete recording",
     "reveal": "Show in folder",
     "play": "Play",

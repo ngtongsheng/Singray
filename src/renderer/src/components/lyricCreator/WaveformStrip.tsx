@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { computePeaks } from '../../lib/computePeaks'
 import { cssColor } from '../../lib/cssColor'
-import { Button } from '../ui'
+import { Button, Stack, Text } from '../ui'
 
 interface Props {
   songId: string
@@ -43,8 +43,10 @@ function WaveformStrip({ songId, audioRef, stamps, onSeek }: Props): React.JSX.E
   const overlayRef = useRef<HTMLCanvasElement>(null)
   const [peaks, setPeaks] = useState<Peaks | null>(null)
   const [failed, setFailed] = useState(false)
+  const [retryKey, setRetryKey] = useState(0)
 
   // Decode vocals.m4a once per song; keep only normalized max-abs buckets, drop the buffer.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: retryKey is a manual re-fetch trigger
   useEffect(() => {
     let cancelled = false
     setPeaks(null)
@@ -68,7 +70,7 @@ function WaveformStrip({ songId, audioRef, stamps, onSeek }: Props): React.JSX.E
     return () => {
       cancelled = true
     }
-  }, [songId])
+  }, [songId, retryKey])
 
   // Base layer: waveform + stamped-unit ticks. Redraws on decode, stamp change, resize.
   useEffect(() => {
@@ -158,8 +160,24 @@ function WaveformStrip({ songId, audioRef, stamps, onSeek }: Props): React.JSX.E
         <canvas ref={baseRef} className="absolute inset-0 size-full" />
         <canvas ref={overlayRef} className="absolute inset-0 size-full" />
         {!peaks && (
-          <span className="absolute inset-0 flex items-center justify-center text-muted-foreground/60 text-xs">
-            {failed ? t('timing.waveformUnavailable') : t('timing.waveformRendering')}
+          <span className="absolute inset-0 flex items-center justify-center text-xs">
+            {failed ? (
+              <Stack gap={2} align="center">
+                <Text variant="hint">{t('timing.waveformUnavailable')}</Text>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setRetryKey((k) => k + 1)
+                  }}
+                >
+                  {t('card.retry')}
+                </Button>
+              </Stack>
+            ) : (
+              <span className="text-muted-foreground/60">{t('timing.waveformRendering')}</span>
+            )}
           </span>
         )}
       </Button>

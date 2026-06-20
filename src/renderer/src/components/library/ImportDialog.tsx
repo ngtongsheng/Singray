@@ -204,7 +204,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
               </Field>
 
               {search.data && (
-                <ScrollArea className="h-64 rounded-lg border border-border">
+                <ScrollArea className="max-h-64 min-h-14 rounded-lg border border-border">
                   <ul className="divide-y divide-border">
                     {search.data.length === 0 && (
                       <li className="px-3 py-4 text-center">
