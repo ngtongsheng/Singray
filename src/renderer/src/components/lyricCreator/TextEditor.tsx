@@ -6,6 +6,7 @@ import { Stack, Text } from '../ui'
 function TextEditor(): React.JSX.Element {
   const { t } = useTranslation()
   const { text, setText, loaded, hasTiming } = useLyricCreatorContext()
+  const lineCount = text.trim() === '' ? 0 : text.split('\n').filter((l) => l.trim() !== '').length
 
   return (
     <>
@@ -19,10 +20,15 @@ function TextEditor(): React.JSX.Element {
           className="outline-none min-h-0 flex-1 resize-none overflow-y-auto bg-card p-6 font-lyric text-base leading-7 placeholder:text-muted-foreground/40"
         />
       </Stack>
-      <div className="border-border border-t px-6 py-2">
+      <div className="flex items-center justify-between gap-4 border-border border-t px-6 py-2">
         <Text variant="hint">
           {t('creator.hint')}
           {hasTiming && <span className="text-accent-soft">{t('creator.hintTimed')}</span>}
+          {' · '}
+          <span className="opacity-50">{t('creator.flowHint')}</span>
+        </Text>
+        <Text variant="hint" className="shrink-0">
+          {t('creator.linesCount', { count: lineCount })}
         </Text>
       </div>
     </>

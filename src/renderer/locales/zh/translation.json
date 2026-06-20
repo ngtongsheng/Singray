@@ -195,7 +195,12 @@
     "discard": "丢弃时间轴",
     "stepText": "文本",
     "stepTap": "打轴",
-    "stepReview": "预览"
+    "stepReview": "预览",
+    "leaveTitle": "未保存，确认离开？",
+    "leaveBody": "当前文字尚未保存为歌词，仍要离开？",
+    "leave": "离开",
+    "linesCount": "共 {{count}} 行",
+    "flowHint": "粘贴 → 编辑 → 打轴"
   },
   "timing": {
     "playTip": "播放（回车）",
@@ -214,7 +219,12 @@
     "hideShortcuts": "隐藏快捷键",
     "clickToSeek": "点击跳转",
     "waveformRendering": "波形渲染中…",
-    "waveformUnavailable": "波形不可用"
+    "waveformUnavailable": "波形不可用",
+    "legend": {
+      "untimed": "未打轴",
+      "partial": "部分",
+      "done": "完成"
+    }
   },
   "recordings": {
     "title": "录音",
