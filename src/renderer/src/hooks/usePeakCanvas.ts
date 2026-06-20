@@ -61,8 +61,8 @@ export function usePeakCanvas({
         }
         return off
       }
-      base = make(cssColor('--color-text-dim'), baseAlpha)
-      played = make(cssColor('--color-accent'), playedAlpha)
+      base = make(cssColor('--color-muted-foreground'), baseAlpha)
+      played = make(cssColor('--color-primary'), playedAlpha)
     }
 
     render()

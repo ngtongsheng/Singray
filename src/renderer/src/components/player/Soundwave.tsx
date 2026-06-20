@@ -30,7 +30,7 @@ function Soundwave({ analyser, playing }: Props): React.JSX.Element {
     ro.observe(canvas)
 
     const accent = getComputedStyle(document.documentElement)
-      .getPropertyValue('--color-accent')
+      .getPropertyValue('--color-primary')
       .trim()
     const data = new Uint8Array(analyser.frequencyBinCount)
     // Bottom ~2/3 of the spectrum carries the music; the top is mostly empty.
