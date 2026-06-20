@@ -34,7 +34,7 @@ function IconButton({
         variant === 'bare'
           ? className
           : cx(
-              'inline-flex shrink-0 cursor-pointer items-center justify-center disabled:pointer-events-none disabled:opacity-50',
+              'flex shrink-0 cursor-pointer items-center justify-center p-0 disabled:pointer-events-none disabled:opacity-50',
               round ? 'rounded-full' : 'rounded-md',
               SIZE[size],
               buttonVariantClass(variant, active),

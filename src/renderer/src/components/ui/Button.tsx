@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react'
 import { cn } from '../../lib/cn'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'bare'
-export type ButtonSize = 'sm' | 'md' | 'lg' | 'bare'
+export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon' | 'bare'
 
 /**
  * Variant classes shared by Button and IconButton (SPEC §10.4: one primary
@@ -46,6 +46,7 @@ export const buttonBase = cva(
         sm: 'h-8 px-3 text-sm',
         md: 'h-9 px-4 py-2 text-sm',
         lg: 'h-10 px-8 text-sm',
+        icon: 'size-9',
         bare: ''
       }
     },

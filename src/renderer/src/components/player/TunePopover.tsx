@@ -37,7 +37,7 @@ function TunePopover(): React.JSX.Element {
     <Popover open={tuneOpen} onOpenChange={setTuneOpen}>
       <PopoverTrigger asChild>
         <Button
-          size="lg"
+          size="icon"
           active={
             tuneOpen || tempoVal !== 1 || keyVal !== 0 || (micActive && micFxPreset !== 'off')
           }
