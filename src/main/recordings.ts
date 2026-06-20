@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { mkdir, readdir, stat, unlink, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join, resolve, sep } from 'node:path'
 import { promisify } from 'node:util'
 import { shell } from 'electron'
 import type { RecordingItem } from '../shared/types'
@@ -93,12 +93,21 @@ export async function listRecordings(songId?: string): Promise<RecordingItem[]> 
   return all.flat().sort((a, b) => b.timestamp.localeCompare(a.timestamp))
 }
 
+function assertRecordingPath(filePath: string): void {
+  const resolved = resolve(filePath)
+  const libraryRoot = resolve(getSettings().libraryDir) + sep
+  if (!resolved.startsWith(libraryRoot)) throw new Error('recording path outside library dir')
+  if (!REC_EXT.test(resolved)) throw new Error('invalid recording file extension')
+}
+
 /** Permanently deletes a recording file. */
 export async function deleteRecording(path: string): Promise<void> {
+  assertRecordingPath(path)
   await unlink(path)
 }
 
 /** Opens the folder containing a recording in the system file manager. */
 export function revealRecording(path: string): void {
+  assertRecordingPath(path)
   shell.showItemInFolder(path)
 }
