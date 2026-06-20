@@ -61,7 +61,7 @@ function LlmModelCombobox(): React.JSX.Element {
         align="start"
         sideOffset={4}
         onOpenAutoFocus={(e) => e.preventDefault()}
-        className="max-h-48 w-[var(--radix-popover-trigger-width)] overflow-y-auto py-1"
+        className="max-h-48 w-[var(--radix-popover-anchor-width)] overflow-y-auto py-1"
       >
         <div role="listbox">
           {filtered.map((model) => (
