@@ -4,12 +4,12 @@ Personal desktop karaoke app. Electron + React + TS + Tailwind v4, Python pipeli
 
 ## Source of truth
 - `SPEC.md` — full spec: architecture, data model, pipeline contract, audio engine, UI design system, risks. Read the sections relevant to the current issue before coding.
-- **GitHub Issues** — the work backlog. `gh issue list` is the development state; issues close on PR merge.
+- **GitHub Issues + Projects board** — the work backlog. The "Singray Round 4" board (`gh project view 1 --owner ngtongsheng`) is the source of order: `Status` (Todo/In Progress/Done) and `Priority` (P0 critical-path, P1 ready/independent, P2 blocked/later). Issues close on PR merge.
 - `DECISIONS.md` — narrative decision log (the *why* behind resolutions). Read the relevant round before starting work.
 - `BACKLOG.md` — **archived** (Rounds 1–3). History only; do not add new work there.
 
 ## Resume protocol (start of every session)
-1. `gh issue list --milestone "<current>"` (or open issues) for what's next. One issue at a time.
+1. Check the board: `gh project item-list 1 --owner ngtongsheng` — pick lowest `Priority` (P0 first) among `Todo`/`In Progress`. One issue at a time.
 2. Read the issue body + the matching `DECISIONS.md` section for context.
 3. If a branch for the issue already exists, inspect the working tree (`git status`, recent commits) to see how far it got, then continue it.
 

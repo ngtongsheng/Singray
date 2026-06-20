@@ -18,7 +18,7 @@ shadcn/react-query PR exercises release-please + branch protection).
 
 | Item | Decision | Why |
 |---|---|---|
-| **Backlog model** | Hybrid. Plannable features/bugs → GitHub Issues + Projects board. This `DECISIONS.md` keeps the narrative. `CLAUDE.md` resume protocol switches to `gh issue list` + read DECISIONS.md. | Issues enable plan-anytime / auto-close-on-merge / outside contributors; in-repo prose keeps the rich decision history that issue comments fragment. |
+| **Backlog model** | Hybrid. Plannable features/bugs → GitHub Issues + Projects board. This `DECISIONS.md` keeps the narrative. `CLAUDE.md` resume protocol reads the board (`Status` + `Priority` fields, P0/P1/P2) for order + read DECISIONS.md. | Issues enable plan-anytime / auto-close-on-merge / outside contributors; the board's Priority field gives picks a real ordering signal; in-repo prose keeps the rich decision history that issue comments fragment. |
 | **Workflow** | Same flow for everyone: issue → branch → PR → squash-merge, Conventional Commit PR titles, branch protection on `main`. | Keeps release-please changelog clean (one line per PR); dogfoods the contributor experience; no two mental models. |
 | **Release** | `release-please` + GitHub Actions. Release-PR bumps version + CHANGELOG; merge → tag + GitHub Release; workflow builds the Windows exe and attaches it. | Automated but gated by the release-PR. Requires strict Conventional Commits going forward. |
 | **Code signing** | Ship **unsigned**, document the SmartScreen "unknown publisher" warning in README/release notes. | Signing cert costs money; not worth it for a personal app's download count. |
