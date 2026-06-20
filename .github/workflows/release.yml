@@ -14,11 +14,34 @@ permissions:
   pull-requests: write
 
 jobs:
+  # Hold all releases (incl. v1.0) until the Round 5 milestone closes. Once it
+  # does, this is permanently a no-op pass-through — every push releases again
+  # as normal from v1.0 onward.
+  gate:
+    name: Gate on Round 5 milestone
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          state=$(gh api "repos/${{ github.repository }}/milestones?state=all" --jq '.[] | select(.title=="Round 5") | .state')
+          if [ "$state" = "open" ]; then
+            echo "Round 5 milestone still open — holding releases until it closes."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          fi
+
   # release-please opens/maintains a release-PR (version bump + CHANGELOG from
   # Conventional Commits). Merging that PR cuts the tag + GitHub Release; only
   # then do the build jobs run and attach installers.
   release-please:
     name: Release-please
+    needs: gate
+    if: needs.gate.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.rp.outputs.release_created }}
