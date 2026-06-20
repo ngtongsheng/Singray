@@ -118,6 +118,7 @@
     "guideTip": "Guide vocal (V)",
     "guideOn": "Guide on",
     "guideOff": "Guide off",
+    "guideVol": "Guide volume",
     "guideVolTip": "Guide vocal volume",
     "keyDownTip": "Key down ([)",
     "keyUpTip": "Key up (])",
@@ -134,6 +135,7 @@
       "bars": "Stage visual: bars"
     },
     "micVolTip": "Mic volume",
+    "micMonitorVol": "Monitor volume",
     "micMonitorOn": "Monitor on",
     "micMonitorOff": "Monitor off",
     "micMonitorTip": "Mute/unmute mic on your speakers — recording still captures the mic",
