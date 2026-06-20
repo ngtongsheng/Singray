@@ -98,3 +98,10 @@ Audited `pipeline/pipeline.py` (+ `setup.ps1`/`setup.sh`/`ruff.toml`) and verifi
 | **Worktree location** | Sibling dir `../singray-worktrees/<branch>` (e.g. `git worktree add ../singray-worktrees/feat-19-foo -b feat/19-foo`). | Keeps worktrees out of the primary checkout; simple relative path works on any machine. |
 | **Enforcement** | Doc-rule only in CLAUDE.md — no helper script. | Script adds a file to maintain; the rule is trivially followable from the doc. |
 | **In-Progress timing** | Move to In Progress **before first commit**, not at PR open. | Prevents agents from double-picking an item that another agent has already started but not yet committed. |
+
+### #58 — system default device select rendered blank
+
+| Choice | Decision | Why |
+|---|---|---|
+| **Root cause** | Not the audio-routing logic (`setSink`/`enableMic` already treated `''` as "omit constraint" correctly) — it was `@radix-ui/react-select`'s `Select.Value`, which hardcodes `shouldShowPlaceholder(value) => value === '' \|\| value === undefined`. Any `Select.Item` with `value=""` can never render its label in the trigger; Radix can't tell "selected the empty-string item" apart from "nothing selected". | Found by building the app and screenshotting Settings — all three System Default options (monitor/stream/mic) showed a blank trigger, never the label, regardless of the underlying setting. |
+| **Fix** | `ui/Select.tsx` remaps `''` to an internal sentinel for Radix only, translated back at the `value`/`onChange` boundary. Settings/IPC/audio-engine code is untouched — it was already correct. | Keeps the fix to one generic primitive instead of special-casing every call site that uses `''` as a "default" sentinel. |
