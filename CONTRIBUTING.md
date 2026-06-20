@@ -6,27 +6,27 @@ a translation.
 
 ## Development workflow
 
-Development is **story-driven**. The single source of state is
-[`BACKLOG.md`](BACKLOG.md):
+Work is tracked in **[GitHub Issues](../../issues)** — the issue list is the
+backlog. Tackle one issue at a time:
 
-- The **Now** pointer names the story currently in flight.
-- Stories are tackled one at a time, top to bottom.
-- A story is *done* only when every "Done when" line has been verified by
-  actually running the app or script — not by reading code.
+1. **One issue → one branch** — `feat/<n>-<slug>` or `fix/<n>-<slug>`.
+2. Read the issue body and the matching [`DECISIONS.md`](DECISIONS.md) section
+   for the *why* before changing code.
+3. An issue is *done* only when its acceptance criteria are verified by actually
+   running the app or script — not by reading code.
+4. **One PR → squash-merge.** Put `Closes #<n>` in the PR body so the merge
+   closes the issue.
 
-The full design lives in [`SPEC.md`](SPEC.md). Read the sections relevant to a
-story before changing code; if you discover a spec change while building,
-update `SPEC.md` in the same commit.
+Commit subjects follow [Conventional Commits](https://www.conventionalcommits.org/)
+(`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`) — release-please reads these
+for the changelog. Add a body only when a decision needs explaining.
 
-### On finishing a story
+The full design lives in [`SPEC.md`](SPEC.md). Read the sections relevant to an
+issue before changing code; if you discover a spec change while building, update
+`SPEC.md` in the same PR. A trade-off made mid-issue goes in `DECISIONS.md` in
+the same PR. Scope creep goes to a **new issue**, not into the current one.
 
-1. Mark it `[x]` in `BACKLOG.md` and move the **Now** pointer to the next story.
-2. Append one line to the Session Log (date · story · outcome / decisions /
-   gotchas).
-3. Commit with the story id in the subject: `R<story>: <what>` (e.g.
-   `R4.1: OSS prep`). Add a body only when a decision needs explaining.
-
-Scope creep goes to the backlog, not into the current story.
+> `BACKLOG.md` is archived (Rounds 1–3) — history only, don't add work there.
 
 ## Checks (must be green before every commit)
 
@@ -74,4 +74,4 @@ every screen renders.
 ## Reporting bugs & requesting features
 
 Use the issue templates. Include your OS, GPU, and reproduction steps for bugs.
-Pull requests should reference the backlog story or issue they address.
+Every pull request should close the issue it addresses (`Closes #<n>`).

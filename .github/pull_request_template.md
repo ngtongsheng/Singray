@@ -1,4 +1,4 @@
-<!-- Reference the backlog story or issue this addresses, e.g. "R4.2" or "#12". -->
+<!-- One feature or bug per PR. Link the issue it closes below. -->
 
 ## What
 
@@ -6,16 +6,18 @@
 
 ## Why
 
-<!-- Motivation / which story or issue. -->
+<!-- Motivation. -->
 
 ## Verification
 
-<!-- How did you confirm it works? Singray has no unit tests — describe what you
-     ran and observed (the story's "Done when" lines). -->
+<!-- Singray has no unit tests — describe what you ran and observed
+     (the issue's acceptance criteria / "Done when" lines). -->
+
+Closes #
 
 ## Checklist
 
 - [ ] `npm run check` is green (Biome + tsc)
 - [ ] `npm run check:py` is green (if pipeline touched)
-- [ ] Backlog updated (story marked, Now pointer moved, Session Log line) if a story landed
-- [ ] SPEC.md updated if the design changed
+- [ ] `SPEC.md` updated if the design changed
+- [ ] `DECISIONS.md` updated if a trade-off was made mid-issue
