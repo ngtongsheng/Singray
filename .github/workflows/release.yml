@@ -11,59 +11,52 @@ concurrency:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
-  release:
-    name: Build + publish Windows installer
-    runs-on: windows-latest
+  # release-please opens/maintains a release-PR (version bump + CHANGELOG from
+  # Conventional Commits). Merging that PR cuts the tag + GitHub Release; only
+  # then do the build jobs run and attach installers.
+  release-please:
+    name: Release-please
+    runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.ver.outputs.version }}
-      released: ${{ steps.ver.outputs.exists == 'false' }}
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: rp
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build-win:
+    name: Build + attach Windows installer
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # need tags + history for release notes
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-
-      # Version drives the tag; skip the whole release if that tag already
-      # exists (re-push of main without a version bump shouldn't re-release).
-      - id: ver
-        shell: pwsh
-        run: |
-          $v = node -p "require('./package.json').version"
-          "version=$v" >> $env:GITHUB_OUTPUT
-          git fetch --tags --quiet
-          if (git tag -l "v$v") { "exists=true" >> $env:GITHUB_OUTPUT }
-          else { "exists=false" >> $env:GITHUB_OUTPUT }
-
-      - if: steps.ver.outputs.exists == 'false'
-        run: npm ci
-
+      - run: npm ci
       # build:win = npm run build (check + electron-vite) && electron-builder --win.
-      # --publish never: the gh step below owns publishing so we can attach notes.
-      - if: steps.ver.outputs.exists == 'false'
-        run: npm run build:win -- --publish never
-
-      - if: steps.ver.outputs.exists == 'false'
-        shell: pwsh
+      # --publish never: release-please owns the Release; we only upload to it.
+      - run: npm run build:win -- --publish never
+      - shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $tag = "v${{ steps.ver.outputs.version }}"
           $exe = Get-ChildItem dist -Filter *-setup.exe | Select-Object -First 1
           if (-not $exe) { throw "No NSIS installer found in dist/" }
-          # --generate-notes builds release notes from merged PR titles since the last tag.
-          gh release create $tag $exe.FullName --title "Singray $tag" --generate-notes
+          gh release upload "${{ needs.release-please.outputs.tag_name }}" $exe.FullName --clobber
 
   # macOS build (R5.2): community-tested, unsigned .dmg uploaded to the same Release.
-  release-mac:
-    name: Build macOS dmg (community-tested, unsigned)
-    needs: release
-    if: needs.release.outputs.released == 'true'
+  build-mac:
+    name: Build + attach macOS dmg (community-tested, unsigned)
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +72,7 @@ jobs:
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          tag="v${{ needs.release.outputs.version }}"
+          tag="${{ needs.release-please.outputs.tag_name }}"
           dmg=$(ls dist/*.dmg | head -n1)
           [ -n "$dmg" ] || { echo "No .dmg found in dist/"; exit 1; }
           gh release upload "$tag" "$dmg" --clobber
