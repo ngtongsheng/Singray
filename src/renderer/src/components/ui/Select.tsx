@@ -1,7 +1,21 @@
 import * as SelectPrimitive from '@radix-ui/react-select'
+import { cva } from 'class-variance-authority'
 import { Check, ChevronDown } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cn } from '../../lib/cn'
+
+const selectTriggerBase = cva(
+  'flex items-center gap-2 rounded-md border border-input bg-card text-left text-sm outline-none focus-visible:border-primary disabled:pointer-events-none disabled:opacity-50',
+  {
+    variants: {
+      uiSize: {
+        md: 'h-9 w-full justify-between px-3 py-2',
+        sm: 'h-8 px-2 text-muted-foreground'
+      }
+    },
+    defaultVariants: { uiSize: 'md' }
+  }
+)
 
 export interface SelectOption<T extends string> {
   value: T
@@ -46,13 +60,7 @@ function Select<T extends string>({
       <SelectPrimitive.Trigger
         title={title}
         aria-label={ariaLabel}
-        className={cn(
-          'flex items-center gap-2 rounded-md border border-input bg-card text-left text-sm outline-none focus-visible:border-primary disabled:pointer-events-none disabled:opacity-50',
-          uiSize === 'md'
-            ? 'h-9 w-full justify-between px-3 py-2'
-            : 'h-8 px-2 text-muted-foreground',
-          className
-        )}
+        className={cn(selectTriggerBase({ uiSize }), className)}
       >
         <SelectPrimitive.Value className="truncate" />
         <SelectPrimitive.Icon asChild>

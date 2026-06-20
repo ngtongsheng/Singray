@@ -1,7 +1,21 @@
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
+import { cva } from 'class-variance-authority'
 import type { MouseEvent, ReactNode } from 'react'
 import { useState } from 'react'
 import { cn } from '../../lib/cn'
+
+const menuItemBase = cva(
+  'flex w-full cursor-default items-center gap-2 rounded-sm px-3 py-1.5 text-left text-sm outline-none select-none',
+  {
+    variants: {
+      danger: {
+        true: 'text-destructive data-[highlighted]:bg-destructive/10 data-[highlighted]:text-destructive',
+        false: 'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground'
+      }
+    },
+    defaultVariants: { danger: false }
+  }
+)
 
 interface MenuProps {
   /** Render the trigger; wire `toggle` to its onClick. `toggle` only stops the click from
@@ -52,15 +66,7 @@ interface MenuItemProps {
 
 export function MenuItem({ danger, onSelect, children }: MenuItemProps): React.JSX.Element {
   return (
-    <DropdownMenuPrimitive.Item
-      onSelect={onSelect}
-      className={cn(
-        'flex w-full cursor-default items-center gap-2 rounded-sm px-3 py-1.5 text-left text-sm outline-none select-none',
-        danger
-          ? 'text-destructive data-[highlighted]:bg-destructive/10 data-[highlighted]:text-destructive'
-          : 'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground'
-      )}
-    >
+    <DropdownMenuPrimitive.Item onSelect={onSelect} className={cn(menuItemBase({ danger }))}>
       {children}
     </DropdownMenuPrimitive.Item>
   )
