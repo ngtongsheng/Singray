@@ -28,10 +28,15 @@ function StatusBadge({
   if (importing) {
     const stageKey = STAGE_KEY[importing.stage]
     return (
-      <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-0.5 text-foreground text-xs">
-        <Loader2 className="size-3 animate-spin" />
-        {stageKey ? t(stageKey) : importing.stage}
-        {importing.stage !== 'queued' && ` ${Math.round(importing.progress * 100)}%`}
+      <span className="absolute bottom-2 left-2 flex flex-col items-start rounded-md bg-black/60 px-2 py-0.5 text-xs">
+        <span className="flex items-center gap-1.5 text-foreground">
+          <Loader2 className="size-3 animate-spin" />
+          {stageKey ? t(stageKey) : importing.stage}
+          {importing.stage !== 'queued' && ` ${Math.round(importing.progress * 100)}%`}
+        </span>
+        {importing.stage === 'separate' && (
+          <span className="text-muted-foreground">{t('stage.separateLongHint')}</span>
+        )}
       </span>
     )
   }

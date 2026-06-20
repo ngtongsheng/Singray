@@ -110,9 +110,14 @@ function Recordings({ songId }: Props): React.JSX.Element {
             {t('common.loading')}
           </Text>
         ) : sorted.length === 0 ? (
-          <Text variant="hint" className="py-12 text-center">
-            {t('recordings.empty')}
-          </Text>
+          <Stack direction="column" gap={2} align="center" className="py-12">
+            <Text variant="hint" className="text-center">
+              {t('recordings.empty')}
+            </Text>
+            <Text variant="hint" className="text-center text-xs">
+              {t('recordings.emptyHint')}
+            </Text>
+          </Stack>
         ) : (
           <Stack direction="column" gap={0} className="divide-y divide-border py-3">
             {sorted.map((rec) => (

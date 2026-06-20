@@ -24,6 +24,7 @@
     "download": "下载中",
     "separate": "分离中",
     "separateLong": "人声分离中",
+    "separateLongHint": "可能需要几分钟",
     "convert": "转换中"
   },
   "library": {
@@ -37,6 +38,8 @@
     "sortMostSung": "唱得最多",
     "sortRecentSung": "最近唱过",
     "emptyHint": "粘贴 YouTube 链接，添加第一首歌",
+    "emptyPipelineHint": "首次使用？请先在",
+    "emptyPipelineLink": "设置 → 处理管线",
     "noMatch": "没有匹配的歌曲。",
     "moreQueued": "· 还有 {{count}} 首排队中",
     "deleteTitle": "删除歌曲？",
@@ -228,6 +231,7 @@
   "recordings": {
     "title": "录音",
     "empty": "还没有录音——在播放器中开始录制。",
+    "emptyHint": "打开一首歌，启用麦克风，然后点击录制。",
     "delete": "删除录音",
     "reveal": "在文件夹中显示",
     "play": "播放",

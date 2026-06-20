@@ -17,7 +17,8 @@ import SongRowList from '../components/library/SongRowList'
 import ViewSortControls from '../components/library/ViewSortControls'
 import ConfirmDialog from '../components/shared/ConfirmDialog'
 import Titlebar from '../components/shared/Titlebar'
-import { ScrollArea, Stack, Text } from '../components/ui'
+import { Button, ScrollArea, Stack, Text } from '../components/ui'
+import { useAppContext } from '../context/AppContext'
 import { LibraryProvider, useLibraryContext } from '../context/LibraryContext'
 
 interface Props {
@@ -35,6 +36,7 @@ function Library({ initialArtistFilter }: Props): React.JSX.Element {
 
 function LibraryView(): React.JSX.Element {
   const { t } = useTranslation()
+  const { goSettings } = useAppContext()
   const {
     songs,
     filteredSongs,
@@ -83,6 +85,17 @@ function LibraryView(): React.JSX.Element {
                 <Mic2 className="size-12 text-primary" strokeWidth={1.5} />
                 <Text variant="hint">{t('library.emptyHint')}</Text>
                 <AddSongButton />
+                <Text variant="hint" className="text-xs">
+                  {t('library.emptyPipelineHint')}{' '}
+                  <Button
+                    variant="bare"
+                    size="bare"
+                    onClick={goSettings}
+                    className="underline text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    {t('library.emptyPipelineLink')}
+                  </Button>
+                </Text>
               </Stack>
             ) : section === 'artists' ? (
               <ArtistList />
