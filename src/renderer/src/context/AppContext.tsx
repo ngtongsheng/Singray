@@ -6,6 +6,7 @@ export type View =
   | { name: 'settings' }
   | { name: 'creator'; song: SongListItem }
   | { name: 'player'; song: SongListItem }
+  | { name: 'recordings'; songId?: string }
 
 interface NavState {
   back: View[]
@@ -19,6 +20,7 @@ interface AppContextValue {
   goSettings: () => void
   goPlayer: (song: SongListItem) => void
   goCreator: (song: SongListItem) => void
+  goRecordings: (songId?: string) => void
   goBack: () => void
   goForward: () => void
   canGoBack: boolean
@@ -46,6 +48,10 @@ export function AppProvider({ children }: { children: React.ReactNode }): React.
   const goSettings = useCallback(() => push({ name: 'settings' }), [push])
   const goPlayer = useCallback((song: SongListItem) => push({ name: 'player', song }), [push])
   const goCreator = useCallback((song: SongListItem) => push({ name: 'creator', song }), [push])
+  const goRecordings = useCallback(
+    (songId?: string) => push({ name: 'recordings', songId }),
+    [push]
+  )
 
   const goBack = useCallback(() => {
     setNav((prev) => {
@@ -85,12 +91,13 @@ export function AppProvider({ children }: { children: React.ReactNode }): React.
       goSettings,
       goPlayer,
       goCreator,
+      goRecordings,
       goBack,
       goForward,
       canGoBack: nav.back.length > 0,
       canGoForward: nav.forward.length > 0
     }),
-    [nav, goLibrary, goSettings, goPlayer, goCreator, goBack, goForward]
+    [nav, goLibrary, goSettings, goPlayer, goCreator, goRecordings, goBack, goForward]
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

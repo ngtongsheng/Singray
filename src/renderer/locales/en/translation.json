@@ -211,6 +211,16 @@
     "waveformRendering": "Rendering waveform…",
     "waveformUnavailable": "Waveform unavailable"
   },
+  "recordings": {
+    "title": "Recordings",
+    "empty": "No recordings yet — start recording in the player.",
+    "delete": "Delete recording",
+    "reveal": "Show in folder",
+    "play": "Play",
+    "pause": "Pause",
+    "deleteTitle": "Delete recording?",
+    "deleteBody": "This recording will be permanently deleted."
+  },
   "settings": {
     "title": "Settings",
     "interface": "Interface",

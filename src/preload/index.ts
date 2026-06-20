@@ -63,7 +63,10 @@ const api: SingrayApi = {
     thumbUrl: (id) => `karaoke://${id}/thumb.jpg`
   },
   recordings: {
-    save: (songId, bytes, ext) => invoke('recordings:save', songId, bytes, ext)
+    save: (songId, bytes, ext) => invoke('recordings:save', songId, bytes, ext),
+    list: (songId) => invoke('recordings:list', songId),
+    delete: (path) => invoke('recordings:delete', path),
+    reveal: (path) => invoke('recordings:reveal', path)
   },
   window: {
     minimize: () => invoke('window:minimize'),

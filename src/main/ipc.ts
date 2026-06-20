@@ -8,7 +8,7 @@ import { deleteSong, getLyrics, listSongs, openSongFolder, saveLyrics, updateMet
 import { listLlmModels, testLlm } from './llm'
 import { findLyrics } from './lyricsFinder'
 import { alignLyrics, listPipelineModels, probe, probeFile, searchYoutube } from './pipeline'
-import { saveRecording } from './recordings'
+import { deleteRecording, listRecordings, revealRecording, saveRecording } from './recordings'
 import { getSettings, setSettings } from './settings'
 
 function handle<C extends IpcChannel>(
@@ -89,4 +89,7 @@ export function registerIpc(): void {
   handle('window:openExternal', (_e, url) => shell.openExternal(url))
 
   handle('recordings:save', (_e, songId, bytes, ext) => saveRecording(songId, bytes, ext))
+  handle('recordings:list', (_e, songId) => listRecordings(songId))
+  handle('recordings:delete', (_e, path) => deleteRecording(path))
+  handle('recordings:reveal', (_e, path) => revealRecording(path))
 }

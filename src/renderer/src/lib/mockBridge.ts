@@ -132,7 +132,10 @@ export function createMockBridge(): SingrayApi {
       thumbUrl: (id) => `karaoke://${id}/thumb.jpg`
     },
     recordings: {
-      save: () => Promise.resolve('mock://recording')
+      save: () => Promise.resolve('mock://recording'),
+      list: () => Promise.resolve([]),
+      delete: () => Promise.resolve(),
+      reveal: () => Promise.resolve()
     },
     window: {
       minimize: noop,

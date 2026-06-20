@@ -10,11 +10,15 @@ const MIME: Record<string, string> = {
   '.flac': 'audio/flac',
   '.jpg': 'image/jpeg',
   '.png': 'image/png',
-  '.json': 'application/json'
+  '.json': 'application/json',
+  '.webm': 'audio/webm',
+  '.wav': 'audio/wav'
 }
 
 const SONG_ID = /^[a-z0-9-]+$/i
 const FILE_NAME = /^[\w-]+\.[a-z0-9]+$/i
+/** recordings/<ISO-timestamp>.<ext> — allows the one-level subdir (R3.REC2). */
+const RECORDING_FILE = /^recordings\/[\w.-]+\.[a-z0-9]+$/i
 /** Extensionless stem requests (R3.8) resolve to whichever encode exists, flac first. */
 const BARE_TRACK = /^(original|instrumental|vocals)$/
 const STEM_EXTS = ['flac', 'm4a'] as const
@@ -61,7 +65,10 @@ export function registerKaraokeHandler(): void {
     const url = new URL(request.url)
     const songId = url.hostname
     const requested = url.pathname.replace(/^\//, '')
-    if (!SONG_ID.test(songId) || !(FILE_NAME.test(requested) || BARE_TRACK.test(requested))) {
+    if (
+      !SONG_ID.test(songId) ||
+      !(FILE_NAME.test(requested) || BARE_TRACK.test(requested) || RECORDING_FILE.test(requested))
+    ) {
       return new Response('Bad request', { status: 400 })
     }
 

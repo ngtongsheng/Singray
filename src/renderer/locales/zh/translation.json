@@ -207,6 +207,16 @@
     "waveformRendering": "波形渲染中…",
     "waveformUnavailable": "波形不可用"
   },
+  "recordings": {
+    "title": "录音",
+    "empty": "还没有录音——在播放器中开始录制。",
+    "delete": "删除录音",
+    "reveal": "在文件夹中显示",
+    "play": "播放",
+    "pause": "暂停",
+    "deleteTitle": "删除录音？",
+    "deleteBody": "此录音将被永久删除。"
+  },
   "settings": {
     "title": "设置",
     "interface": "界面",
