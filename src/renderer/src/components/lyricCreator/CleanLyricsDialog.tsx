@@ -1,7 +1,7 @@
+import { clsx as cx } from 'clsx'
 import { useTranslation } from 'react-i18next'
 import { diffLines } from '../../lib/lineDiff'
 import { Button, DialogFooter, ScrollArea, Stack, Text } from '../ui'
-import { cx } from '../ui/cx'
 import Dialog from '../ui/Dialog'
 
 interface Props {

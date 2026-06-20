@@ -1,6 +1,6 @@
+import { clsx as cx } from 'clsx'
 import { Fragment, memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { cx } from '../ui/cx'
 
 interface Props {
   artists: string[]

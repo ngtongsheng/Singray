@@ -2,8 +2,8 @@ import type { ComponentProps } from 'react'
 import { cn } from '../../lib/cn'
 import { ScrollArea } from './ScrollArea'
 
-export type ContainerPb = 0 | 4 | 6 | 8 | 10 | 12
-export type ContainerMaxWidth = 'lg' | 'xl'
+type ContainerPb = 0 | 4 | 6 | 8 | 10 | 12
+type ContainerMaxWidth = 'lg' | 'xl'
 
 const PB: Record<ContainerPb, string> = {
   0: 'pb-0',
