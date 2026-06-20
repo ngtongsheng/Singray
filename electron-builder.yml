@@ -15,7 +15,8 @@ files:
   - '!src/*'
   - '!pipeline/*'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{biome.json,dev-app-update.yml,CHANGELOG.md,README.md,SPEC.md,BACKLOG.md,CLAUDE.md}'
+  - '!{biome.json,dev-app-update.yml,CHANGELOG.md,README.md,SPEC.md,CLAUDE.md}'
+  - '!docs/**'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:

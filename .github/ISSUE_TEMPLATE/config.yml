@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Spec & development state
-    url: https://github.com/ngtongsheng/singray/blob/main/BACKLOG.md
-    about: Check the backlog and spec before filing — the work may already be planned.
+    url: https://github.com/ngtongsheng/singray/blob/main/SPEC.md
+    about: Check the spec and open issues before filing — the work may already be planned.

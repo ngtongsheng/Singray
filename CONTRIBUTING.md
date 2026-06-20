@@ -26,7 +26,7 @@ issue before changing code; if you discover a spec change while building, update
 `SPEC.md` in the same PR. A trade-off made mid-issue goes in `DECISIONS.md` in
 the same PR. Scope creep goes to a **new issue**, not into the current one.
 
-> `BACKLOG.md` is archived (Rounds 1–3) — history only, don't add work there.
+> `docs/history/BACKLOG.md` is archived (Rounds 1–3) — history only, don't add work there.
 
 ## Checks (must be green before every commit)
 
