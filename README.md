@@ -43,12 +43,16 @@ website streaming setup, but works standalone.
 
 ## Install (use the app)
 
-> A packaged installer ships with the first GitHub Release. Until then, run
-> from source (below).
+> **v0.1.0 is released.** Download `singray-0.1.0-setup.exe` (Windows) or `singray-0.1.0.dmg`
+> (macOS) from the [GitHub Releases page](https://github.com/ngtongsheng/Singray/releases).
+>
+> Windows SmartScreen will warn "Windows protected your PC" — click **More info → Run anyway**
+> (expected for unsigned installers). macOS: right-click the app → **Open** → confirm, or run
+> `xattr -dr com.apple.quarantine /Applications/Singray.app`.
 
-The app needs a Python pipeline for download + separation. The dev path sets
-this up via `pipeline/setup.ps1`; an app-managed first-run bootstrapper is on
-the roadmap (tracked in [GitHub Issues](https://github.com/ngtongsheng/Singray/issues)).
+The app manages its own Python pipeline on first launch (no manual setup needed). Advanced
+users can point it at a dev venv via Settings → Pipeline. If the managed install fails or
+you want to run from source, follow the steps below.
 
 ## Develop (run from source)
 

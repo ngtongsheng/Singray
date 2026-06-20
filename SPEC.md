@@ -18,9 +18,8 @@ A personal-use desktop app: build a karaoke library from YouTube links (download
 
 ### Non-Goals (v1)
 - No unit tests.
-- No in-app microphone capture or recording (AG06 + website chain owns voice).
 - No multi-user features, no cloud sync, no scoring.
-- No auto lyric fetching or LLM metadata enrichment (was deferred from MVP; landing in Round 1 Phase 3 — see §12).
+- No auto lyric fetching or LLM metadata enrichment (was deferred from MVP; landed in Round 3 — see §12).
 
 ---
 
@@ -32,7 +31,7 @@ A personal-use desktop app: build a karaoke library from YouTube links (download
 | Frontend | React 18 + TypeScript + Vite | via `electron-vite` |
 | Main process | TypeScript | fs, spawn, job queue, IPC |
 | Audio engine | Web Audio API (renderer) | `AudioContext.setSinkId` for device routing (Chromium ✓) |
-| Pitch/tempo | SoundTouch WASM (`soundtouchjs` or `@soundtouchjs/audio-worklet`) | AudioWorklet-based |
+| Pitch/tempo | SoundTouch WASM (vendored `soundtouch.js` + `soundtouch-processor.js`) | AudioWorklet-based; vendored into `src/renderer/public/worklets/` |
 | Stem split pipeline | Python (native Windows, 3.13 or 3.11) | port of `audio_stems.py`, WSL paths removed |
 | Separation model | UVR `6_HP-Karaoke-UVR.pth` via `audio-separator[gpu]` | torch cu128, RTX 5060 Ti |
 | Download | `yt-dlp` | metadata via `--dump-json` |
@@ -55,7 +54,6 @@ A personal-use desktop app: build a karaoke library from YouTube links (download
 | typescript | ^6.0.3 |
 | @types/react | ^19.2.17 |
 | tailwindcss | ^4.3.0 |
-| soundtouchjs | ^0.3.0 |
 | motion | ^12.40.0 (R2.2) |
 | @biomejs/biome | ^2.4.16 |
 | yt-dlp (pip) | 2026.6.9 |
@@ -181,18 +179,40 @@ Conversion note: the legacy `karaoke.add('00:26.488','00:32.419','不是…','15
 {
   "libraryDir": "C:\\Users\\PC\\Karaoke",
   "pythonPath": "C:\\Users\\PC\\Projects\\singray\\pipeline\\.venv\\Scripts\\python.exe",
+  // Audio routing
+  "audioOutputMode": "single",    // "single" | "dual"
   "monitorDeviceId": "",          // AG06 USB output
   "streamDeviceId": "",           // VB-Cable input
-  "audioOutputMode": "single",    // "single" | "dual"
+  // Player UI
   "playerBarPinned": true,        // R1.2: control bar pinned vs 3s auto-hide
-  "stageVisual": "off",           // R1.4: "off" | "waveform" | "bars"
-  "languages": [                  // R2.4: editable list — import form, filter chips,
-    { "code": "zh", "label": "中文" },     // alignment language (meta.json → whisperx).
-    { "code": "en", "label": "English" }   // Removing one never touches song metas;
-  ],                                       // "unknown" is always offered implicitly.
-  "llmBaseUrl": "http://localhost:11434/v1", // R3.1: OpenAI-compatible endpoint (Ollama default)
-  "llmModel": "",                 // R3.1: chat model name, user-set
-  "llmApiKey": ""                 // R3.1: bearer token for hosted endpoints, '' = none
+  "showWaveform": false,          // stage top-strip waveform
+  "showBars": false,              // stage live analyser bars
+  "libraryView": "grid",          // "grid" | "list" — library layout
+  // Pipeline / import
+  "stemFormat": "flac",           // R3.8: "flac" | "m4a" — encode for new imports
+  "separationModel": "6_HP-Karaoke-UVR.pth",
+  // Language list (R2.4): drives import form, filter chips, alignment
+  "languages": [
+    { "code": "zh", "label": "中文" },
+    { "code": "en", "label": "English" }
+  ],                              // "unknown" always offered implicitly; removing never touches song metas
+  "uiLanguage": "",               // R2.5: locale folder name, '' = follow OS
+  // LLM assist (R3.1, R3.2)
+  "llmProvider": "ollama",        // provider preset — selects base URL + auth shape
+  "llmBaseUrl": "http://localhost:11434/v1", // Ollama-only override
+  "llmModel": "",                 // model name, e.g. "gemma4:12b-it-qat" or "gpt-4o-mini"
+  "llmApiKey": "",                // bearer token for cloud providers, '' = none
+  // Microphone (R3.MIC*)
+  "micDeviceId": "",              // audioinput device, '' = system default
+  "micEnabled": false,            // build mic graph when player loads
+  "micMonitor": false,            // R3.MIC2: monitor leg audible (false = AG06 hardware-monitor)
+  "micVolume": 0.8,               // R3.MIC2: gain 0..1
+  "micFxPreset": "none",          // R3.MIC3: FX preset
+  "micFxAmount": 0.3,             // R3.MIC3: wet/dry 0..1
+  // Recordings (R3.REC1)
+  "recordingFormat": "webm",      // "webm" | "wav"
+  // Playback
+  "countdownLead": 3              // lead-in countdown seconds (0 = off)
 }
 ```
 
@@ -340,25 +360,74 @@ Lyric clock = audio engine's authoritative playback position (derived from `Audi
 
 ## 8. IPC Contract (preload, typed)
 
-```ts
-// invoke/handle
-library.list(): SongListItem[]   // SongMeta + derived {hasLyrics, error} the cards need
-library.delete(id: string): void
-library.updateMeta(id: string, patch: Partial<SongMeta>): SongMeta
-library.openFolder(id: string): void   // open song folder in Explorer
-lyrics.get(id: string): Lyrics | null
-lyrics.save(id: string, lyrics: Lyrics): void
-lyrics.align(id: string, text: string): AlignToken[]  // forced alignment (§6.6), slow, rejects on failure
-import.probe(url: string): ProbeResult
-import.start(req: {url, title, artist, language, youtubeTitle}): jobId
-import.retry(id: string): void
-settings.get(): Settings
-settings.set(patch: Partial<Settings>): Settings
-audio.url(id: string, track: "original"|"instrumental"|"vocals"): string  // karaoke:// URL
+Full type source: `src/shared/types.ts` (`SingrayApi`, `IpcMap`). Below is the readable summary.
 
-// main → renderer events
-import:progress {jobId, songId, stage, progress}
-library:changed
+```ts
+// ── Library ──────────────────────────────────────────────────────────────────
+library.list(): SongListItem[]           // SongMeta + derived {hasLyrics, error}
+library.delete(id): void
+library.updateMeta(id, patch): SongMeta
+library.openFolder(id): void             // open song folder in Explorer
+library.uploadThumb(id, bytes): void     // save ArrayBuffer as thumb.jpg (R3.TH*)
+library.setThumbFromUrl(id, url): void   // download URL → thumb.jpg
+library.searchArtwork(query): ArtworkResult[]  // iTunes artwork search
+
+// ── Lyrics ───────────────────────────────────────────────────────────────────
+lyrics.get(id): Lyrics | null
+lyrics.save(id, lyrics): void
+lyrics.align(id, text): AlignToken[]    // forced alignment §6.6, slow, rejects on failure
+lyrics.findLyrics(query): LrclibHit[]   // LRCLIB search (R3.5)
+
+// ── Import ───────────────────────────────────────────────────────────────────
+import.probe(url): ProbeResult
+import.probeFile(path): ProbeResult     // local file probe (R3.7)
+import.pickFile(): string | null        // native open dialog, null = cancelled
+import.getPathForFile(file: File): string  // drag-drop File → FS path (webUtils)
+import.search(query): SearchResult[]    // ytsearch10 (R3.SNG1)
+import.start(req: ImportRequest): jobId
+import.retry(id): void
+
+// ── Settings ─────────────────────────────────────────────────────────────────
+settings.get(): Settings
+settings.set(patch): Settings
+
+// ── Pipeline (R4.3) ──────────────────────────────────────────────────────────
+pipeline.status(): PipelineStatus
+pipeline.install(): void                // streams pipeline:install:progress events
+pipeline.cancelInstall(): void
+pipeline.onInstallProgress(cb): unsubFn
+pipeline.listModels(force?): string[]   // available separation models
+
+// ── LLM assist (R3.1/R3.2/R3.6) ─────────────────────────────────────────────
+llm.test(): LlmTestResult
+llm.listModels(provider, baseUrl, apiKey): string[]
+llm.enrichProbe(probe): EnrichResult    // import prefill cleanup, never rejects
+llm.cleanMeta(input): EnrichResult      // "Clean up with AI" for existing song
+llm.cleanLyrics(input): string          // strip section tags / credits (R3.6)
+
+// ── Audio ────────────────────────────────────────────────────────────────────
+audio.url(id, track): string    // karaoke://<id>/<track> — extensionless, flac-first
+audio.thumbUrl(id, version?): string  // karaoke://<id>/thumb.jpg[?v=N] for cache-busting
+
+// ── Recordings (R3.REC1) ─────────────────────────────────────────────────────
+recordings.save(songId, bytes, ext): string  // save ArrayBuffer under recordings/; returns path
+recordings.list(songId?): RecordingItem[]    // omit songId = all library recordings
+recordings.delete(path): void
+recordings.reveal(path): void               // open containing folder in Explorer
+
+// ── Window (NAV1 custom titlebar) ────────────────────────────────────────────
+window.minimize(): void
+window.toggleMaximize(): void
+window.close(): void
+window.isMaximized(): boolean
+window.onMaximizedChange(cb): unsubFn
+window.openExternal(url): void    // system browser
+
+// ── Events (main → renderer) ─────────────────────────────────────────────────
+import:progress          {jobId, songId, stage, progress}
+library:changed          ()
+pipeline:install:progress InstallEvent
+window:maximized-changed boolean
 ```
 
 Media served via custom `karaoke://` protocol handler (registered privileged, supports range requests) — avoids `file://` CORS/security weirdness with Web Audio `fetch` + `decodeAudioData`.
@@ -404,7 +473,7 @@ Fallback if `AudioContext.setSinkId` misbehaves with ASIO-ish devices: render st
 
 ### 9.4 SoundTouch integration
 
-- AudioWorklet wrapping `soundtouchjs` (pure-JS port — pinned in §2.1; vendored into `public/worklets/` because Vite doesn't bundle worklet module graphs). Engine-level parameters: `pitchSemitones` (±6), `tempo` (0.75–1.25).
+- AudioWorklet wrapping the vendored SoundTouch JS port (`src/renderer/public/worklets/soundtouch.js` + `soundtouch-processor.js` — Vite cannot bundle worklet module graphs, so these are static assets). Engine-level parameters: `pitchSemitones` (±6), `tempo` (0.75–1.25).
 - The worklet itself does **pitch shifting only** (frame-count 1:1, so the push model from a live source can't underrun). Tempo is implemented as `AudioBufferSourceNode.playbackRate = tempo` plus a compensating pitch offset of `−12·log2(tempo)` semitones in the worklet; the user's key change adds on top. Master clock scales: position advances at `tempo ×` wall rate, which also keeps the lyric clock in sync for free.
 - At effective pitch 0 (key 0, tempo 1) the worklet copies input to output verbatim — bit-transparent bypass, zero artifacts.
 - Engaging/disengaging the shifter mid-song has a short (~latency) warm-up where the worklet outputs silence; acceptable for a manual key/tempo change.
