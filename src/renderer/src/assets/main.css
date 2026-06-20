@@ -107,6 +107,17 @@
   }
 }
 
+/* Player control bar: sits on black/80 gradient — dark tokens vanish.
+   Override surface tokens to white/opacity so all controls auto-adapt. */
+.player-bar {
+  --border: rgb(255 255 255 / 0.2);
+  --input: rgb(255 255 255 / 0.2);
+  --card: rgb(255 255 255 / 0.08);
+  --secondary: rgb(255 255 255 / 0.1);
+  --muted: rgb(255 255 255 / 0.06);
+  --accent: rgb(255 255 255 / 0.06);
+}
+
 /* Frameless window (R2.1): the titlebar is the drag region; interactive
    children opt out so clicks reach them instead of moving the window. */
 .app-drag {
