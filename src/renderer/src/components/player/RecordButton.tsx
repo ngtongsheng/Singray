@@ -10,7 +10,7 @@ function RecordButton(): React.JSX.Element {
 
   return (
     <Toggle
-      size="sm"
+      size="md"
       pressed={recording}
       onClick={toggleRecord}
       title={recording ? t('player.recordStopTip') : t('player.recordStartTip')}
