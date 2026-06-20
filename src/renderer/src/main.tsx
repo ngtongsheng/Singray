@@ -2,12 +2,15 @@ import './assets/main.css'
 
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { scan } from 'react-scan' // ponytail: dev-only perf overlay, tree-shaken in prod
 import { tokenizeLine } from '../../shared/tokenize'
 import App from './App'
 import { AppProvider } from './context/AppContext'
 import { AudioEngine } from './lib/audioEngine'
 import { initI18n, resolveLocale } from './lib/i18n'
 import { createMockBridge } from './lib/mockBridge'
+
+scan({ enabled: import.meta.env.DEV })
 
 if (import.meta.env.DEV && !window.singray) {
   // Browser dev (localhost:5173): no Electron preload, so window.singray is
