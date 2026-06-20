@@ -1,8 +1,8 @@
+import { clsx as cx } from 'clsx'
 import { Copy, Minus, Square, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Stack } from '../ui'
-import { cx } from '../ui/cx'
 
 const BTN =
   'app-no-drag flex h-full w-11 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground'

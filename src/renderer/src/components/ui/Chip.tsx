@@ -1,5 +1,5 @@
+import { clsx as cx } from 'clsx'
 import type { ComponentProps } from 'react'
-import { cx } from './cx'
 import Toggle from './Toggle'
 
 interface ChipProps extends ComponentProps<'button'> {

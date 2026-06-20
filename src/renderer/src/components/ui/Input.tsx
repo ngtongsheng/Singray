@@ -1,5 +1,5 @@
+import { clsx as cx } from 'clsx'
 import type { ComponentProps, ReactNode } from 'react'
-import { cx } from './cx'
 
 interface InputProps extends ComponentProps<'input'> {
   /** `size` is a native input attribute, hence the prefix. */

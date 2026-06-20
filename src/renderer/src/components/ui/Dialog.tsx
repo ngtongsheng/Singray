@@ -2,7 +2,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog'
 import type { ReactNode } from 'react'
 import { cn } from '../../lib/cn'
 
-export type DialogWidth = 'sm' | 'md' | 'lg' | 'xl' | '2xl'
+type DialogWidth = 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 
 const WIDTH: Record<DialogWidth, string> = {
   sm: 'max-w-sm',
