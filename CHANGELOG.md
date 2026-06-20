@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.0](https://github.com/ngtongsheng/Singray/compare/singray-v0.3.0...singray-v1.0.0) (2026-06-20)
+
+
+### Features
+
+* multi-artist metadata cleanup, artwork crop preview, recordings seed script ([#118](https://github.com/ngtongsheng/Singray/issues/118)) ([9dcd15d](https://github.com/ngtongsheng/Singray/commit/9dcd15dc3a8a3bba33f835860bd649e7c9e20e47))
+
+
+### Miscellaneous Chores
+
+* cut v1.0.0 ([52675a6](https://github.com/ngtongsheng/Singray/commit/52675a6259a388b0dba97f7d67fcf052c8529755))
+
 ## [0.3.0](https://github.com/ngtongsheng/Singray/compare/singray-v0.2.0...singray-v0.3.0) (2026-06-20)
 
 
