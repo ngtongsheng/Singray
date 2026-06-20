@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Lyrics } from '../../../../shared/types'
 import { Button } from '../ui'
 
@@ -35,6 +36,7 @@ const DIM_SCALE = 'scale(0.52)'
  * (opacity). Zero layout work per frame.
  */
 function LyricRenderer({ lyrics, clock, onSeek, showGradient = true }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const viewRef = useRef<HTMLDivElement>(null)
   const colRef = useRef<HTMLDivElement>(null)
   const lineEls = useRef<(HTMLElement | null)[]>([])
@@ -212,7 +214,8 @@ function LyricRenderer({ lyrics, clock, onSeek, showGradient = true }: Props): R
                 e.currentTarget.blur()
               }}
               disabled={line.start === null}
-              className="block w-full origin-center cursor-pointer py-1.5 text-center font-semibold leading-snug transition-transform duration-300 ease-out will-change-transform data-[role=past]:opacity-30 data-[role=future]:opacity-60 disabled:cursor-default"
+              title={line.start === null ? t('player.unsyncedTip') : undefined}
+              className="block w-full origin-center cursor-pointer py-1.5 text-center font-semibold leading-snug transition-transform duration-300 ease-out will-change-transform data-[role=past]:opacity-30 data-[role=future]:opacity-60 disabled:cursor-default disabled:opacity-40"
             >
               {line.units.map((u, ui) => (
                 <span

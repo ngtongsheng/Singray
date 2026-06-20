@@ -26,7 +26,11 @@ const SeekBar = memo(function SeekBar({ engine, seekTip }: Props): React.JSX.Ele
   const display = dragPos ?? position
   return (
     <>
-      <span className="text-sm text-muted-foreground tabular-nums">{fmt(display)}</span>
+      <span
+        className={`text-sm tabular-nums transition-opacity ${dragPos !== null ? 'text-foreground opacity-60' : 'text-muted-foreground'}`}
+      >
+        {fmt(display)}
+      </span>
       <Slider
         min={0}
         max={engine.duration}

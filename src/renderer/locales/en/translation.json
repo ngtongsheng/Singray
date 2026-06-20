@@ -165,7 +165,10 @@
       "none": "None",
       "start": "Start"
     },
-    "viewRecordings": "Recordings"
+    "viewRecordings": "Recordings",
+    "unsyncedTip": "Timing not set — sync this line in the lyric creator",
+    "nowPlaying": "Now Playing",
+    "noMicTip": "Requires microphone"
   },
   "details": {
     "title": "Song details",

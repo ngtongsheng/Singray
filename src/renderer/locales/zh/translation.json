@@ -163,7 +163,10 @@
       "none": "无",
       "start": "开始"
     },
-    "viewRecordings": "录音"
+    "viewRecordings": "录音",
+    "unsyncedTip": "未打轴 — 请在歌词创作器中为此行打轴",
+    "nowPlaying": "正在播放",
+    "noMicTip": "需要麦克风"
   },
   "details": {
     "title": "歌曲详情",

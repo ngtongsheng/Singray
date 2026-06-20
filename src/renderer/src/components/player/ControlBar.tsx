@@ -36,10 +36,13 @@ function ControlBar(): React.JSX.Element | null {
         <Stack gap={4} className="">
           <PlaybackButton />
           <SeekBar engine={engine} seekTip={t('player.seekTip')} />
+          <div className="h-4 w-px bg-white/20" />
           <InstrumentalVolume />
           <VocalGuide />
           {micActive && <MicMonitor />}
-          {engine.canRecord && <RecordButton />}
+          <div className="h-4 w-px bg-white/20" />
+          <RecordButton />
+          <div className="h-4 w-px bg-white/20" />
           <TunePopover />
           <PinToggle />
         </Stack>
