@@ -1,10 +1,12 @@
-import { clsx as cx } from 'clsx'
+import { cva } from 'class-variance-authority'
 import type { ComponentProps, ElementType } from 'react'
+import { cn } from '../../lib/cn'
 
 export type StackGap = 0 | 0.5 | 1 | 1.5 | 2 | 3 | 4 | 5 | 6 | 8
 export type StackJustify = 'start' | 'center' | 'end' | 'between' | 'around' | 'evenly'
 export type StackAlign = 'start' | 'center' | 'end' | 'stretch' | 'baseline'
 
+/** Gap scale shared with Grid (both index the same Tailwind gap-* steps). */
 export const GAP: Record<StackGap, string> = {
   0: 'gap-0',
   0.5: 'gap-0.5',
@@ -18,22 +20,29 @@ export const GAP: Record<StackGap, string> = {
   8: 'gap-8'
 }
 
-const JUSTIFY: Record<StackJustify, string> = {
-  start: 'justify-start',
-  center: 'justify-center',
-  end: 'justify-end',
-  between: 'justify-between',
-  around: 'justify-around',
-  evenly: 'justify-evenly'
-}
-
-const ALIGN: Record<StackAlign, string> = {
-  start: 'items-start',
-  center: 'items-center',
-  end: 'items-end',
-  stretch: 'items-stretch',
-  baseline: 'items-baseline'
-}
+const stackBase = cva('flex', {
+  variants: {
+    direction: { row: 'flex-row', column: 'flex-col' },
+    gap: GAP,
+    justify: {
+      start: 'justify-start',
+      center: 'justify-center',
+      end: 'justify-end',
+      between: 'justify-between',
+      around: 'justify-around',
+      evenly: 'justify-evenly'
+    },
+    align: {
+      start: 'items-start',
+      center: 'items-center',
+      end: 'items-end',
+      stretch: 'items-stretch',
+      baseline: 'items-baseline'
+    },
+    wrap: { true: 'flex-wrap' }
+  },
+  defaultVariants: { direction: 'row', gap: 0 }
+})
 
 export interface StackProps extends ComponentProps<'div'> {
   /** Element tag (default 'div'); 'header'/'footer' for landmark rows. */
@@ -62,15 +71,7 @@ function Stack({
   const resolvedAlign = align ?? (direction === 'column' ? 'stretch' : 'center')
   return (
     <Tag
-      className={cx(
-        'flex',
-        direction === 'column' ? 'flex-col' : 'flex-row',
-        GAP[gap],
-        justify && JUSTIFY[justify],
-        ALIGN[resolvedAlign],
-        wrap && 'flex-wrap',
-        className
-      )}
+      className={cn(stackBase({ direction, gap, justify, align: resolvedAlign, wrap }), className)}
       {...rest}
     />
   )

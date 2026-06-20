@@ -1,5 +1,23 @@
-import { clsx as cx } from 'clsx'
+import { cva } from 'class-variance-authority'
 import type { ComponentProps, ReactNode } from 'react'
+import { cn } from '../../lib/cn'
+
+const inputBase = cva(
+  'w-full rounded-md border border-input bg-card pr-3 text-sm placeholder:text-muted-foreground/60',
+  {
+    variants: {
+      uiSize: {
+        md: 'h-9 py-1',
+        sm: 'h-8'
+      },
+      icon: {
+        true: 'pl-8',
+        false: 'pl-3'
+      }
+    },
+    defaultVariants: { uiSize: 'md', icon: false }
+  }
+)
 
 interface InputProps extends ComponentProps<'input'> {
   /** `size` is a native input attribute, hence the prefix. */
@@ -29,16 +47,7 @@ function Input({
           {icon}
         </span>
       )}
-      <input
-        className={cx(
-          'w-full rounded-md border border-input bg-card text-sm placeholder:text-muted-foreground/60',
-          uiSize === 'md' ? 'h-9 py-1' : 'h-8',
-          icon ? 'pl-8' : 'pl-3',
-          'pr-3',
-          className
-        )}
-        {...rest}
-      />
+      <input className={cn(inputBase({ uiSize, icon: Boolean(icon) }), className)} {...rest} />
       {trailing && <span className="-translate-y-1/2 absolute top-1/2 right-3">{trailing}</span>}
     </div>
   )

@@ -1,3 +1,4 @@
+import { cva } from 'class-variance-authority'
 import type { ComponentProps } from 'react'
 import { cn } from '../../lib/cn'
 import { ScrollArea } from './ScrollArea'
@@ -5,19 +6,28 @@ import { ScrollArea } from './ScrollArea'
 type ContainerPb = 0 | 4 | 6 | 8 | 10 | 12
 type ContainerMaxWidth = 'lg' | 'xl'
 
-const PB: Record<ContainerPb, string> = {
-  0: 'pb-0',
-  4: 'pb-4',
-  6: 'pb-6',
-  8: 'pb-8',
-  10: 'pb-10',
-  12: 'pb-12'
-}
+const containerPb = cva('pl-6 pr-6', {
+  variants: {
+    pb: {
+      0: 'pb-0',
+      4: 'pb-4',
+      6: 'pb-6',
+      8: 'pb-8',
+      10: 'pb-10',
+      12: 'pb-12'
+    }
+  },
+  defaultVariants: { pb: 0 }
+})
 
-const MAX_WIDTH: Record<ContainerMaxWidth, string> = {
-  lg: 'mx-auto max-w-lg',
-  xl: 'mx-auto max-w-xl'
-}
+const containerMaxWidth = cva('', {
+  variants: {
+    maxWidth: {
+      lg: 'mx-auto max-w-lg',
+      xl: 'mx-auto max-w-xl'
+    }
+  }
+})
 
 export interface ContainerProps extends ComponentProps<'div'> {
   pb?: ContainerPb
@@ -35,8 +45,8 @@ function Container({
   return (
     <div className={cn('absolute inset-0 pt-19', className)} {...rest}>
       <ScrollArea className="h-full">
-        <div className={cn('pl-6 pr-6', PB[pb])}>
-          {maxWidth ? <div className={MAX_WIDTH[maxWidth]}>{children}</div> : children}
+        <div className={containerPb({ pb })}>
+          {maxWidth ? <div className={containerMaxWidth({ maxWidth })}>{children}</div> : children}
         </div>
       </ScrollArea>
     </div>
