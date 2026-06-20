@@ -10,15 +10,15 @@ function VocalGuide(): React.JSX.Element {
   return (
     <Stack
       gap={2}
-      className={`h-9 rounded-md border p-1.5 ${vocalOn ? 'border-primary' : 'border-border'}`}
+      className={`h-9 rounded-md border p-0.5 ${vocalOn ? 'border-primary' : 'border-border'}`}
     >
       <Toggle
         variant="ghost"
-        size="bare"
+        size="sm"
         pressed={vocalOn}
         onClick={toggleVocal}
         title={t('player.guideTip')}
-        className="shrink-0 whitespace-nowrap text-sm"
+        className="shrink-0 whitespace-nowrap"
       >
         {vocalOn ? (
           <Mic className="size-4" strokeWidth={1.5} />
