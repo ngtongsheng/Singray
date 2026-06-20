@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.3.0](https://github.com/ngtongsheng/Singray/compare/singray-v0.2.0...singray-v0.3.0) (2026-06-20)
+
+
+### Features
+
+* access song recordings from player page ([#102](https://github.com/ngtongsheng/Singray/issues/102)) ([8e545eb](https://github.com/ngtongsheng/Singray/commit/8e545eb1153c01283bcca4ac005a2d95b048312c)), closes [#67](https://github.com/ngtongsheng/Singray/issues/67)
+* AI Assist — provider presets + strict model dropdown ([#94](https://github.com/ngtongsheng/Singray/issues/94)) ([c95059c](https://github.com/ngtongsheng/Singray/commit/c95059c521d371d9322129a67200bc7c9d0e39bb))
+* hover tooltip on truncated Add Song search-result titles ([#95](https://github.com/ngtongsheng/Singray/issues/95)) ([3630858](https://github.com/ngtongsheng/Singray/commit/3630858294d959157fdb2615d9c3f6ad4a746385)), closes [#62](https://github.com/ngtongsheng/Singray/issues/62)
+* lead-in countdown to first lyric word on play-from-start ([#71](https://github.com/ngtongsheng/Singray/issues/71)) ([#99](https://github.com/ngtongsheng/Singray/issues/99)) ([20b5abe](https://github.com/ngtongsheng/Singray/commit/20b5abeba19d014e66b6d40a8ce48402c8481660))
+* Library flex layout (only grid/list scrolls) + ScrollArea app-wide ([#93](https://github.com/ngtongsheng/Singray/issues/93)) ([20d6cbd](https://github.com/ngtongsheng/Singray/commit/20d6cbdc44b3ad81c4118c0e75cfd78efdfc6344)), closes [#60](https://github.com/ngtongsheng/Singray/issues/60)
+* multi-artist support for songs (artists[] + migration + multi-select) ([#96](https://github.com/ngtongsheng/Singray/issues/96)) ([445a9e9](https://github.com/ngtongsheng/Singray/commit/445a9e933b94ff2ac3a326b8d49e7f90807c4e8f)), closes [#63](https://github.com/ngtongsheng/Singray/issues/63)
+* pre-record prep dialog — mic picker, level meter, countdown ([#65](https://github.com/ngtongsheng/Singray/issues/65)) ([#97](https://github.com/ngtongsheng/Singray/issues/97)) ([ec1306f](https://github.com/ngtongsheng/Singray/commit/ec1306fe3803de7aaa45767c674159c4b907a95a))
+* Recording mini-player bottom bar on Recordings screen ([#66](https://github.com/ngtongsheng/Singray/issues/66)) ([#98](https://github.com/ngtongsheng/Singray/issues/98)) ([5994dc1](https://github.com/ngtongsheng/Singray/commit/5994dc1b1c7ec59ef21f5fa68093a12536e099fb))
+* song thumbnail change via upload + iTunes online search ([#104](https://github.com/ngtongsheng/Singray/issues/104)) ([955c960](https://github.com/ngtongsheng/Singray/commit/955c960e91c67ca8aca4d950d7e3a1669e9d537b)), closes [#69](https://github.com/ngtongsheng/Singray/issues/69)
+* YouTube nocookie iframe preview in Add Song dialog ([#101](https://github.com/ngtongsheng/Singray/issues/101)) ([886844b](https://github.com/ngtongsheng/Singray/commit/886844b9ee7cb719347a85dccf48e9612473473d)), closes [#64](https://github.com/ngtongsheng/Singray/issues/64)
+
+
+### Bug Fixes
+
+* remove stray dev-round note from dual output-mode label ([#90](https://github.com/ngtongsheng/Singray/issues/90)) ([3ed1966](https://github.com/ngtongsheng/Singray/commit/3ed19665310b6c54e519eb6bcd71b60162f9dc44)), closes [#59](https://github.com/ngtongsheng/Singray/issues/59)
+* robustness nits — audio cleanup, exit code, import finalize ([#107](https://github.com/ngtongsheng/Singray/issues/107)) ([a0ce209](https://github.com/ngtongsheng/Singray/commit/a0ce209ad03ef458a7e86f4ba1597d8391f2cf2f)), closes [#74](https://github.com/ngtongsheng/Singray/issues/74)
+* **ux:** lyric creator flow — exit nav guard, color legend, text orientation, i18n dev warning ([#100](https://github.com/ngtongsheng/Singray/issues/100)) ([99d1252](https://github.com/ngtongsheng/Singray/commit/99d125289fc2510cb9d107d3b6e7279f35f23ab0)), closes [#78](https://github.com/ngtongsheng/Singray/issues/78)
+
+
+### Performance Improvements
+
+* reuse freq buffer in Soundwave + fix pipeline error messages ([#77](https://github.com/ngtongsheng/Singray/issues/77)) ([#110](https://github.com/ngtongsheng/Singray/issues/110)) ([afd0150](https://github.com/ngtongsheng/Singray/commit/afd01508c674f849facb36b744c21413b0c77e4f))
+
 ## [0.2.0](https://github.com/ngtongsheng/Singray/compare/singray-v0.1.0...singray-v0.2.0) (2026-06-20)
 
 
