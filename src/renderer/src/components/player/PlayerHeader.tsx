@@ -1,4 +1,13 @@
-import { ArrowLeft, AudioWaveform, BarChart3, Info, MoreVertical, Pencil, Type } from 'lucide-react'
+import {
+  ArrowLeft,
+  AudioWaveform,
+  BarChart3,
+  Info,
+  Mic,
+  MoreVertical,
+  Pencil,
+  Type
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { usePlayerContext } from '../../context/PlayerContext'
 import ArtistLink from '../shared/ArtistLink'
@@ -19,7 +28,8 @@ function PlayerHeader(): React.JSX.Element {
     showBars,
     toggleBars,
     openEditMeta,
-    openDetails
+    openDetails,
+    onRecordings
   } = usePlayerContext()
 
   return (
@@ -96,6 +106,9 @@ function PlayerHeader(): React.JSX.Element {
               </IconButton>
             )}
           >
+            <MenuItem onSelect={onRecordings}>
+              <Mic className="size-3.5" strokeWidth={1.5} /> {t('player.viewRecordings')}
+            </MenuItem>
             <MenuItem onSelect={openDetails}>
               <Info className="size-3.5" strokeWidth={1.5} /> {t('player.songDetails')}
             </MenuItem>

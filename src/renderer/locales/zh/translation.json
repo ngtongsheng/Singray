@@ -160,7 +160,8 @@
       "countdown": "倒计时",
       "none": "无",
       "start": "开始"
-    }
+    },
+    "viewRecordings": "录音"
   },
   "details": {
     "title": "歌曲详情",

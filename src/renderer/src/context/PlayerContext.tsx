@@ -13,6 +13,7 @@ interface PlayerContextValue {
   onExit: () => void
   onEditLyrics: (s: SongListItem) => void
   onArtistClick: (artist: string) => void
+  onRecordings: () => void
 
   engine: AudioEngine | null
   error: string | null
@@ -90,10 +91,11 @@ interface ProviderProps {
  * auto-hide control bar (§7.2). Space play/pause, V guide vocal, Esc exits.
  */
 export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Element {
-  const { goLibrary, goCreator } = useAppContext()
+  const { goLibrary, goCreator, goRecordings } = useAppContext()
   const onExit = useCallback(() => goLibrary(), [goLibrary])
   const onEditLyrics = useCallback((s: SongListItem) => goCreator(s), [goCreator])
   const onArtistClick = useCallback((artist: string) => goLibrary(artist), [goLibrary])
+  const onRecordings = useCallback(() => goRecordings(song.id), [goRecordings, song.id])
   const [vocalOn, setVocalOn] = useState(false)
   const [vocalVol, setVocalVol] = useState(1)
   const [instrVol, setInstrVol] = useState(1)
@@ -353,6 +355,7 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
     onExit,
     onEditLyrics,
     onArtistClick,
+    onRecordings,
     engine,
     error,
     lyrics,
