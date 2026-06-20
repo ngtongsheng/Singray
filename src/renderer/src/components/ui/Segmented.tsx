@@ -1,8 +1,8 @@
 import * as ToggleGroupPrimitive from '@radix-ui/react-toggle-group'
+import { clsx as cx } from 'clsx'
 import type { ReactNode } from 'react'
-import { cx } from './cx'
 
-export interface SegmentOption<T extends string> {
+interface SegmentOption<T extends string> {
   value: T
   label: ReactNode
   title?: string

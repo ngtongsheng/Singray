@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button, Dialog, DialogFooter, Stack, Text } from '../ui'
 
 interface Props {
@@ -17,6 +18,7 @@ function ConfirmDialog({
   onConfirm,
   onCancel
 }: Props): React.JSX.Element {
+  const { t } = useTranslation()
   const cancelRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -34,7 +36,7 @@ function ConfirmDialog({
         </Stack>
         <DialogFooter>
           <Button ref={cancelRef} onClick={onCancel}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button variant="danger" onClick={onConfirm}>
             {confirmLabel}

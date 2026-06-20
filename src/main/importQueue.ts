@@ -54,7 +54,10 @@ function generateSongId(): SongId {
   return `${date}-${time}-${rand}` as SongId
 }
 
+const SONG_ID = /^[a-z0-9-]+$/i
+
 function songDir(songId: string): string {
+  if (!SONG_ID.test(songId)) throw new Error(`invalid song id: ${songId}`)
   return join(getSettings().libraryDir, songId)
 }
 
@@ -148,6 +151,7 @@ function run(job: Job): void {
   const settings = getSettings()
   const model = settings.separationModel || '6_HP-Karaoke-UVR.pth'
   let lastError = ''
+  let doneSeen = false
 
   spawnLines(
     effectivePythonPath(),
@@ -177,6 +181,7 @@ function run(job: Job): void {
         const pipelineLine = ImportPipelineLineSchema.safeParse(parsed)
         if (!pipelineLine.success) return
         if (pipelineLine.data.stage === 'done') {
+          doneSeen = true
           void finalizeDone(job, pipelineLine.data.durationSec ?? 0)
         } else if (pipelineLine.data.stage === 'error') {
           lastError = pipelineLine.data.message
@@ -194,6 +199,8 @@ function run(job: Job): void {
             dir,
             lastError || lastStderrLine(stderrTail) || `pipeline exited ${code}`
           )
+        } else if (!doneSeen) {
+          await failJob(job, dir, 'pipeline exited without emitting done')
         }
         releaseSlot()
       })()
