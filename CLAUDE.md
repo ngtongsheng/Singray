@@ -9,7 +9,7 @@ Personal desktop karaoke app. Electron + React + TS + Tailwind v4, Python pipeli
 - `BACKLOG.md` — **archived** (Rounds 1–3). History only; do not add new work there.
 
 ## Resume protocol (start of every session)
-1. Check the board: `gh project item-list 1 --owner ngtongsheng` — pick lowest `Priority` (P0 first) among `Todo`/`In Progress`. One issue at a time.
+1. Check the board: `gh project item-list 1 --owner ngtongsheng` — pick lowest `Priority` (P0 first) among **`Todo` only**. Never auto-pick an `In Progress` item; resume one only when the user names it. One issue at a time.
 2. Read the issue body + the matching `DECISIONS.md` section for context.
 3. If a branch for the issue already exists, inspect the working tree (`git status`, recent commits) to see how far it got, then continue it.
 
