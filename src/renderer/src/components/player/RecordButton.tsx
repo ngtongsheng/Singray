@@ -3,17 +3,24 @@ import { useTranslation } from 'react-i18next'
 import { usePlayerContext } from '../../context/PlayerContext'
 import { Toggle } from '../ui'
 
-/** Only rendered when `engine.canRecord`. */
 function RecordButton(): React.JSX.Element {
   const { t } = useTranslation()
-  const { recording, openRecordPrep, stopRecording } = usePlayerContext()
+  const { engine, recording, openRecordPrep, stopRecording } = usePlayerContext()
+  const canRecord = engine?.canRecord ?? false
 
   return (
     <Toggle
       size="md"
       pressed={recording}
+      disabled={!canRecord}
       onClick={recording ? stopRecording : openRecordPrep}
-      title={recording ? t('player.recordStopTip') : t('player.recordStartTip')}
+      title={
+        !canRecord
+          ? t('player.noMicTip')
+          : recording
+            ? t('player.recordStopTip')
+            : t('player.recordStartTip')
+      }
       className={recording ? 'text-destructive' : ''}
     >
       <Circle

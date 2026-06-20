@@ -76,7 +76,7 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
           variant="bare"
           onClick={toggleFavorite}
           title={song.favorite ? t('card.unfavorite') : t('card.favorite')}
-          className="shrink-0"
+          className={`shrink-0 transition-opacity ${song.favorite ? '' : 'opacity-0 group-hover:opacity-100'}`}
         >
           <Heart
             className={`size-4 ${song.favorite ? 'fill-primary text-primary' : 'text-muted-foreground hover:text-foreground'}`}
@@ -94,7 +94,7 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
               onClick={toggle}
               title={t('card.moreActions')}
               aria-label={t('card.moreActions')}
-              className="shrink-0 text-muted-foreground hover:text-foreground"
+              className="shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground"
             >
               <MoreHorizontal className="size-4" strokeWidth={1.5} />
             </IconButton>

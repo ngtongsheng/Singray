@@ -5,6 +5,7 @@ import {
   Info,
   Mic,
   MoreVertical,
+  Music2,
   Pencil,
   Type
 } from 'lucide-react'
@@ -43,7 +44,10 @@ function PlayerHeader(): React.JSX.Element {
         >
           <ArrowLeft className="size-4" strokeWidth={1.5} />
         </IconButton>
-        <Stack gap={2} justify="center" className="min-w-0">
+        <Stack direction="column" gap={0} className="min-w-0">
+          <span className="flex items-center gap-1 text-muted-foreground text-xs">
+            <Music2 className="size-3" strokeWidth={1.5} /> {t('player.nowPlaying')}
+          </span>
           <Text as="h1" variant="subtitle" className="truncate">
             {song.title}
           </Text>
