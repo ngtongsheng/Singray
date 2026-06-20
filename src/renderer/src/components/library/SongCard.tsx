@@ -79,7 +79,7 @@ const SongCard = memo(function SongCard({ song, importing }: Props): React.JSX.E
         openable ? 'cursor-pointer' : ''
       }`}
     >
-      <div className="relative aspect-video overflow-hidden rounded-t-card bg-muted">
+      <div className="relative aspect-video overflow-hidden rounded-t-lg bg-muted">
         {song.ready && (
           <img
             src={window.singray.audio.thumbUrl(song.id)}

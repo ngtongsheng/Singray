@@ -29,9 +29,7 @@ function Soundwave({ analyser, playing }: Props): React.JSX.Element {
     const ro = new ResizeObserver(resize)
     ro.observe(canvas)
 
-    const accent = getComputedStyle(document.documentElement)
-      .getPropertyValue('--color-accent')
-      .trim()
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()
     const data = new Uint8Array(analyser.frequencyBinCount)
     // Bottom ~2/3 of the spectrum carries the music; the top is mostly empty.
     const usableBins = Math.floor(analyser.frequencyBinCount * 0.66)

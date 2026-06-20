@@ -93,7 +93,7 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
           max={duration || 1}
           step={0.1}
           value={Math.min(time, duration)}
-          onChange={(e) => seekTo(Number(e.target.value))}
+          onChange={seekTo}
           onMouseUp={(e) => e.currentTarget.blur()}
           className="flex-1"
         />

@@ -1,32 +1,58 @@
-import type { ComponentProps, CSSProperties } from 'react'
-import { cx } from './cx'
+import * as SliderPrimitive from '@radix-ui/react-slider'
+import type { ComponentProps } from 'react'
+import { cn } from '../../lib/cn'
 
-type SliderProps = Omit<ComponentProps<'input'>, 'type'>
+interface SliderProps
+  extends Omit<ComponentProps<'span'>, 'value' | 'onChange' | 'dir' | 'defaultValue'> {
+  min?: number
+  max?: number
+  step?: number
+  value: number
+  onChange: (value: number) => void
+  /** Fired on pointer-up / key-up — use for expensive operations like audio seek. */
+  onCommit?: (value: number) => void
+  disabled?: boolean
+}
 
-/** De-native range input (UI4): CSS-only track/thumb restyle, native keyboard + drag kept. */
+/** Radix Slider (keyboard + drag a11y) wrapped to the single-number value/onChange API the
+ * app already uses, so call sites keep passing a plain number instead of Radix's value[]. */
 function Slider({
-  className,
-  style,
   min = 0,
   max = 100,
+  step,
   value,
+  onChange,
+  onCommit,
+  disabled,
+  className,
   ...rest
 }: SliderProps): React.JSX.Element {
-  const lo = Number(min)
-  const hi = Number(max)
-  const v = Number(value ?? lo)
-  const pct = hi > lo ? ((v - lo) / (hi - lo)) * 100 : 0
-
   return (
-    <input
-      type="range"
+    <SliderPrimitive.Root
       min={min}
       max={max}
-      value={value}
-      style={{ ...style, '--slider-pct': `${pct}%` } as CSSProperties}
-      className={cx('slider cursor-pointer', className)}
+      step={step}
+      value={[value]}
+      onValueChange={(vals) => {
+        const v = vals[0]
+        if (v !== undefined) onChange(v)
+      }}
+      onValueCommit={(vals) => {
+        const v = vals[0]
+        if (v !== undefined) onCommit?.(v)
+      }}
+      disabled={disabled}
+      className={cn(
+        'relative flex w-full cursor-pointer touch-none items-center select-none',
+        className
+      )}
       {...rest}
-    />
+    >
+      <SliderPrimitive.Track className="relative h-[3px] w-full grow overflow-hidden rounded-full bg-border">
+        <SliderPrimitive.Range className="absolute h-full bg-primary" />
+      </SliderPrimitive.Track>
+      <SliderPrimitive.Thumb className="block size-3 shrink-0 rounded-full bg-foreground shadow-sm outline-none disabled:pointer-events-none disabled:opacity-50" />
+    </SliderPrimitive.Root>
   )
 }
 

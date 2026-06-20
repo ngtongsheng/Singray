@@ -12,6 +12,7 @@ function CreatorHeader(): React.JSX.Element {
     <Stack justify="between" className="w-full">
       <Stack gap={2} align="center" className="min-w-0">
         <IconButton
+          size="md"
           onClick={onBack}
           title={t('common.back')}
           className="app-no-drag shrink-0 text-muted-foreground hover:text-foreground"

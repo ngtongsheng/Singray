@@ -66,7 +66,6 @@ function LanguagesSection(): React.JSX.Element | null {
             aria-label={t('settings.langLabel')}
           />
           <Button
-            size="md"
             onClick={addLanguage}
             disabled={!newCodeClean || !newLabel.trim() || codeTaken}
             title={

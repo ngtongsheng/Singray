@@ -116,6 +116,7 @@
     "guideTip": "导唱人声（V）",
     "guideOn": "导唱开",
     "guideOff": "导唱关",
+    "guideVol": "导唱音量",
     "guideVolTip": "导唱音量",
     "keyDownTip": "降调（[）",
     "keyUpTip": "升调（]）",
@@ -132,6 +133,7 @@
       "bars": "舞台视觉：频谱"
     },
     "micVolTip": "麦克风音量",
+    "micMonitorVol": "监听音量",
     "micMonitorOn": "监听开",
     "micMonitorOff": "监听关",
     "micMonitorTip": "在扬声器上静音/取消静音麦克风 — 录音仍会捕获麦克风",

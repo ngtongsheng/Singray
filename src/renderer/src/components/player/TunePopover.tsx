@@ -27,7 +27,11 @@ function TunePopover(): React.JSX.Element {
     stepKey,
     tempoVal,
     changeTempo,
+    vocalVol,
+    setVocalVolume,
     micActive,
+    micVol,
+    setMicVolume,
     micFxPreset,
     micFxAmount,
     setMicFx
@@ -37,7 +41,7 @@ function TunePopover(): React.JSX.Element {
     <Popover open={tuneOpen} onOpenChange={setTuneOpen}>
       <PopoverTrigger asChild>
         <Button
-          size="lg"
+          size="icon"
           active={
             tuneOpen || tempoVal !== 1 || keyVal !== 0 || (micActive && micFxPreset !== 'off')
           }
@@ -114,6 +118,40 @@ function TunePopover(): React.JSX.Element {
             </Grid>
           </Stack>
 
+          <div className="h-px bg-border" />
+          <Stack direction="column" gap={2}>
+            <Text as="span" variant="hint">
+              {t('player.guideVol')}
+            </Text>
+            <Slider
+              min={0}
+              max={1}
+              step={0.01}
+              value={vocalVol}
+              onChange={setVocalVolume}
+              className="h-8 w-full"
+            />
+          </Stack>
+
+          {micActive && (
+            <>
+              <div className="h-px bg-border" />
+              <Stack direction="column" gap={2}>
+                <Text as="span" variant="hint">
+                  {t('player.micMonitorVol')}
+                </Text>
+                <Slider
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={micVol}
+                  onChange={setMicVolume}
+                  className="h-8 w-full"
+                />
+              </Stack>
+            </>
+          )}
+
           {micActive && (
             <>
               <div className="h-px bg-border" />
@@ -149,7 +187,7 @@ function TunePopover(): React.JSX.Element {
                     max={1}
                     step={0.01}
                     value={micFxAmount}
-                    onChange={(e) => setMicFx(micFxPreset, Number(e.target.value))}
+                    onChange={(v) => setMicFx(micFxPreset, v)}
                     title={t('player.micFxAmountTip')}
                     className="h-8 w-full"
                   />

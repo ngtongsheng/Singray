@@ -33,10 +33,10 @@ function ConfirmDialog({
           <p className="text-sm text-muted-foreground">{body}</p>
         </Stack>
         <DialogFooter>
-          <Button ref={cancelRef} size="md" onClick={onCancel}>
+          <Button ref={cancelRef} onClick={onCancel}>
             Cancel
           </Button>
-          <Button variant="danger" size="md" onClick={onConfirm}>
+          <Button variant="danger" onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </DialogFooter>

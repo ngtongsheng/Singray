@@ -78,7 +78,7 @@ function LibraryView(): React.JSX.Element {
           <Stack direction="column" gap={4} justify="center" align="center" className="py-24">
             <Mic2 className="size-12 text-primary" strokeWidth={1.5} />
             <Text variant="hint">{t('library.emptyHint')}</Text>
-            <AddSongButton size="md" />
+            <AddSongButton />
           </Stack>
         ) : section === 'artists' ? (
           <ArtistList />

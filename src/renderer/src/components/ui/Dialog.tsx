@@ -32,13 +32,13 @@ function Dialog({ label, alert, width, onClose, children }: DialogProps): React.
   return (
     <DialogPrimitive.Root open onOpenChange={(o) => !o && onClose()}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/50 data-[state=closed]:animate-[fade-out_100ms_ease-in] data-[state=open]:animate-[fade-in_120ms_ease-out]" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/50 data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
           role={alert ? 'alertdialog' : 'dialog'}
           aria-label={label}
           onInteractOutside={(e) => alert && e.preventDefault()}
           className={cn(
-            '-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-40 w-full rounded-lg border border-border bg-muted p-6 shadow-raised outline-none data-[state=closed]:animate-[pop-out_100ms_ease-in] data-[state=open]:animate-[pop-in_120ms_ease-out]',
+            '-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-40 w-full rounded-lg border border-border bg-muted p-6 shadow-lg outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
             WIDTH[width]
           )}
         >

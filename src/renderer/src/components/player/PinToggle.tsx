@@ -9,7 +9,7 @@ function PinToggle(): React.JSX.Element {
 
   return (
     <Toggle
-      size="lg"
+      size="icon"
       pressed={pinned}
       onClick={togglePin}
       title={pinned ? t('player.unpinTip') : t('player.pinTip')}

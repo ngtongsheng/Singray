@@ -14,7 +14,7 @@ interface FieldProps {
 function Field({ label, hint, className, children }: FieldProps): React.JSX.Element {
   return (
     // biome-ignore lint/a11y/noLabelWithoutControl: children is opaque here; callers always pass a form control
-    <label className={cx('flex flex-col gap-1', className)}>
+    <label className={cx('flex flex-col gap-2', className)}>
       <Text as="span" variant="hint">
         {label}
       </Text>

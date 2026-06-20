@@ -20,8 +20,8 @@ export function usePeakCanvas({
   peaks,
   duration,
   clock,
-  baseAlpha = 0.5,
-  playedAlpha = 0.9
+  baseAlpha = 0.7,
+  playedAlpha = 0.95
 }: Options): React.RefObject<HTMLCanvasElement | null> {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -61,15 +61,15 @@ export function usePeakCanvas({
         }
         return off
       }
-      base = make(cssColor('--color-text-dim'), baseAlpha)
-      played = make(cssColor('--color-accent'), playedAlpha)
+      base = make(cssColor('--muted-foreground'), baseAlpha)
+      played = make(cssColor('--primary'), playedAlpha)
     }
 
     render()
     const ro = new ResizeObserver(render)
     ro.observe(canvas)
 
-    const playheadColor = cssColor('--color-lyric-active')
+    const playheadColor = cssColor('--lyric-active')
     let raf = 0
     const loop = (): void => {
       if (base && played) {

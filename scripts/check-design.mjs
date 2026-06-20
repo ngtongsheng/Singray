@@ -94,7 +94,8 @@ const violations = []
 
 for (const file of listFiles(ROOT)) {
   // shadcn/Radix primitives under ui/ need arbitrary values
-  // (w-[--radix-popover-trigger-width], data-[state=open]:…) the rule forbids elsewhere.
+  // (w-[--radix-popover-trigger-width], data-[state=open]:…) and margin utilities
+  // (ml-auto, mt-*) that stock shadcn source uses — both forbidden elsewhere.
   const inUi = file.replace(/\\/g, '/').includes('/components/ui/')
   const text = readFileSync(file, 'utf8')
   const lines = text.split('\n')
@@ -116,12 +117,12 @@ for (const file of listFiles(ROOT)) {
             `${file}:${lineNo}: non-token color class "${token}" — use a design-system color token`
           )
         }
-        if (marginRe.test(bare)) {
+        if (marginRe.test(bare) && !inUi) {
           violations.push(
             `${file}:${lineNo}: margin class "${token}" — use gap (Stack/Grid) instead of margin`
           )
         }
-        if (marginXyRe.test(bare) && bare !== 'mx-auto' && bare !== 'my-auto') {
+        if (marginXyRe.test(bare) && !inUi && bare !== 'mx-auto' && bare !== 'my-auto') {
           violations.push(
             `${file}:${lineNo}: margin class "${token}" — only mx-auto/my-auto allowed, use gap otherwise`
           )

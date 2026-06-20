@@ -39,21 +39,21 @@ function PlayerStage(): React.JSX.Element {
       />
       <div className="absolute inset-0 bg-black/55" />
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1/3 bg-gradient-to-b from-background to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-background to-transparent" />
+      {/* Bars overlay: below the bottom gradient. */}
+      {showBars && analyser && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-40 opacity-75">
+          <Soundwave analyser={analyser} playing={playing} />
+        </div>
+      )}
+      <div className="absolute inset-x-0 bottom-0 z-1 h-1/3 bg-gradient-to-t from-background to-transparent" />
       {/* Spacer matching the Titlebar (top-9 = 36px + h-10 = 40px). */}
       <div
         className="h-[76px] shrink-0" /* design-allow: exact Titlebar height, no scale token matches */
       />
       {/* Waveform strip: top strip below the header. */}
       {showWaveform && peaks && engine && (
-        <div className="relative z-10 h-16 shrink-0 opacity-75">
+        <div className="relative z-10 h-16 shrink-0">
           <StageWaveform peaks={peaks} duration={engine.duration} clock={clock} />
-        </div>
-      )}
-      {/* Bars overlay: bottom of stage, behind the control bar. */}
-      {showBars && analyser && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-40 opacity-75">
-          <Soundwave analyser={analyser} playing={playing} />
         </div>
       )}
       {/* Content area: lyrics / loading / error — fills remaining height. */}
@@ -61,9 +61,7 @@ function PlayerStage(): React.JSX.Element {
         {error ? (
           <Stack direction="column" gap={3} justify="center" align="center" className="h-full">
             <p className="text-destructive">{error}</p>
-            <Button size="md" onClick={onExit}>
-              {t('common.back')}
-            </Button>
+            <Button onClick={onExit}>{t('common.back')}</Button>
           </Stack>
         ) : !engine ? (
           <Stack gap={2} justify="center" className="h-full text-muted-foreground">
@@ -73,7 +71,7 @@ function PlayerStage(): React.JSX.Element {
           <LyricRenderer lyrics={lyrics} clock={clock} onSeek={seek} />
         ) : (
           <Stack justify="center" className="h-full">
-            <Button variant="primary" size="md" onClick={() => onEditLyrics(song)}>
+            <Button variant="primary" onClick={() => onEditLyrics(song)}>
               <Type className="size-4" strokeWidth={1.5} /> {t('player.addLyrics')}
             </Button>
           </Stack>

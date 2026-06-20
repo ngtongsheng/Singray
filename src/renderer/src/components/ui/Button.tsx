@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react'
 import { cn } from '../../lib/cn'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'bare'
-export type ButtonSize = 'sm' | 'md' | 'lg' | 'bare'
+export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon' | 'bare'
 
 /**
  * Variant classes shared by Button and IconButton (SPEC §10.4: one primary
@@ -34,19 +34,23 @@ export function buttonVariantClass(variant: ButtonVariant, active?: boolean): st
   }
 }
 
-/** Structural base + size (cva); variant colors come from buttonVariantClass. */
-const buttonBase = cva(
-  'inline-flex items-center justify-center gap-1.5 rounded-md disabled:opacity-50',
+/** Structural base + size (cva); variant colors come from buttonVariantClass. Sizes match
+ * stock shadcn's buttonVariants so controls in a row (button/input/select/...) share heights.
+ * Exported so Toggle.tsx can apply the same classes to Radix's Toggle primitive, which has
+ * no native size prop. */
+export const buttonBase = cva(
+  'inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-md disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       size: {
         sm: 'h-8 px-3 text-sm',
-        md: 'px-4 py-2 text-sm',
-        lg: 'h-11 px-3 text-sm',
+        md: 'h-9 px-4 py-2 text-sm',
+        lg: 'h-10 px-8 text-sm',
+        icon: 'size-9',
         bare: ''
       }
     },
-    defaultVariants: { size: 'sm' }
+    defaultVariants: { size: 'md' }
   }
 )
 
@@ -60,7 +64,7 @@ export interface ButtonProps extends ComponentProps<'button'> {
 /** Standard control button. `variant="bare"` opts out of all styling (content-like buttons). */
 function Button({
   variant = 'secondary',
-  size = 'sm',
+  size = 'md',
   active,
   className,
   ...rest

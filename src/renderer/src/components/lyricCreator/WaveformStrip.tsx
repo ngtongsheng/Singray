@@ -86,7 +86,7 @@ function WaveformStrip({ songId, audioRef, stamps, onSeek }: Props): React.JSX.E
 
       const mid = HEIGHT / 2
       const bucketsPerPx = peaks.data.length / w
-      ctx.fillStyle = cssColor('--color-text-dim')
+      ctx.fillStyle = cssColor('--muted-foreground')
       ctx.globalAlpha = 0.55
       for (let x = 0; x < w; x++) {
         const end = Math.min(Math.ceil((x + 1) * bucketsPerPx), peaks.data.length)
@@ -100,7 +100,7 @@ function WaveformStrip({ songId, audioRef, stamps, onSeek }: Props): React.JSX.E
       }
 
       ctx.globalAlpha = 0.9
-      ctx.fillStyle = cssColor('--color-accent-soft')
+      ctx.fillStyle = cssColor('--accent-soft')
       for (const t of stamps) {
         const x = Math.round((t / peaks.duration) * w)
         ctx.fillRect(x, 0, 1, 10)
@@ -118,7 +118,7 @@ function WaveformStrip({ songId, audioRef, stamps, onSeek }: Props): React.JSX.E
   useEffect(() => {
     if (!peaks) return
     let raf = 0
-    const color = cssColor('--color-lyric-active')
+    const color = cssColor('--lyric-active')
     const loop = (): void => {
       const overlay = overlayRef.current
       const a = audioRef.current

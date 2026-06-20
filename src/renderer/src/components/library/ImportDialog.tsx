@@ -276,12 +276,9 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
         </Stack>
 
         <DialogFooter>
-          <Button size="md" onClick={onClose}>
-            {t('common.cancel')}
-          </Button>
+          <Button onClick={onClose}>{t('common.cancel')}</Button>
           <Button
             variant="primary"
-            size="md"
             onClick={submit}
             disabled={!probe.probed || !probe.title.trim() || submitting}
           >
