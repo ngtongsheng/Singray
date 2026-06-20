@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Settings as SettingsModel } from '../../../shared/types'
+import type { LlmProvider, Settings as SettingsModel } from '../../../shared/types'
 import { type UseAsync, useAsync } from '../hooks/useAsync'
 import { useAudioDevices } from '../hooks/useAudioDevices'
 import { useSettings } from '../hooks/useSettings'
@@ -15,7 +15,7 @@ interface SettingsContextValue {
   onBack: () => void
   pipelineTest: UseAsync<string, []>
   llmTest: UseAsync<string, []>
-  llmModels: UseAsync<string[], [url: string, key: string]>
+  llmModels: UseAsync<string[], [provider: LlmProvider, url: string, key: string]>
   outputs: MediaDeviceInfo[]
   inputs: MediaDeviceInfo[]
   toneBusy: 'monitor' | 'stream' | null
@@ -40,7 +40,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
     const r = await window.singray.llm.test()
     return t('settings.llmOk', { reply: r.reply, secs: (r.ms / 1000).toFixed(1) })
   })
-  const llmModels = useAsync((url: string, key: string) => window.singray.llm.listModels(url, key))
+  const llmModels = useAsync((provider: LlmProvider, url: string, key: string) =>
+    window.singray.llm.listModels(provider, url, key)
+  )
   const { outputs, inputs } = useAudioDevices()
   const { toneBusy, toneError, testTone } = useTestTone(settings)
 
@@ -52,13 +54,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
     return () => window.removeEventListener('keydown', onKey)
   }, [onBack])
 
+  const llmProvider = settings?.llmProvider ?? 'ollama'
   const llmBaseUrl = settings?.llmBaseUrl ?? ''
   const llmApiKey = settings?.llmApiKey ?? ''
   const { run: runLlmModels } = llmModels
   useEffect(() => {
-    if (!llmBaseUrl) return
-    void runLlmModels(llmBaseUrl, llmApiKey)
-  }, [runLlmModels, llmBaseUrl, llmApiKey])
+    const ready = llmProvider === 'ollama' ? !!llmBaseUrl : !!llmApiKey
+    if (!ready) return
+    void runLlmModels(llmProvider, llmBaseUrl, llmApiKey)
+  }, [runLlmModels, llmProvider, llmBaseUrl, llmApiKey])
 
   const value: SettingsContextValue = {
     settings,

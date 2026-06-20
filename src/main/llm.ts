@@ -1,11 +1,18 @@
-import { ChatCompletionResponseSchema, ListModelsResponseSchema } from '../shared/schemas'
-import type { LlmTestResult } from '../shared/types'
+import {
+  AnthropicMessagesResponseSchema,
+  ChatCompletionResponseSchema,
+  GeminiGenerateContentResponseSchema,
+  GeminiModelsResponseSchema,
+  ListModelsResponseSchema
+} from '../shared/schemas'
+import type { LlmProvider, LlmTestResult } from '../shared/types'
 import { getSettings } from './settings'
 
 /**
- * OpenAI-compatible chat client (R3.1, SPEC §12).
- * Plain fetch against `<llmBaseUrl>/chat/completions` — covers Ollama, LM Studio,
- * and hosted providers. Errors are rewritten into messages a settings screen can show.
+ * Multi-provider chat client (R3.1 + issue #61). `chat`/`listLlmModels` dispatch on the
+ * configured provider preset — Ollama/OpenAI/OpenRouter share an OpenAI-compatible `/v1`
+ * shape, Anthropic and Gemini each need their own endpoint + auth header + response shape.
+ * Errors are rewritten into messages a settings screen can show.
  */
 
 export interface ChatMessage {
@@ -21,11 +28,36 @@ export interface ChatOptions {
    * Ask reasoning models to skip thinking (`reasoning_effort: "none"`, honored by
    * Ollama's /v1) — without it a thinking model burns the whole enrichment budget
    * on hidden tokens. Servers that reject the param get one retry without it.
+   * OpenAI-compatible providers only; ignored for Anthropic/Gemini.
    */
   noReasoning?: boolean
 }
 
 const DEFAULT_TIMEOUT_MS = 30_000
+const MODELS_TIMEOUT_MS = 5_000
+/** Generous cap so lyric cleanup (can run long) isn't cut off; this is a personal app, not metered. */
+const ANTHROPIC_MAX_TOKENS = 4096
+
+const PROVIDER_DEFAULTS: Record<LlmProvider, { baseUrl: string; requiresKey: boolean }> = {
+  ollama: { baseUrl: 'http://localhost:11434/v1', requiresKey: false },
+  openai: { baseUrl: 'https://api.openai.com/v1', requiresKey: true },
+  anthropic: { baseUrl: 'https://api.anthropic.com', requiresKey: true },
+  gemini: { baseUrl: 'https://generativelanguage.googleapis.com/v1beta', requiresKey: true },
+  openrouter: { baseUrl: 'https://openrouter.ai/api/v1', requiresKey: true }
+}
+
+/** Ollama's base URL is user-editable; cloud providers use a fixed, hidden base URL. */
+function resolveBaseUrl(provider: LlmProvider, settingsBaseUrl: string): string {
+  if (provider !== 'ollama') return PROVIDER_DEFAULTS[provider].baseUrl
+  const trimmed = settingsBaseUrl.trim().replace(/\/+$/, '')
+  if (!trimmed) throw new Error('Set the Ollama base URL in Settings first.')
+  try {
+    new URL(trimmed)
+  } catch {
+    throw new Error(`"${trimmed}" is not a valid URL.`)
+  }
+  return trimmed
+}
 
 function friendlyNetworkError(err: unknown, baseUrl: string, timeoutMs: number): Error {
   if (err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
@@ -42,7 +74,7 @@ function friendlyNetworkError(err: unknown, baseUrl: string, timeoutMs: number):
   return new Error(`Request to ${baseUrl} failed: ${err instanceof Error ? err.message : err}`)
 }
 
-/** Pulls the human-readable message out of an OpenAI-style error body, else falls back to status. */
+/** Pulls the human-readable message out of an OpenAI/Anthropic/Gemini-style error body. */
 async function friendlyHttpError(res: Response, model: string): Promise<Error> {
   let detail = ''
   try {
@@ -58,26 +90,36 @@ async function friendlyHttpError(res: Response, model: string): Promise<Error> {
   return new Error(detail ? `Server error: ${detail}` : `Server returned HTTP ${res.status}.`)
 }
 
-/** Sends a chat completion request to the endpoint configured in settings; resolves with the reply text. */
-export async function chat(messages: ChatMessage[], opts: ChatOptions = {}): Promise<string> {
-  const { llmBaseUrl, llmModel, llmApiKey } = getSettings()
-  const baseUrl = llmBaseUrl.trim().replace(/\/+$/, '')
-  const model = llmModel.trim()
-  if (!baseUrl) throw new Error('Set the LLM base URL in Settings first.')
-  if (!model) throw new Error('Set a model name in Settings first.')
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+  baseUrlForError: string
+): Promise<Response> {
   try {
-    new URL(baseUrl)
-  } catch {
-    throw new Error(`"${baseUrl}" is not a valid URL.`)
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) })
+  } catch (err) {
+    throw friendlyNetworkError(err, baseUrlForError, timeoutMs)
   }
+}
 
-  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS
+// --- OpenAI-compatible (Ollama, OpenAI, OpenRouter) ---
+
+async function chatOpenAiCompat(
+  baseUrl: string,
+  apiKey: string,
+  model: string,
+  messages: ChatMessage[],
+  opts: ChatOptions,
+  timeoutMs: number
+): Promise<string> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (llmApiKey.trim()) headers.Authorization = `Bearer ${llmApiKey.trim()}`
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`
 
-  const request = async (noReasoning: boolean): Promise<Response> => {
-    try {
-      return await fetch(`${baseUrl}/chat/completions`, {
+  const request = async (noReasoning: boolean): Promise<Response> =>
+    fetchWithTimeout(
+      `${baseUrl}/chat/completions`,
+      {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -86,13 +128,11 @@ export async function chat(messages: ChatMessage[], opts: ChatOptions = {}): Pro
           stream: false,
           ...(opts.temperature !== undefined && { temperature: opts.temperature }),
           ...(noReasoning && { reasoning_effort: 'none' })
-        }),
-        signal: AbortSignal.timeout(timeoutMs)
-      })
-    } catch (err) {
-      throw friendlyNetworkError(err, baseUrl, timeoutMs)
-    }
-  }
+        })
+      },
+      timeoutMs,
+      baseUrl
+    )
 
   let res = await request(opts.noReasoning ?? false)
   // Strict providers 400 on reasoning_effort for non-reasoning models — retry plain.
@@ -112,24 +152,189 @@ export async function chat(messages: ChatMessage[], opts: ChatOptions = {}): Pro
   return content
 }
 
-/** GET /v1/models from the configured OpenAI-compat endpoint; returns sorted model IDs. */
-export async function listLlmModels(baseUrl: string, apiKey: string): Promise<string[]> {
-  const base = baseUrl.trim().replace(/\/+$/, '')
-  if (!base) return []
+async function listOpenAiCompatModels(baseUrl: string, apiKey: string): Promise<string[]> {
   const headers: Record<string, string> = {}
-  if (apiKey.trim()) headers.Authorization = `Bearer ${apiKey.trim()}`
-  let res: Response
-  try {
-    res = await fetch(`${base}/models`, { headers, signal: AbortSignal.timeout(5000) })
-  } catch (err) {
-    throw friendlyNetworkError(err, base, 5000)
-  }
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`
+  const res = await fetchWithTimeout(`${baseUrl}/models`, { headers }, MODELS_TIMEOUT_MS, baseUrl)
   if (!res.ok) throw await friendlyHttpError(res, '')
   const parsed = ListModelsResponseSchema.safeParse(await res.json())
   return (parsed.success ? parsed.data.data : []).map((m) => m.id).sort()
 }
 
-/** Settings "Test" button: tiny round-trip proving URL + model + key all work. */
+// --- Anthropic ---
+
+async function chatAnthropic(
+  baseUrl: string,
+  apiKey: string,
+  model: string,
+  messages: ChatMessage[],
+  opts: ChatOptions,
+  timeoutMs: number
+): Promise<string> {
+  const system = messages
+    .filter((m) => m.role === 'system')
+    .map((m) => m.content)
+    .join('\n\n')
+  const conversation = messages
+    .filter((m) => m.role !== 'system')
+    .map((m) => ({ role: m.role, content: m.content }))
+
+  const res = await fetchWithTimeout(
+    `${baseUrl}/v1/messages`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: ANTHROPIC_MAX_TOKENS,
+        messages: conversation,
+        ...(system && { system }),
+        ...(opts.temperature !== undefined && { temperature: opts.temperature })
+      })
+    },
+    timeoutMs,
+    baseUrl
+  )
+  if (!res.ok) throw await friendlyHttpError(res, model)
+
+  let raw: unknown
+  try {
+    raw = await res.json()
+  } catch {
+    throw new Error('Endpoint returned non-JSON — not an Anthropic Messages API URL?')
+  }
+  const parsed = AnthropicMessagesResponseSchema.safeParse(raw)
+  const text = parsed.success ? parsed.data.content.find((c) => c.type === 'text')?.text : undefined
+  if (typeof text !== 'string') throw new Error('Unexpected response shape from Anthropic.')
+  return text
+}
+
+async function listAnthropicModels(baseUrl: string, apiKey: string): Promise<string[]> {
+  const res = await fetchWithTimeout(
+    `${baseUrl}/v1/models`,
+    { headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' } },
+    MODELS_TIMEOUT_MS,
+    baseUrl
+  )
+  if (!res.ok) throw await friendlyHttpError(res, '')
+  const parsed = ListModelsResponseSchema.safeParse(await res.json())
+  return (parsed.success ? parsed.data.data : []).map((m) => m.id).sort()
+}
+
+// --- Gemini ---
+
+async function chatGemini(
+  baseUrl: string,
+  apiKey: string,
+  model: string,
+  messages: ChatMessage[],
+  opts: ChatOptions,
+  timeoutMs: number
+): Promise<string> {
+  const system = messages
+    .filter((m) => m.role === 'system')
+    .map((m) => m.content)
+    .join('\n\n')
+  const contents = messages
+    .filter((m) => m.role !== 'system')
+    .map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }))
+
+  const res = await fetchWithTimeout(
+    `${baseUrl}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents,
+        ...(system && { systemInstruction: { parts: [{ text: system }] } }),
+        ...(opts.temperature !== undefined && {
+          generationConfig: { temperature: opts.temperature }
+        })
+      })
+    },
+    timeoutMs,
+    baseUrl
+  )
+  if (!res.ok) throw await friendlyHttpError(res, model)
+
+  let raw: unknown
+  try {
+    raw = await res.json()
+  } catch {
+    throw new Error('Endpoint returned non-JSON — not a Gemini generateContent URL?')
+  }
+  const parsed = GeminiGenerateContentResponseSchema.safeParse(raw)
+  const parts = parsed.success ? parsed.data.candidates[0]?.content?.parts : undefined
+  const text = parts?.map((p) => p.text ?? '').join('')
+  if (!text) throw new Error('Unexpected response shape from Gemini.')
+  return text
+}
+
+async function listGeminiModels(baseUrl: string, apiKey: string): Promise<string[]> {
+  const res = await fetchWithTimeout(
+    `${baseUrl}/models?key=${encodeURIComponent(apiKey)}`,
+    {},
+    MODELS_TIMEOUT_MS,
+    baseUrl
+  )
+  if (!res.ok) throw await friendlyHttpError(res, '')
+  const parsed = GeminiModelsResponseSchema.safeParse(await res.json())
+  const models = parsed.success ? parsed.data.models : []
+  return models
+    .filter((m) => m.supportedGenerationMethods.includes('generateContent'))
+    .map((m) => m.name.replace(/^models\//, ''))
+    .sort()
+}
+
+// --- Dispatch ---
+
+/** Sends a chat request to the endpoint configured in settings; resolves with the reply text. */
+export async function chat(messages: ChatMessage[], opts: ChatOptions = {}): Promise<string> {
+  const { llmProvider, llmBaseUrl, llmModel, llmApiKey } = getSettings()
+  const model = llmModel.trim()
+  if (!model) throw new Error('Set a model name in Settings first.')
+  const apiKey = llmApiKey.trim()
+  const cfg = PROVIDER_DEFAULTS[llmProvider]
+  if (cfg.requiresKey && !apiKey) throw new Error('Set an API key in Settings first.')
+  const baseUrl = resolveBaseUrl(llmProvider, llmBaseUrl)
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS
+
+  switch (llmProvider) {
+    case 'anthropic':
+      return chatAnthropic(baseUrl, apiKey, model, messages, opts, timeoutMs)
+    case 'gemini':
+      return chatGemini(baseUrl, apiKey, model, messages, opts, timeoutMs)
+    default:
+      return chatOpenAiCompat(baseUrl, apiKey, model, messages, opts, timeoutMs)
+  }
+}
+
+/** Lists available models for the given provider preset; returns sorted model IDs. */
+export async function listLlmModels(
+  provider: LlmProvider,
+  baseUrl: string,
+  apiKey: string
+): Promise<string[]> {
+  const cfg = PROVIDER_DEFAULTS[provider]
+  const key = apiKey.trim()
+  if (cfg.requiresKey && !key) throw new Error('Set an API key in Settings first.')
+  const base = resolveBaseUrl(provider, baseUrl)
+
+  switch (provider) {
+    case 'anthropic':
+      return listAnthropicModels(base, key)
+    case 'gemini':
+      return listGeminiModels(base, key)
+    default:
+      return listOpenAiCompatModels(base, key)
+  }
+}
+
+/** Settings "Test" button: tiny round-trip proving provider + model + key all work. */
 export async function testLlm(): Promise<LlmTestResult> {
   const started = Date.now()
   const reply = await chat([{ role: 'user', content: 'Reply with the single word: pong' }], {

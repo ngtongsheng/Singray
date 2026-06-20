@@ -40,7 +40,9 @@ export function registerIpc(): void {
   handle('lyrics:findLyrics', (_e, query) => findLyrics(query))
 
   handle('llm:test', () => testLlm())
-  handle('llm:listModels', (_e, baseUrl, apiKey) => listLlmModels(baseUrl, apiKey))
+  handle('llm:listModels', (_e, provider, baseUrl, apiKey) =>
+    listLlmModels(provider, baseUrl, apiKey)
+  )
   handle('llm:enrichProbe', (_e, probe) => enrichProbe(probe))
   handle('llm:cleanMeta', (_e, input) => cleanMeta(input))
   handle('llm:cleanLyrics', (_e, input) => cleanLyrics(input))

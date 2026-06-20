@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { RecordingItem } from '../../../shared/types'
 import ConfirmDialog from '../components/shared/ConfirmDialog'
 import Titlebar from '../components/shared/Titlebar'
-import { Container, IconButton, ScrollArea, Stack, Text } from '../components/ui'
+import { Container, IconButton, Stack, Text } from '../components/ui'
 import { useAppContext } from '../context/AppContext'
 import { useLibrary } from '../hooks/useLibrary'
 
@@ -57,7 +57,7 @@ function Recordings({ songId }: Props): React.JSX.Element {
 
   function songTitle(id: string): string {
     const song = songs.find((s) => s.id === id)
-    return song ? `${song.title} — ${song.artist}` : id
+    return song ? `${song.title} — ${song.artists.join(', ')}` : id
   }
 
   const title = songId
@@ -89,55 +89,53 @@ function Recordings({ songId }: Props): React.JSX.Element {
             {t('recordings.empty')}
           </Text>
         ) : (
-          <ScrollArea className="h-full">
-            <Stack direction="column" gap={0} className="divide-y divide-border py-3">
-              {recordings.map((rec) => (
-                <Stack key={rec.path} justify="between" align="center" className="px-1 py-3">
-                  <Stack direction="column" gap={0.5}>
-                    {!songId && (
-                      <Text as="span" variant="item">
-                        {songTitle(rec.songId)}
-                      </Text>
-                    )}
-                    <Text as="span" variant="hint" className="text-xs">
-                      {fmtTimestamp(rec.timestamp, i18n.language)} · {fmtDuration(rec.durationSec)}
+          <Stack direction="column" gap={0} className="divide-y divide-border py-3">
+            {recordings.map((rec) => (
+              <Stack key={rec.path} justify="between" align="center" className="px-1 py-3">
+                <Stack direction="column" gap={0.5}>
+                  {!songId && (
+                    <Text as="span" variant="item">
+                      {songTitle(rec.songId)}
                     </Text>
-                  </Stack>
-
-                  <Stack gap={1}>
-                    <IconButton
-                      size="sm"
-                      title={playingUrl === rec.url ? t('recordings.pause') : t('recordings.play')}
-                      onClick={() => togglePlay(rec)}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      {playingUrl === rec.url ? (
-                        <Square className="size-4" strokeWidth={1.5} />
-                      ) : (
-                        <Play className="size-4" strokeWidth={1.5} />
-                      )}
-                    </IconButton>
-                    <IconButton
-                      size="sm"
-                      title={t('recordings.reveal')}
-                      onClick={() => window.singray.recordings.reveal(rec.path)}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <FolderOpen className="size-4" strokeWidth={1.5} />
-                    </IconButton>
-                    <IconButton
-                      size="sm"
-                      title={t('recordings.delete')}
-                      onClick={() => setPendingDelete(rec)}
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="size-4" strokeWidth={1.5} />
-                    </IconButton>
-                  </Stack>
+                  )}
+                  <Text as="span" variant="hint" className="text-xs">
+                    {fmtTimestamp(rec.timestamp, i18n.language)} · {fmtDuration(rec.durationSec)}
+                  </Text>
                 </Stack>
-              ))}
-            </Stack>
-          </ScrollArea>
+
+                <Stack gap={1}>
+                  <IconButton
+                    size="sm"
+                    title={playingUrl === rec.url ? t('recordings.pause') : t('recordings.play')}
+                    onClick={() => togglePlay(rec)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    {playingUrl === rec.url ? (
+                      <Square className="size-4" strokeWidth={1.5} />
+                    ) : (
+                      <Play className="size-4" strokeWidth={1.5} />
+                    )}
+                  </IconButton>
+                  <IconButton
+                    size="sm"
+                    title={t('recordings.reveal')}
+                    onClick={() => window.singray.recordings.reveal(rec.path)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <FolderOpen className="size-4" strokeWidth={1.5} />
+                  </IconButton>
+                  <IconButton
+                    size="sm"
+                    title={t('recordings.delete')}
+                    onClick={() => setPendingDelete(rec)}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="size-4" strokeWidth={1.5} />
+                  </IconButton>
+                </Stack>
+              </Stack>
+            ))}
+          </Stack>
         )}
       </Container>
 
