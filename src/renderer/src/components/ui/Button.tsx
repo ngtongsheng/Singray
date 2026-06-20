@@ -39,7 +39,7 @@ export function buttonVariantClass(variant: ButtonVariant, active?: boolean): st
  * Exported so Toggle.tsx can apply the same classes to Radix's Toggle primitive, which has
  * no native size prop. */
 export const buttonBase = cva(
-  'inline-flex items-center justify-center gap-1.5 rounded-md disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-md disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       size: {
