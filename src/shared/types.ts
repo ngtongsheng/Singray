@@ -1,8 +1,14 @@
 // Single source of truth for types shared by main / preload / renderer (SPEC §8).
 // Runtime-validated types live in schemas.ts and are re-exported here for import compat.
-import type { ImportPipelineLine, ImportStage, LrclibHit, MicFxPreset } from './schemas'
+import type {
+  ImportPipelineLine,
+  ImportStage,
+  LlmProvider,
+  LrclibHit,
+  MicFxPreset
+} from './schemas'
 
-export type { ImportPipelineLine, ImportStage, LrclibHit, MicFxPreset }
+export type { ImportPipelineLine, ImportStage, LlmProvider, LrclibHit, MicFxPreset }
 
 /** File extensions accepted by "From file" import (R3.7 picker filter + ADD2 drop zone). */
 export const MEDIA_EXTENSIONS = [
@@ -35,7 +41,7 @@ export interface SongMeta {
   schemaVersion: 1
   id: string
   title: string
-  artist: string
+  artists: string[]
   language: Language
   youtubeUrl: string
   youtubeTitle: string
@@ -106,11 +112,13 @@ export interface Settings {
   languages: LanguageDef[]
   /** UI locale (R2.5): a folder name under src/renderer/locales, or '' = follow OS. */
   uiLanguage: string
-  /** OpenAI-compatible chat endpoint base URL (R3.1), e.g. http://localhost:11434/v1 for Ollama. */
+  /** AI Assist provider preset (issue #61): selects auth header + base URL + endpoint shape. */
+  llmProvider: LlmProvider
+  /** Ollama-only override; ignored for cloud providers (fixed base URL per provider). */
   llmBaseUrl: string
   /** Model name passed to the endpoint, e.g. "gemma4:12b-it-qat" or "gpt-4o-mini". */
   llmModel: string
-  /** Bearer token for hosted endpoints; '' = none (local Ollama needs no key). */
+  /** API key for cloud providers; '' = none (local Ollama needs no key). */
   llmApiKey: string
   /** UVR separation model filename for new imports (e.g. "6_HP-Karaoke-UVR.pth"). */
   separationModel: string
@@ -188,7 +196,7 @@ export type ImportProgress =
 export interface ImportRequest {
   url: string
   title: string
-  artist: string
+  artists: string[]
   language: Language
   /** Raw YouTube title, kept in meta.json for future re-enrichment. */
   youtubeTitle: string
@@ -309,8 +317,8 @@ export interface SingrayApi {
   llm: {
     /** Round-trips a tiny prompt through the configured endpoint; rejects with a readable message. */
     test(): Promise<LlmTestResult>
-    /** Lists available models from the configured OpenAI-compat /v1/models endpoint; rejects readably. */
-    listModels(baseUrl: string, apiKey: string): Promise<string[]>
+    /** Lists available models for the given provider preset; rejects readably. */
+    listModels(provider: LlmProvider, baseUrl: string, apiKey: string): Promise<string[]>
     /** Cleans probe metadata for import prefill; falls back to the heuristic parser, never rejects. */
     enrichProbe(probe: ProbeResult): Promise<EnrichResult>
     /** "Clean up with AI" on an existing song; rejects with a readable message. */
@@ -369,7 +377,10 @@ export interface IpcMap {
   'lyrics:findLyrics': { args: [query: LrclibQuery]; result: LrclibHit[] }
 
   'llm:test': { args: []; result: LlmTestResult }
-  'llm:listModels': { args: [baseUrl: string, apiKey: string]; result: string[] }
+  'llm:listModels': {
+    args: [provider: LlmProvider, baseUrl: string, apiKey: string]
+    result: string[]
+  }
   'llm:enrichProbe': { args: [probe: ProbeResult]; result: EnrichResult }
   'llm:cleanMeta': {
     args: [input: { title: string; artist: string; youtubeTitle: string }]

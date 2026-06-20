@@ -52,7 +52,7 @@ const api: SingrayApi = {
   },
   llm: {
     test: () => invoke('llm:test'),
-    listModels: (baseUrl, apiKey) => invoke('llm:listModels', baseUrl, apiKey),
+    listModels: (provider, baseUrl, apiKey) => invoke('llm:listModels', provider, baseUrl, apiKey),
     enrichProbe: (probe) => invoke('llm:enrichProbe', probe),
     cleanMeta: (input) => invoke('llm:cleanMeta', input),
     cleanLyrics: (input) => invoke('llm:cleanLyrics', input)

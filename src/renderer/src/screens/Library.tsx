@@ -17,7 +17,7 @@ import SongRowList from '../components/library/SongRowList'
 import ViewSortControls from '../components/library/ViewSortControls'
 import ConfirmDialog from '../components/shared/ConfirmDialog'
 import Titlebar from '../components/shared/Titlebar'
-import { Container, Stack, Text } from '../components/ui'
+import { ScrollArea, Stack, Text } from '../components/ui'
 import { LibraryProvider, useLibraryContext } from '../context/LibraryContext'
 
 interface Props {
@@ -68,32 +68,36 @@ function LibraryView(): React.JSX.Element {
         </Stack>
       </Titlebar>
 
-      <Container>
+      <div className="flex h-full flex-col pt-19">
         {section === 'songs' && (
-          <Stack gap={2} justify="between" className="py-3">
+          <Stack gap={2} justify="between" className="flex-none px-6 py-3">
             <FilterChips langDefs={langDefs} />
             <ViewSortControls />
           </Stack>
         )}
 
-        {songs.length === 0 ? (
-          <Stack direction="column" gap={4} justify="center" align="center" className="py-24">
-            <Mic2 className="size-12 text-primary" strokeWidth={1.5} />
-            <Text variant="hint">{t('library.emptyHint')}</Text>
-            <AddSongButton />
-          </Stack>
-        ) : section === 'artists' ? (
-          <ArtistList />
-        ) : filteredSongs.length === 0 ? (
-          <Text variant="hint" className="py-12 text-center">
-            {t('library.noMatch')}
-          </Text>
-        ) : view === 'grid' ? (
-          <SongGrid />
-        ) : (
-          <SongRowList />
-        )}
-      </Container>
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="px-6">
+            {songs.length === 0 ? (
+              <Stack direction="column" gap={4} justify="center" align="center" className="py-24">
+                <Mic2 className="size-12 text-primary" strokeWidth={1.5} />
+                <Text variant="hint">{t('library.emptyHint')}</Text>
+                <AddSongButton />
+              </Stack>
+            ) : section === 'artists' ? (
+              <ArtistList />
+            ) : filteredSongs.length === 0 ? (
+              <Text variant="hint" className="py-12 text-center">
+                {t('library.noMatch')}
+              </Text>
+            ) : view === 'grid' ? (
+              <SongGrid />
+            ) : (
+              <SongRowList />
+            )}
+          </div>
+        </ScrollArea>
+      </div>
 
       <ImportStatusStrip />
 
@@ -104,7 +108,7 @@ function LibraryView(): React.JSX.Element {
             title={t('library.deleteTitle')}
             body={t('library.deleteBody', {
               title: pendingDelete.title,
-              artist: pendingDelete.artist
+              artist: pendingDelete.artists.join(', ')
             })}
             confirmLabel={t('common.delete')}
             onConfirm={confirmDelete}
