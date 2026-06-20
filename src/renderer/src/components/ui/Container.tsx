@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react'
-import { cx } from './cx'
+import { cn } from '../../lib/cn'
+import { ScrollArea } from './ScrollArea'
 
 export type ContainerPb = 0 | 4 | 6 | 8 | 10 | 12
 export type ContainerMaxWidth = 'lg' | 'xl'
@@ -18,16 +19,14 @@ const MAX_WIDTH: Record<ContainerMaxWidth, string> = {
   xl: 'mx-auto max-w-xl'
 }
 
-export interface ContainerProps extends ComponentProps<'div'> {
+export interface ContainerProps extends ComponentProps<typeof ScrollArea> {
   pb?: ContainerPb
-  /** Centers content to a max width (forms), instead of running full-width. */
   maxWidth?: ContainerMaxWidth
 }
 
 /**
- * Page-level scroll container: sits below the floating header (pt-19),
- * edges at pl-6/pr-[14px] (24px visual both sides — pr compensates for the
- * 10px scrollbar-gutter reserved by .overflow-y-auto in main.css).
+ * Page-level scroll container. Radix ScrollArea overlays the thumb so no
+ * scrollbar-gutter compensation needed — symmetric pl-6/pr-6.
  */
 function Container({
   pb = 0,
@@ -37,12 +36,11 @@ function Container({
   ...rest
 }: ContainerProps): React.JSX.Element {
   return (
-    <div
-      className={cx('absolute inset-0 overflow-y-auto pl-6 pr-[14px] pt-19', PB[pb], className)} // design-allow: scrollbar-gutter compensation (comment above)
-      {...rest}
-    >
-      {maxWidth ? <div className={MAX_WIDTH[maxWidth]}>{children}</div> : children}
-    </div>
+    <ScrollArea className={cn('absolute inset-0', className)} {...rest}>
+      <div className={cn('pl-6 pr-6 pt-19', PB[pb])}>
+        {maxWidth ? <div className={MAX_WIDTH[maxWidth]}>{children}</div> : children}
+      </div>
+    </ScrollArea>
   )
 }
 

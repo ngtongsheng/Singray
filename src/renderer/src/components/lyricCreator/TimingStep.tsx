@@ -3,7 +3,7 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Lyrics } from '../../../../shared/types'
 import { useTapTimingCursor } from '../../hooks/useTapTimingCursor'
-import { Button, IconButton, Slider, Stack, StatusStrip } from '../ui'
+import { Button, IconButton, ScrollArea, Slider, Stack, StatusStrip } from '../ui'
 import ReviewPane from './ReviewPane'
 import WaveformStrip from './WaveformStrip'
 
@@ -130,44 +130,42 @@ function TimingStep({ songId, lyrics, onChange, review }: Props): React.JSX.Elem
             </p>
           </Stack>
 
-          <Stack
-            direction="column"
-            gap={1}
-            className="min-h-0 flex-1 overflow-y-auto pl-6 pr-[14px] pb-4" // design-allow: scrollbar-gutter compensation, see Container.tsx
-          >
-            {lyrics.lines.map((line, li) =>
-              line.units.length === 0 ? (
-                // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable while timing
-                <div key={li} className="px-3 py-1 text-muted-foreground/40 tracking-widest">
-                  · · ·
-                </div>
-              ) : (
-                <Button
+          <ScrollArea className="min-h-0 flex-1">
+            <Stack direction="column" gap={1} className="pl-6 pr-6 pb-4">
+              {lyrics.lines.map((line, li) =>
+                line.units.length === 0 ? (
                   // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable while timing
-                  key={li}
-                  variant="bare"
-                  ref={(el) => registerLineRef(li, el)}
-                  tabIndex={-1}
-                  onClick={(e) => {
-                    jumpToLine(li)
-                    e.currentTarget.blur()
-                  }}
-                  className={`flex w-full items-baseline gap-3 rounded-md px-3 py-1 text-left font-lyric text-base hover:bg-card ${
-                    li === currentLine && !done ? '' : 'opacity-40'
-                  }`}
-                >
-                  <span
-                    className={`w-14 shrink-0 text-xs tabular-nums ${lineTimestampClass(line)}`}
+                  <div key={li} className="px-3 py-1 text-muted-foreground/40 tracking-widest">
+                    · · ·
+                  </div>
+                ) : (
+                  <Button
+                    // biome-ignore lint/suspicious/noArrayIndexKey: line order is stable while timing
+                    key={li}
+                    variant="bare"
+                    ref={(el) => registerLineRef(li, el)}
+                    tabIndex={-1}
+                    onClick={(e) => {
+                      jumpToLine(li)
+                      e.currentTarget.blur()
+                    }}
+                    className={`flex w-full items-baseline gap-3 rounded-md px-3 py-1 text-left font-lyric text-base hover:bg-card ${
+                      li === currentLine && !done ? '' : 'opacity-40'
+                    }`}
                   >
-                    {lineTimestamp(line)}
-                  </span>
-                  <span className={li === currentLine && !done ? 'text-lyric-active' : ''}>
-                    {line.text}
-                  </span>
-                </Button>
-              )
-            )}
-          </Stack>
+                    <span
+                      className={`w-14 shrink-0 text-xs tabular-nums ${lineTimestampClass(line)}`}
+                    >
+                      {lineTimestamp(line)}
+                    </span>
+                    <span className={li === currentLine && !done ? 'text-lyric-active' : ''}>
+                      {line.text}
+                    </span>
+                  </Button>
+                )
+              )}
+            </Stack>
+          </ScrollArea>
         </>
       )}
       <StatusStrip progress={progressPct / 100} className="h-8">

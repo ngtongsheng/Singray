@@ -5,7 +5,7 @@ import type { ImportProgress, ImportStage, SongListItem } from '../../../../shar
 import { useLibraryContext } from '../../context/LibraryContext'
 import { useSongCardActions } from '../../hooks/useSongCardActions'
 import ArtistLink from '../shared/ArtistLink'
-import { Button, IconButton, Text } from '../ui'
+import { AspectRatio, Button, Card, CardContent, IconButton, Text } from '../ui'
 import SongCardMenu from './SongCardMenu'
 
 interface Props {
@@ -69,22 +69,21 @@ const SongCard = memo(function SongCard({ song, importing }: Props): React.JSX.E
   )
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: card contains nested buttons (heart/menu/retry) — a real <button> can't nest them
-    <div
+    <Card
       role="button"
       tabIndex={0}
       onClick={onActivate}
       onKeyDown={onKeyActivate}
-      className={`group rounded-lg border border-border bg-card transition-colors hover:border-muted-foreground/40 ${
+      className={`group overflow-hidden transition-colors hover:border-muted-foreground/40 ${
         openable ? 'cursor-pointer' : ''
       }`}
     >
-      <div className="relative aspect-video overflow-hidden rounded-t-lg bg-muted">
+      <AspectRatio ratio={16 / 9} className="bg-muted">
         {song.ready && (
           <img
             src={window.singray.audio.thumbUrl(song.id)}
             alt=""
-            className="h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover"
             draggable={false}
           />
         )}
@@ -130,8 +129,8 @@ const SongCard = memo(function SongCard({ song, importing }: Props): React.JSX.E
             </Button>
           </div>
         )}
-      </div>
-      <div className="p-3">
+      </AspectRatio>
+      <CardContent className="p-3">
         <Text variant="item" title={song.title}>
           {song.title}
         </Text>
@@ -143,8 +142,8 @@ const SongCard = memo(function SongCard({ song, importing }: Props): React.JSX.E
           }}
           className="min-w-0 max-w-full"
         />
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 })
 

@@ -7,12 +7,14 @@ import { useMediaProbe } from '../../hooks/useMediaProbe'
 import { useSettings } from '../../hooks/useSettings'
 import { stripIpcError } from '../../lib/stripIpcError'
 import {
+  AspectRatio,
   Button,
   Dialog,
   DialogFooter,
   Field,
   IconButton,
   Input,
+  ScrollArea,
   Select,
   Stack,
   Tabs,
@@ -153,40 +155,44 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
               </Field>
 
               {search.data && (
-                <ul className="max-h-64 divide-y divide-border overflow-y-auto rounded-lg border border-border">
-                  {search.data.length === 0 && (
-                    <li className="px-3 py-4 text-center">
-                      <Text variant="hint">{t('import.noResults')}</Text>
-                    </li>
-                  )}
-                  {search.data.map((r) => (
-                    <li key={r.url}>
-                      <Button
-                        variant="bare"
-                        size="bare"
-                        onClick={() => pickResult(r)}
-                        className="flex w-full items-center gap-3 px-2 py-2 text-left hover:bg-card"
-                      >
-                        <div className="aspect-video w-24 shrink-0 overflow-hidden rounded bg-card">
-                          {r.thumbnailUrl && (
-                            <img
-                              src={r.thumbnailUrl}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm">{r.title}</p>
-                          <Text variant="hint" className="truncate">
-                            {r.channel}
-                            {r.duration > 0 && ` · ${formatDuration(r.duration)}`}
-                          </Text>
-                        </div>
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
+                <ScrollArea className="max-h-64 rounded-lg border border-border">
+                  <ul className="divide-y divide-border">
+                    {search.data.length === 0 && (
+                      <li className="px-3 py-4 text-center">
+                        <Text variant="hint">{t('import.noResults')}</Text>
+                      </li>
+                    )}
+                    {search.data.map((r) => (
+                      <li key={r.url}>
+                        <Button
+                          variant="bare"
+                          size="bare"
+                          onClick={() => pickResult(r)}
+                          className="flex w-full items-center gap-3 px-2 py-2 text-left hover:bg-card"
+                        >
+                          <div className="w-24 shrink-0 overflow-hidden rounded bg-card">
+                            <AspectRatio ratio={16 / 9}>
+                              {r.thumbnailUrl && (
+                                <img
+                                  src={r.thumbnailUrl}
+                                  alt=""
+                                  className="absolute inset-0 h-full w-full object-cover"
+                                />
+                              )}
+                            </AspectRatio>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm">{r.title}</p>
+                            <Text variant="hint" className="truncate">
+                              {r.channel}
+                              {r.duration > 0 && ` · ${formatDuration(r.duration)}`}
+                            </Text>
+                          </div>
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </ScrollArea>
               )}
 
               <Field label={t('import.urlLabel')}>
@@ -238,14 +244,16 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
           {probe.probed && (
             <Stack gap={4}>
               <Stack direction="column" gap={2} className="w-56 shrink-0">
-                <div className="aspect-video overflow-hidden rounded-lg bg-card">
-                  {probe.probed.thumbnailUrl && (
-                    <img
-                      src={probe.probed.thumbnailUrl}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  )}
+                <div className="overflow-hidden rounded-lg bg-card">
+                  <AspectRatio ratio={16 / 9}>
+                    {probe.probed.thumbnailUrl && (
+                      <img
+                        src={probe.probed.thumbnailUrl}
+                        alt=""
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    )}
+                  </AspectRatio>
                 </div>
                 <Text variant="hint" className="line-clamp-2">
                   {probe.probed.title}
