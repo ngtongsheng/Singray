@@ -1,16 +1,24 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog'
+import { cva } from 'class-variance-authority'
 import type { ReactNode } from 'react'
 import { cn } from '../../lib/cn'
 
 type DialogWidth = 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 
-const WIDTH: Record<DialogWidth, string> = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-  '2xl': 'max-w-2xl'
-}
+const dialogContentBase = cva(
+  '-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-40 w-full rounded-lg border border-border bg-muted p-6 shadow-lg outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+  {
+    variants: {
+      width: {
+        sm: 'max-w-sm',
+        md: 'max-w-md',
+        lg: 'max-w-lg',
+        xl: 'max-w-xl',
+        '2xl': 'max-w-2xl'
+      }
+    }
+  }
+)
 
 interface DialogProps {
   label: string
@@ -37,10 +45,7 @@ function Dialog({ label, alert, width, onClose, children }: DialogProps): React.
           role={alert ? 'alertdialog' : 'dialog'}
           aria-label={label}
           onInteractOutside={(e) => alert && e.preventDefault()}
-          className={cn(
-            '-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-40 w-full rounded-lg border border-border bg-muted p-6 shadow-lg outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-            WIDTH[width]
-          )}
+          className={cn(dialogContentBase({ width }))}
         >
           <DialogPrimitive.Title className="sr-only">{label}</DialogPrimitive.Title>
           {children}
