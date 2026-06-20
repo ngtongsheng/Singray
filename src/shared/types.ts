@@ -214,6 +214,20 @@ export interface LrclibQuery {
 
 export type AudioTrack = 'original' | 'instrumental' | 'vocals'
 
+/** One saved performance recording (R3.REC2). */
+export interface RecordingItem {
+  /** Absolute filesystem path — used for delete/reveal operations. */
+  path: string
+  songId: string
+  /** karaoke:// playback URL. */
+  url: string
+  /** Basename of the file. */
+  filename: string
+  /** ISO timestamp derived from file mtime. */
+  timestamp: string
+  durationSec: number | null
+}
+
 /** Pipeline environment readiness (R4.3 bootstrapper). */
 export interface PipelineStatus {
   /** Both python + ffmpeg resolvable → imports can run. */
@@ -311,6 +325,12 @@ export interface SingrayApi {
   recordings: {
     /** Saves a performance recording (R3.REC1) under the song's recordings/ folder; resolves the saved path. */
     save(songId: string, bytes: ArrayBuffer, ext: string): Promise<string>
+    /** Lists recordings for a song, or all recordings across the library if songId is omitted. */
+    list(songId?: string): Promise<RecordingItem[]>
+    /** Permanently deletes a recording file. */
+    delete(path: string): Promise<void>
+    /** Opens the folder containing the recording in the system file manager. */
+    reveal(path: string): Promise<void>
   }
   window: {
     /** Custom titlebar controls (NAV1): replace the native min/max/close. */
@@ -376,6 +396,9 @@ export interface IpcMap {
   'window:openExternal': { args: [url: string]; result: NoResult }
 
   'recordings:save': { args: [songId: string, bytes: ArrayBuffer, ext: string]; result: string }
+  'recordings:list': { args: [songId?: string]; result: RecordingItem[] }
+  'recordings:delete': { args: [path: string]; result: NoResult }
+  'recordings:reveal': { args: [path: string]; result: NoResult }
 }
 
 export type IpcChannel = keyof IpcMap

@@ -8,6 +8,7 @@ import Library from './screens/Library'
 import LyricCreator from './screens/LyricCreator'
 import PipelineSetup from './screens/PipelineSetup'
 import Player from './screens/Player'
+import Recordings from './screens/Recordings'
 import Settings from './screens/Settings'
 
 function App(): React.JSX.Element {
@@ -48,6 +49,10 @@ function App(): React.JSX.Element {
       case 'library':
         screen = <Library initialArtistFilter={view.artistFilter} />
         key = 'library'
+        break
+      case 'recordings':
+        screen = <Recordings songId={view.songId} />
+        key = `recordings:${view.songId ?? 'all'}`
         break
       default:
         assertNever(view)

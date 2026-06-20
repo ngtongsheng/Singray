@@ -8,6 +8,7 @@ import ArtistList from '../components/library/ArtistList'
 import FilterChips from '../components/library/FilterChips'
 import ImportDialog from '../components/library/ImportDialog'
 import ImportStatusStrip from '../components/library/ImportStatusStrip'
+import RecordingsButton from '../components/library/RecordingsButton'
 import SearchInput from '../components/library/SearchInput'
 import SectionSwitch from '../components/library/SectionSwitch'
 import SettingsButton from '../components/library/SettingsButton'
@@ -61,6 +62,7 @@ function LibraryView(): React.JSX.Element {
           </Stack>
           <Stack gap={3}>
             <AddSongButton className="app-no-drag" />
+            <RecordingsButton />
             <SettingsButton />
           </Stack>
         </Stack>
