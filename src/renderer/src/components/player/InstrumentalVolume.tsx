@@ -17,7 +17,7 @@ function InstrumentalVolume(): React.JSX.Element {
         value={instrVol}
         onChange={setInstrumentalVolume}
         title={t('player.instrVolTip')}
-        className="h-11 w-12"
+        className="h-11 w-24"
       />
     </span>
   )
