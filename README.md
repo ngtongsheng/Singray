@@ -17,7 +17,23 @@ website streaming setup, but works standalone.
 
 ## Demo
 
-[▶ Watch demo video](https://github.com/ngtongsheng/Singray/releases/download/v0.1.0/singray-demo2.mp4) — library browse · add song · karaoke player with synced lyrics · recordings (v0.1.0, ~35 s, 1.1 MB MP4)
+**Library, browse & sing** — grid/list browse, search, open a song, pitch shift, guide vocal toggle
+
+![Library, browse & sing](docs/demo/library-and-sing.gif)
+
+<!-- TODO(video-upload): for real video w/ audio+controls, drag the equivalent mp4 (regenerate via scripts/record-demo.mjs-style capture) into this README's GitHub web editor, swap this line for the resulting https://github.com/user-attachments/assets/... URL -->
+
+**Manage a song** — edit title/artist & thumbnail crop, lyric creator text/tap/review steps
+
+![Manage a song](docs/demo/manage-song.gif)
+
+<!-- TODO(video-upload): see note above -->
+
+**Add a song** — search YouTube in-app, real download + GPU stem separation, play the finished song
+
+![Add a song](docs/demo/add-song.gif)
+
+<!-- TODO(video-upload): see note above -->
 
 ## Features
 
