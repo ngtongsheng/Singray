@@ -1,3 +1,4 @@
+import { useDebouncer } from '@tanstack/react-pacer'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Lyrics } from '../../../shared/types'
 import { inferEnds } from '../lib/inferEnds'
@@ -85,27 +86,29 @@ export function useTapTimingCursor({
 
   // Debounced autosave; flush on unmount. Parent state is already synced via onChange.
   const dirtyRef = useRef<Lyrics | null>(null)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const saveDebouncer = useDebouncer(
+    (withEnds: Lyrics): void => {
+      dirtyRef.current = null
+      void window.singray.lyrics.save(songId, withEnds)
+    },
+    { wait: 1000 }
+  )
   const persist = useCallback(
     (next: Lyrics): void => {
       // End inference (SPEC §6.4) on every write keeps lyrics.json valid after the last stamp.
       const withEnds = inferEnds(next, audioRef.current?.duration || 0)
       onChange(withEnds)
       dirtyRef.current = withEnds
-      if (timerRef.current) clearTimeout(timerRef.current)
-      timerRef.current = setTimeout(() => {
-        dirtyRef.current = null
-        void window.singray.lyrics.save(songId, withEnds)
-      }, 1000)
+      saveDebouncer.maybeExecute(withEnds)
     },
-    [songId, onChange, audioRef]
+    [onChange, audioRef, saveDebouncer]
   )
   useEffect(
     () => () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
+      saveDebouncer.cancel()
       if (dirtyRef.current) void window.singray.lyrics.save(songId, dirtyRef.current)
     },
-    [songId]
+    [songId, saveDebouncer]
   )
 
   // Clock: rAF read of audio time, quantized to 0.1s so re-renders stay ~10Hz.

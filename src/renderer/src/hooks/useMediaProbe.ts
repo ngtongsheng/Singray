@@ -1,3 +1,4 @@
+import { useDebouncer } from '@tanstack/react-pacer'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Language, LanguageDef, ProbeResult } from '../../../shared/types'
 import { detectLanguage } from '../lib/detectLanguage'
@@ -72,20 +73,8 @@ export function useMediaProbe({ languages, onPrefill }: MediaProbeOptions): Medi
     }
   }
 
-  useEffect(() => {
-    const trimmed = url.trim()
-    if (!/^https?:\/\/\S+$/.test(trimmed)) {
-      if (!filePath) {
-        setProbed(null)
-        setProbeError(null)
-      }
-      return
-    }
-    setFilePath(null) // a typed URL takes precedence over a previously picked file
-    const seq = ++probeSeq.current
-    setProbing(true)
-    setProbeError(null)
-    const timer = setTimeout(() => {
+  const probeDebouncer = useDebouncer(
+    (trimmed: string, seq: number): void => {
       window.singray.import
         .probe(trimmed)
         .then((result) => prefill(result, seq))
@@ -97,9 +86,26 @@ export function useMediaProbe({ languages, onPrefill }: MediaProbeOptions): Medi
         .finally(() => {
           if (seq === probeSeq.current) setProbing(false)
         })
-    }, 400)
-    return () => clearTimeout(timer)
-  }, [url, filePath, prefill])
+    },
+    { wait: 400 }
+  )
+
+  useEffect(() => {
+    const trimmed = url.trim()
+    if (!/^https?:\/\/\S+$/.test(trimmed)) {
+      if (!filePath) {
+        setProbed(null)
+        setProbeError(null)
+      }
+      probeDebouncer.cancel()
+      return
+    }
+    setFilePath(null) // a typed URL takes precedence over a previously picked file
+    const seq = ++probeSeq.current
+    setProbing(true)
+    setProbeError(null)
+    probeDebouncer.maybeExecute(trimmed, seq)
+  }, [url, filePath, probeDebouncer])
 
   return {
     url,
