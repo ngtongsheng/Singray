@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.0.2](https://github.com/ngtongsheng/Singray/compare/singray-v1.0.1...singray-v1.0.2) (2026-06-21)
+
+
+### Bug Fixes
+
+* add timeouts to artwork/iTunes fetch calls ([#148](https://github.com/ngtongsheng/Singray/issues/148)) ([90e5f97](https://github.com/ngtongsheng/Singray/commit/90e5f97c4a17cbd31050a312a70a3c1f73739958)), closes [#137](https://github.com/ngtongsheng/Singray/issues/137)
+* install managed ffmpeg reliably and re-validate stale install steps ([#129](https://github.com/ngtongsheng/Singray/issues/129)) ([2266e9c](https://github.com/ngtongsheng/Singray/commit/2266e9c7eb96684f1a58ba21bfbf81b64632aa5f)), closes [#128](https://github.com/ngtongsheng/Singray/issues/128)
+* make generateSongId collisions impossible to overwrite ([#143](https://github.com/ngtongsheng/Singray/issues/143)) ([98f8e2b](https://github.com/ngtongsheng/Singray/commit/98f8e2bf96e1602d69202b6800c5b212db0a6bf5)), closes [#135](https://github.com/ngtongsheng/Singray/issues/135)
+* stop leaked mic tracks when dispose races a pending enableMic() ([#140](https://github.com/ngtongsheng/Singray/issues/140)) ([71e659f](https://github.com/ngtongsheng/Singray/commit/71e659f13547b9ebf92c70b42cd790734b8d355a)), closes [#133](https://github.com/ngtongsheng/Singray/issues/133)
+* time out pingWorklets() so a stuck worklet can't hang Promise.all ([#142](https://github.com/ngtongsheng/Singray/issues/142)) ([66d643c](https://github.com/ngtongsheng/Singray/commit/66d643c1d03d0c96695c60791109a32246be4417)), closes [#134](https://github.com/ngtongsheng/Singray/issues/134)
+* yt-dlp bot-detection — retry with browser cookies on macOS ([#153](https://github.com/ngtongsheng/Singray/issues/153)) ([f4eca41](https://github.com/ngtongsheng/Singray/commit/f4eca4149281fb2e0fee0b4eb2c238b026211197))
+
+
+### Performance Improvements
+
+* cache recording durations instead of ffprobing on every list ([#150](https://github.com/ngtongsheng/Singray/issues/150)) ([8f7410c](https://github.com/ngtongsheng/Singray/commit/8f7410ca17987d58b6f651fc0149908b8ff67a60))
+* parallelize listSongs() disk reads ([#144](https://github.com/ngtongsheng/Singray/issues/144)) ([de58bab](https://github.com/ngtongsheng/Singray/commit/de58bab47b5ed02e0644a01c9dde4b227d5bf9e8)), closes [#136](https://github.com/ngtongsheng/Singray/issues/136)
+
 ## [1.0.1](https://github.com/ngtongsheng/Singray/compare/singray-v1.0.0...singray-v1.0.1) (2026-06-21)
 
 
