@@ -1,6 +1,6 @@
 {
   "name": "singray",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Personal desktop karaoke app",
   "main": "./out/main/index.js",
   "author": "ngtongsheng",
