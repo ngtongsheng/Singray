@@ -134,3 +134,16 @@ Audited `pipeline/pipeline.py` (+ `setup.ps1`/`setup.sh`/`ruff.toml`) and verifi
 | **Gemini model list filtered to `supportedGenerationMethods.includes('generateContent')`** | Gemini's `/v1beta/models` also returns embedding-only models; un-filtered they'd show up as chat model choices and fail at call time. | Keeps the strict dropdown actually strict — every listed model must work for the chat/test call. |
 
 Verified live against real Anthropic/Gemini endpoints with a throwaway key (both correctly returned and parsed real `401`/"API key not valid" errors); Ollama path unchanged. OpenAI/OpenRouter share Ollama's OpenAI-compatible code path, not separately live-tested.
+
+## Round 6 — dev/CI toolchain hygiene
+
+### #122 — bump dev/CI Node.js to latest LTS
+
+| Choice | Decision | Why |
+|---|---|---|
+| **Target version** | Node **24** (current Active LTS as of 2026-06; Node 22 is Maintenance LTS, Node 26 is Current/not-yet-LTS). | CI was pinned to 20, the untracked local `.node-version` said 22 — neither matched the actual current LTS. Picking the real Active LTS gives #121 (mise + `.tool-versions`) a settled number to pin to instead of re-deciding. |
+| **`engines.node` added to `package.json`** (`>=24`) | New field; none existed before. | Makes the floor explicit to `npm install` instead of only living in CI YAML. |
+| **Electron's bundled Node untouched** | Scope limited to dev/CI tooling (workflows, `engines`, README prerequisite). Electron `^42.4.1` ships its own Node runtime regardless of the host Node version. | Bumping host Node doesn't change what Node version the shipped app actually runs on — no reason to conflate the two. |
+| **Untracked local `.node-version` left as-is** | Not touched in this PR — it says `22`, now also stale against the new `24` pin. | Replacing it is #121's job (mise + `.tool-versions` supersedes it); editing it here would just create a second source of truth for one PR cycle. |
+
+Verified: `npm install` + `npm run check` (exit 0) + `npm run build:unpack` all green on Node 24.17.0 (via fnm) in a worktree; produced a working `Singray.app` bundle.

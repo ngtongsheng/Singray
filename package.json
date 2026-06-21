@@ -5,6 +5,9 @@
   "main": "./out/main/index.js",
   "author": "ngtongsheng",
   "private": true,
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "dev:noscan": "set VITE_NO_SCAN=1 && electron-vite dev",
