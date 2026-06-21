@@ -310,7 +310,12 @@ async function installFfmpegBinary(tool: 'ffmpeg' | 'ffprobe', url: string): Pro
 }
 
 async function stepFfmpeg(emit: Emit): Promise<void> {
-  if (ffmpegOnPath() || managedFfmpegPresent()) return
+  // Don't short-circuit on ffmpegOnPath(): a packaged macOS app launched from
+  // Finder doesn't inherit the login-shell PATH, so a system ffmpeg visible at
+  // install time may be invisible at runtime (#128). The managed copy is the
+  // only source we control end-to-end, so always install it (idempotent on the
+  // managed binary alone).
+  if (managedFfmpegPresent()) return
   emit({ step: 'ffmpeg', status: 'start', message: 'Downloading ffmpeg…' })
   const dir = managedFfmpegDir()
   await mkdir(dir, { recursive: true })
@@ -348,6 +353,26 @@ async function stepVerify(emit: Emit, gpu: boolean): Promise<void> {
 }
 
 /**
+ * Whether a recorded step's artifact is still on disk, for steps with a cheap
+ * check. Returns `null` for steps without one (torch/deps install into the venv
+ * with no single sentinel file — we trust their recorded flag). Guards against a
+ * stale `.install-state.json` claiming a step done after its output was removed
+ * or never produced — e.g. ffmpeg marked done with no managed binary (#128).
+ */
+function artifactPresent(step: InstallStep): boolean | null {
+  switch (step) {
+    case 'uv':
+      return existsSync(uvBin())
+    case 'venv':
+      return existsSync(managedPythonPath())
+    case 'ffmpeg':
+      return managedFfmpegPresent()
+    default:
+      return null
+  }
+}
+
+/**
  * Guided install of the whole pipeline env (R4.3). Idempotent + resumable: each
  * completed step is recorded and skipped on a re-run, and downloads write to a
  * `.part` file so an interrupted transfer is re-fetched cleanly.
@@ -372,7 +397,9 @@ export async function installPipeline(emit: Emit): Promise<void> {
 
     for (const [name, fn] of steps) {
       throwIfCancelled()
-      if (state.steps[name] && name !== 'verify') {
+      // Skip a recorded step only when its artifact is actually still present;
+      // a stale flag whose output is gone (artifactPresent === false) re-runs.
+      if (state.steps[name] && name !== 'verify' && artifactPresent(name) !== false) {
         emit({ step: name, status: 'done', message: 'Already installed' })
         continue
       }
