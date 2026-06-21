@@ -39,6 +39,8 @@ const TEMPO_MAX = 1.25
 /** Key change bounds, semitones. */
 const PITCH_MIN = -6
 const PITCH_MAX = 6
+/** Max wait for a worklet's ping echo before pingWorklets() gives up on it. */
+const PING_TIMEOUT_MS = 1000
 /** AudioWorklet module path — relative to index.html (public/ is served verbatim). */
 const WORKLET_URL = 'worklets/soundtouch-processor.js'
 /** Mic monitor-leg headroom (~+12dB) — getUserMedia capture is unboosted (no AGC), so the
@@ -420,25 +422,32 @@ export class AudioEngine {
     }
   }
 
-  /** Round-trip state from every worklet (diagnostics/verification). */
-  pingWorklets(): Promise<WorkletState[]> {
+  /** Round-trip state from every worklet (diagnostics/verification). A worklet that
+   *  never echoes (errored, port stuck) resolves `null` after PING_TIMEOUT_MS instead
+   *  of hanging Promise.all forever and leaking its message listener. */
+  pingWorklets(): Promise<(WorkletState | null)[]> {
     const nodes = [this.stInstr, this.stVocal, this.stInstrStream].filter(
       (n): n is AudioWorkletNode => n !== null
     )
     return Promise.all(
       nodes.map(
         (node) =>
-          new Promise<WorkletState>((resolve) => {
+          new Promise<WorkletState | null>((resolve) => {
             const id = ++pingSeq
             const onMsg = (e: MessageEvent): void => {
               const state = e.data
               // Match on id: stale unsolicited states (id null) queue up on a
               // not-yet-started port and would otherwise resolve the ping early.
               if (isWorkletState(state) && state.id === id) {
+                window.clearTimeout(timer)
                 node.port.removeEventListener('message', onMsg)
                 resolve(state)
               }
             }
+            const timer = window.setTimeout(() => {
+              node.port.removeEventListener('message', onMsg)
+              resolve(null)
+            }, PING_TIMEOUT_MS)
             node.port.addEventListener('message', onMsg)
             node.port.start()
             node.port.postMessage({ type: 'ping', id })
@@ -471,6 +480,9 @@ export class AudioEngine {
   private _micFxAmount = 0.3
   /** Non-fatal mic problem (permission denied, no device). */
   micWarning: string | null = null
+  /** Set by dispose() — lets a pending enableMic() (getUserMedia) resolving after
+   *  teardown stop its tracks immediately instead of wiring nodes onto a closed context. */
+  private disposed = false
 
   get micEnabled(): boolean {
     return this.micStream !== null
@@ -549,6 +561,10 @@ export class AudioEngine {
           ...(deviceId ? { deviceId } : {})
         }
       })
+      if (this.disposed) {
+        for (const track of stream.getTracks()) track.stop()
+        return
+      }
       this.micStream = stream
       const trackRate = stream.getAudioTracks()[0]?.getSettings().sampleRate
       if (trackRate && trackRate !== this.ctx.sampleRate) {
@@ -696,6 +712,7 @@ export class AudioEngine {
 
   /** Tear down everything; the engine is unusable afterwards. */
   dispose(): void {
+    this.disposed = true
     if (this.latencyTimer !== null) window.clearTimeout(this.latencyTimer)
     this.stopDriftWatchdog()
     this.stopSources()
