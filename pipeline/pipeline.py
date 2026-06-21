@@ -48,7 +48,8 @@ def _yt_extract(opts: dict, url: str, *, download: bool = False):
     """Run yt-dlp extract_info; on bot-detection, retry with each installed browser's cookies."""
     last_exc: Exception | None = None
     for browser in [None, *_BROWSER_ORDER]:
-        try_opts = {**opts, **({"cookiesfrombrowser": (browser, None, None, None)} if browser else {})}
+        cookie = {"cookiesfrombrowser": (browser, None, None, None)} if browser else {}
+        try_opts = {**opts, **cookie}
         try:
             with yt_dlp.YoutubeDL(try_opts) as ydl:
                 return ydl.extract_info(url, download=download)
