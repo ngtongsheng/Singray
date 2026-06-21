@@ -38,46 +38,54 @@ export function songDir(id: string): string {
   return join(getSettings().libraryDir, id)
 }
 
+async function readSongListItem(libraryDir: string, entry: Dirent): Promise<SongListItem | null> {
+  const dir = join(libraryDir, entry.name)
+  try {
+    const raw = JSON.parse(await readFile(join(dir, 'meta.json'), 'utf-8')) as SongMeta & {
+      artist?: string
+    }
+    const { artist: legacyArtist, ...meta } = raw
+    const [thumbVersion, hasLyrics, error, hasFlac, hasM4a] = await Promise.all([
+      stat(join(dir, 'thumb.jpg')).then(
+        (info) => info.mtimeMs,
+        () => 0 // no thumb yet
+      ),
+      exists(join(dir, 'lyrics.json')),
+      readImportError(dir),
+      exists(join(dir, 'original.flac')),
+      exists(join(dir, 'original.m4a'))
+    ])
+    return {
+      ...meta,
+      artists: meta.artists ?? (legacyArtist ? [legacyArtist] : []), // pre-#63 metas have a single `artist` string
+      sings: meta.sings ?? [], // pre-R1.5 metas have no sings array
+      sourceFile: meta.sourceFile ?? null, // pre-R3.7 metas have no sourceFile
+      id: entry.name, // folder name is the id authority
+      hasLyrics,
+      error,
+      ready: hasFlac || hasM4a,
+      thumbVersion
+    }
+  } catch {
+    return null // no/corrupt meta.json → not a song folder, skip
+  }
+}
+
 export async function listSongs(): Promise<SongListItem[]> {
+  const libraryDir = getSettings().libraryDir
   let entries: Dirent[]
   try {
-    entries = await readdir(getSettings().libraryDir, { withFileTypes: true })
+    entries = await readdir(libraryDir, { withFileTypes: true })
   } catch {
     return [] // library dir missing → empty library
   }
 
-  const songs: SongListItem[] = []
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue
-    const dir = join(getSettings().libraryDir, entry.name)
-    try {
-      const raw = JSON.parse(await readFile(join(dir, 'meta.json'), 'utf-8')) as SongMeta & {
-        artist?: string
-      }
-      const { artist: legacyArtist, ...meta } = raw
-      let thumbVersion = 0
-      try {
-        const info = await stat(join(dir, 'thumb.jpg'))
-        thumbVersion = info.mtimeMs
-      } catch {
-        // no thumb yet
-      }
-      songs.push({
-        ...meta,
-        artists: meta.artists ?? (legacyArtist ? [legacyArtist] : []), // pre-#63 metas have a single `artist` string
-        sings: meta.sings ?? [], // pre-R1.5 metas have no sings array
-        sourceFile: meta.sourceFile ?? null, // pre-R3.7 metas have no sourceFile
-        id: entry.name, // folder name is the id authority
-        hasLyrics: await exists(join(dir, 'lyrics.json')),
-        error: await readImportError(dir),
-        ready:
-          (await exists(join(dir, 'original.flac'))) || (await exists(join(dir, 'original.m4a'))),
-        thumbVersion
-      })
-    } catch {
-      // no/corrupt meta.json → not a song folder, skip
-    }
-  }
+  const results = await Promise.all(
+    entries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => readSongListItem(libraryDir, entry))
+  )
+  const songs = results.filter((song): song is SongListItem => song !== null)
   songs.sort((a, b) => b.addedAt.localeCompare(a.addedAt))
   return songs
 }
