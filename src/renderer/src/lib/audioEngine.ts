@@ -480,6 +480,9 @@ export class AudioEngine {
   private _micFxAmount = 0.3
   /** Non-fatal mic problem (permission denied, no device). */
   micWarning: string | null = null
+  /** Set by dispose() — lets a pending enableMic() (getUserMedia) resolving after
+   *  teardown stop its tracks immediately instead of wiring nodes onto a closed context. */
+  private disposed = false
 
   get micEnabled(): boolean {
     return this.micStream !== null
@@ -558,6 +561,10 @@ export class AudioEngine {
           ...(deviceId ? { deviceId } : {})
         }
       })
+      if (this.disposed) {
+        for (const track of stream.getTracks()) track.stop()
+        return
+      }
       this.micStream = stream
       const trackRate = stream.getAudioTracks()[0]?.getSettings().sampleRate
       if (trackRate && trackRate !== this.ctx.sampleRate) {
@@ -705,6 +712,7 @@ export class AudioEngine {
 
   /** Tear down everything; the engine is unusable afterwards. */
   dispose(): void {
+    this.disposed = true
     if (this.latencyTimer !== null) window.clearTimeout(this.latencyTimer)
     this.stopDriftWatchdog()
     this.stopSources()
