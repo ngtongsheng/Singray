@@ -106,10 +106,22 @@ export function LyricCreatorProvider({ song, children }: ProviderProps): React.J
     [text, saved]
   )
 
+  // Leaving with edits: auto-save and go straight back unless the edit would silently drop
+  // existing timing (deleted/changed a timed line) — that case still needs an explicit choice.
   const onBack = useCallback(() => {
-    if (isDirty) setBackGuard(true)
-    else goPlayer(song)
-  }, [isDirty, goPlayer, song])
+    if (!isDirty) {
+      goPlayer(song)
+      return
+    }
+    const result = buildLyrics(text, song.language, saved)
+    if (result.invalidated.length === 0) {
+      void window.singray.lyrics.save(song.id, result.lyrics)
+      setSaved(result.lyrics)
+      goPlayer(song)
+      return
+    }
+    setBackGuard(true)
+  }, [isDirty, text, song, saved, goPlayer])
 
   const save = useCallback(
     async (result: BuildResult, landOn: CreatorStep): Promise<void> => {
