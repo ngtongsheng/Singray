@@ -30,8 +30,13 @@ function ControlBar(): React.JSX.Element | null {
         gap={2}
         className="bg-gradient-to-t from-black/80 to-transparent px-6 pt-12 pb-5"
       >
-        {micWarning && (
-          <Text variant="error">{t('player.micWarning', { message: micWarning })}</Text>
+        {micWarning && <Text variant="error">{t(`player.micWarning.${micWarning}`)}</Text>}
+        {engine.routingWarning && (
+          <Text variant="error">
+            {engine.routingWarning.kind === 'noDevice'
+              ? t('player.streamWarning.noDevice')
+              : t(`player.streamWarning.${engine.routingWarning.reason}`)}
+          </Text>
         )}
         <Stack gap={4} className="">
           <PlaybackButton />
