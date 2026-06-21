@@ -10,9 +10,11 @@ import { MEDIA_EXTENSIONS, type SearchResult } from '../../../../shared/types'
 import { useAsync } from '../../hooks/useAsync'
 import { useLibrary } from '../../hooks/useLibrary'
 import { useMediaProbe } from '../../hooks/useMediaProbe'
+import { usePipelineStatus } from '../../hooks/usePipelineStatus'
 import { useSettings } from '../../hooks/useSettings'
 import { stripIpcError } from '../../lib/stripIpcError'
 import ArtistChips from '../shared/ArtistChips'
+import PipelineRequirementBanner from '../shared/PipelineRequirementBanner'
 import {
   AspectRatio,
   Button,
@@ -61,6 +63,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
     [songs]
   )
   const languages = settings?.languages ?? []
+  const pipelineStatus = usePipelineStatus()
   const [submitting, setSubmitting] = useState(false)
   const [query, setQuery] = useState('')
   const search = useAsync((q: string) => window.singray.import.search(q), { resetOnRun: true })
@@ -161,6 +164,8 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
           <Text as="h2" variant="title">
             {t('import.title')}
           </Text>
+
+          <PipelineRequirementBanner status={pipelineStatus} />
 
           <div className="flex justify-center">
             <Segmented<SourceMode>
@@ -372,7 +377,12 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
           <Button
             variant="primary"
             onClick={onSubmit}
-            disabled={!probe.probed || !titleVal?.trim() || submitting}
+            disabled={
+              !probe.probed ||
+              !titleVal?.trim() ||
+              submitting ||
+              (pipelineStatus !== null && !pipelineStatus.ready)
+            }
           >
             {t('import.add')}
           </Button>

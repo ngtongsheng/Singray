@@ -82,7 +82,10 @@
     "fromFile": "From file…",
     "dropHint": "or drop an audio/video file here",
     "unsupportedFile": "Unsupported file type",
-    "add": "Add"
+    "add": "Add",
+    "pythonMissing": "Python environment isn't set up — importing will fail.",
+    "ffmpegMissing": "ffmpeg is missing — downloading and stem separation will fail.",
+    "gpuMissing": "No GPU detected — stem separation will run on CPU (slow)."
   },
   "editMeta": {
     "title": "Edit details",

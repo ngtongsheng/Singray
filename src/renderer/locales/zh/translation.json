@@ -81,7 +81,10 @@
     "fromFile": "从文件…",
     "dropHint": "或将音频/视频文件拖到此处",
     "unsupportedFile": "不支持的文件类型",
-    "add": "添加"
+    "add": "添加",
+    "pythonMissing": "Python 环境尚未配置 — 导入将失败。",
+    "ffmpegMissing": "缺少 ffmpeg — 下载和人声分离将失败。",
+    "gpuMissing": "未检测到 GPU — 人声分离将使用 CPU（较慢）。"
   },
   "editMeta": {
     "title": "编辑信息",
