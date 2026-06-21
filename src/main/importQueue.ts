@@ -50,7 +50,7 @@ function generateSongId(): SongId {
   const pad = (n: number): string => String(n).padStart(2, '0')
   const date = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`
   const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
-  const rand = randomUUID().slice(0, 4)
+  const rand = randomUUID().replace(/-/g, '')
   return `${date}-${time}-${rand}` as SongId
 }
 
@@ -61,8 +61,27 @@ function songDir(songId: string): string {
   return join(getSettings().libraryDir, songId)
 }
 
+/** Generates a song id and atomically claims its directory. mkdir without
+ *  `recursive` fails EEXIST if the id is already taken (collision, or a retry
+ *  racing a still-running import), so a fresh id is drawn and retried — the
+ *  full-UUID suffix makes that astronomically rare, but this makes "no
+ *  overwrite" a guarantee rather than a probability. */
+async function reserveSongDir(): Promise<SongId> {
+  await mkdir(getSettings().libraryDir, { recursive: true })
+  for (;;) {
+    const songId = generateSongId()
+    try {
+      await mkdir(songDir(songId))
+      return songId
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'EEXIST') continue
+      throw err
+    }
+  }
+}
+
 export async function startImport(req: ImportRequest): Promise<string> {
-  const songId = generateSongId()
+  const songId = await reserveSongDir()
   const jobId = randomUUID() as JobId
 
   const meta: SongMeta = {
@@ -84,7 +103,6 @@ export async function startImport(req: ImportRequest): Promise<string> {
     separationModel: getSettings().separationModel || '6_HP-Karaoke-UVR.pth',
     enrichment: null
   }
-  await mkdir(songDir(songId), { recursive: true })
   await writeFile(join(songDir(songId), 'meta.json'), JSON.stringify(meta, null, 2), 'utf-8')
 
   enqueue({ jobId, songId, url: req.url, filePath: req.filePath || null })
