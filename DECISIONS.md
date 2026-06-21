@@ -22,7 +22,6 @@ shadcn/react-query PR exercises release-please + branch protection).
 | **Workflow** | Same flow for everyone: issue → branch → PR → squash-merge, Conventional Commit PR titles, branch protection on `main`. | Keeps release-please changelog clean (one line per PR); dogfoods the contributor experience; no two mental models. |
 | **Release** | `release-please` + GitHub Actions. Release-PR bumps version + CHANGELOG; merge → tag + GitHub Release; workflow builds the Windows exe and attaches it. | Automated but gated by the release-PR. Requires strict Conventional Commits going forward. |
 | **Code signing** | Ship **unsigned**, document the SmartScreen "unknown publisher" warning in README/release notes. | Signing cert costs money; not worth it for a personal app's download count. |
-| **macOS "damaged" (#125)** | Stay unsigned, but ad-hoc re-sign the `.app` in `build/afterPack.cjs` (`codesign --force --deep --sign -`) and gate the release on `codesign --verify` passing. | With signing skipped, electron-builder shipped a *broken* seal (`Sealed Resources=none`); on Apple Silicon a quarantined download then fails as **"Singray is damaged"** instead of the dismissible "unidentified developer" prompt. Ad-hoc signing makes the bundle structurally valid (still unsigned to Gatekeeper) so it opens after the user clears quarantine — proper notarization still needs a paid Apple cert, out of scope. |
 | **Deps** | Update **all to latest**, chase fallout. Hard blocker only if electron-vite 5 can't run Vite 8 → pin that one back and report. | Majors (TS 6, Vite 8, plugin-react 6, @types/node 26) carry compat risk; gate on `npm run build` staying green. |
 | **Docs** | Merge `docs/rounds` + `docs/feedback` into one history dir; fold ongoing decisions into this file / release notes. | The two folders were the same thing (dev history). |
 | **build/ vs resources/** | Not a bug — keep both. `build/` = electron-builder package-time assets (installer icons, mac entitlements). `resources/` = runtime-bundled (`asarUnpack`), `main/index.ts` imports `resources/icon.png` for the window icon. Same source image, two consumers. Document it. | electron-vite scaffold convention; they serve different lifecycle stages. |
@@ -136,41 +135,8 @@ Audited `pipeline/pipeline.py` (+ `setup.ps1`/`setup.sh`/`ruff.toml`) and verifi
 
 Verified live against real Anthropic/Gemini endpoints with a throwaway key (both correctly returned and parsed real `401`/"API key not valid" errors); Ollama path unchanged. OpenAI/OpenRouter share Ollama's OpenAI-compatible code path, not separately live-tested.
 
-## Round 6 — dev/CI toolchain hygiene
+---
 
-### #122 — bump dev/CI Node.js to latest LTS
+## Round 6 — (scope TBD, opened 2026-06-21)
 
-| Choice | Decision | Why |
-|---|---|---|
-| **Target version** | Node **24** (current Active LTS as of 2026-06; Node 22 is Maintenance LTS, Node 26 is Current/not-yet-LTS). | CI was pinned to 20, the untracked local `.node-version` said 22 — neither matched the actual current LTS. Picking the real Active LTS gives #121 (mise + `.tool-versions`) a settled number to pin to instead of re-deciding. |
-| **`engines.node` added to `package.json`** (`>=24`) | New field; none existed before. | Makes the floor explicit to `npm install` instead of only living in CI YAML. |
-| **Electron's bundled Node untouched** | Scope limited to dev/CI tooling (workflows, `engines`, README prerequisite). Electron `^42.4.1` ships its own Node runtime regardless of the host Node version. | Bumping host Node doesn't change what Node version the shipped app actually runs on — no reason to conflate the two. |
-| **Untracked local `.node-version` left as-is** | Not touched in this PR — it says `22`, now also stale against the new `24` pin. | Replacing it is #121's job (mise + `.tool-versions` supersedes it); editing it here would just create a second source of truth for one PR cycle. |
-
-Verified: `npm install` + `npm run check` (exit 0) + `npm run build:unpack` all green on Node 24.17.0 (via fnm) in a worktree; produced a working `Singray.app` bundle.
-
-### #121 — adopt mise + `.tool-versions`
-
-| Choice | Decision | Why |
-|---|---|---|
-| **Scope: Node only, not Python** | `.tool-versions` pins `node 24.17.0` (exact, asdf/mise-style reproducibility). The pipeline's Python interpreter (`pipeline/.venv`, selected by the Windows `py` launcher with 3.13/3.11 fallback + exact `pip`-pinned cu128 torch wheels in `pipeline/setup.ps1` / `pipeline/setup.sh`) stays **out** of mise. | The pipeline's Python selection is already exact-pinned end-to-end through a tested setup script tied to GPU wheel availability (cu128/MPS/CPU branching) — mise managing the interpreter would just add a second resolution path with no benefit, and mise's Windows support is the least mature of its platforms, which is where this app is "Windows first". CI's `ruff` job (`python-version: "3.13"`) already matches the `setup.ps1` pin via a comment cross-reference; no drift to fix there. |
-| **Exact pin (`24.17.0`), not floating `24`** | `.tool-versions` pins the exact patch; CI's `setup-node` floats to the latest `24.x` via `node-version-file: .tool-versions` (same file, same regex-matched value — see below). | Exact pin is the point of mise/asdf — full local reproducibility. CI already resolves the same file, so the two don't drift; a contributor's `mise install` and CI's `setup-node` step land on the same `.tool-versions` value by construction. |
-| **CI reads `.tool-versions` directly** (`node-version-file: .tool-versions` in `ci.yml` + `release.yml`), replacing the hardcoded `node-version: 24` from #122 | `actions/setup-node@v4`'s generic version-file parser (regex `^(?:node(js)?\s+)?v?<version>$` against the whole trimmed file) happens to match our single-line `node 24.17.0` format even though it's not a dedicated multi-tool `.tool-versions` parser. | One source of truth instead of two (file + hardcoded YAML number) — exactly the drift #121/#122 exist to fix. This only stays safe as long as `.tool-versions` has exactly one line; if a second tool (e.g. Python) is ever added here, CI's parse would break and would need revisiting then. |
-| **Untracked local `.node-version` deleted** | Removed from the working tree (it was never committed). | Fully superseded by the tracked `.tool-versions` — keeping both around is the exact drift this issue exists to kill. |
-| **`mise install` documented in README**, not CONTRIBUTING | Added as the first line of the `### App` source-build steps. | `CONTRIBUTING.md` has no existing Node-setup section to hook into; README's "Develop (run from source)" prerequisites is where a new contributor already looks. |
-
-Verified: `mise install` resolves/installs Node 24.17.0 from `.tool-versions`; `npm install` + `npm run check` (exit 0) green under the mise-activated Node.
-
-## Round 7 — backlog bug/perf sweep
-
-### #139 — protect stored llmApiKey with safeStorage
-
-| Choice | Decision | Why |
-|---|---|---|
-| **Ciphertext stored under the same `llmApiKey` field, base64-encoded** | No new field added to `Settings`. `writeToDisk()` swaps in `safeStorage.encryptString(plain).toString('base64')` only at the disk-write boundary; the in-memory cache (and what's exposed to the renderer over IPC) stays plaintext, exactly as before. | Keeps `Settings` as one shape everywhere except the on-disk JSON, which already diverges from the type for other legacy-migration fields (e.g. the old `artist` string). No IPC/UI changes needed. |
-| **Migration heuristic: a failed decrypt = legacy plaintext, but only rewrite when `safeStorage.isEncryptionAvailable()` is true** | `decryptApiKey()` treats any thrown error from `decryptString` as "this was never encrypted." `getSettings()` only persists the migrated (now-encrypted) value back to disk if encryption is *currently* available. | Distinguishes "this key predates safeStorage" from "this key is real ciphertext but the OS keychain is temporarily unavailable" — the second case must never trigger a rewrite, or the real encrypted key would be permanently clobbered with garbage decoded-as-plaintext. Since safeStorage's encryption key is tied to the local OS user account, a decrypt failure while encryption *is* available on the same machine reliably means "not actually ciphertext." |
-| **Graceful degradation = write plaintext, not refuse to save** | `encryptApiKey()` falls back to returning the plaintext key as-is when `isEncryptionAvailable()` is false (e.g. some headless/no-keyring Linux). | Per the issue's fix sketch. Losing the user's typed-in API key because the OS has no keychain backend would be worse than the plaintext-at-rest risk this issue is reducing. |
-
-Verified against the real Electron `safeStorage` API (macOS Keychain-backed, run via the project's own `electron` binary, not a stub — `safeStorage` has no meaningful behavior under plain Node): a freshly-set key round-trips through encrypt → on-disk base64 ciphertext (confirmed plaintext never appears in `settings.json`) → decrypt-on-read; a hand-written legacy plaintext `settings.json` is migrated to ciphertext on first `getSettings()` call, resolves to the correct plaintext key in memory, and stays correct (without re-migrating) on a subsequent fresh read.
-
-**Known limitation:** on Windows, `safeStorage` ciphertext is DPAPI-encrypted, which ties it to the local Windows user profile. Copying `settings.json` (or the whole `%APPDATA%` folder) to a different machine or user account makes the stored key permanently undecryptable there — `decryptString` throws, which the migration heuristic above reads as "legacy plaintext" and writes back as the new "key" on next save, silently discarding the original. The practical effect is a confusing LLM auth error rather than data loss (the key was unrecoverable on the new machine either way); the user just has to re-enter it. Not worth defending against in code — there's no reliable way to distinguish "real plaintext key" from "ciphertext orphaned by a profile change" — but worth knowing if an API key mysteriously "disappears" after a machine/profile move.
+No issues filed yet. GitHub milestone "Round 6" created (#3, open) for tracking; no release-gate wired to it — the Round 5 gate in `release.yml` is now a permanent pass-through and needs no Round 6 equivalent.
