@@ -129,16 +129,40 @@ export async function uploadThumb(id: string, bytes: ArrayBuffer): Promise<void>
   notifyLibraryChanged()
 }
 
+/** Artwork host / iTunes search are best-effort lookups, not core pipeline work —
+ *  a short timeout keeps a hung host from blocking the IPC handler indefinitely. */
+const ARTWORK_FETCH_TIMEOUT_MS = 6000
+
+function fetchArtwork(url: string): Promise<Response> {
+  return fetch(url, { signal: AbortSignal.timeout(ARTWORK_FETCH_TIMEOUT_MS) })
+}
+
+function isTimeout(err: unknown): boolean {
+  return err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')
+}
+
 export async function fetchArtworkBytes(url: string): Promise<ArrayBuffer> {
-  const res = await fetch(url)
+  let res: Response
+  try {
+    res = await fetchArtwork(url)
+  } catch (err) {
+    throw isTimeout(err)
+      ? new Error(`Artwork download timed out after ${ARTWORK_FETCH_TIMEOUT_MS / 1000}s`)
+      : err
+  }
   if (!res.ok) throw new Error(`Artwork download failed: ${res.status}`)
   return res.arrayBuffer()
 }
 
 export async function searchArtwork(query: string): Promise<ArtworkResult[]> {
-  const res = await fetch(
-    `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=12&media=music`
-  )
+  let res: Response
+  try {
+    res = await fetchArtwork(
+      `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=12&media=music`
+    )
+  } catch {
+    return [] // network error / timeout → no results, same as a non-ok response
+  }
   if (!res.ok) return []
   const data = (await res.json()) as {
     results: { artworkUrl100: string; trackName: string; artistName: string }[]
