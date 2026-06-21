@@ -465,6 +465,7 @@ export class AudioEngine {
   // gainMicStr is the dual-mode broadcast leg (volume only → stream device).
   // MIC3: dry/wet FX crossfade inserted between src and micFxOut/gainMicStr.
   private micStream: MediaStream | null = null
+  private micGeneration = 0
   private srcMicMon: MediaStreamAudioSourceNode | null = null
   private srcMicStr: MediaStreamAudioSourceNode | null = null
   private micFxOut: GainNode | null = null
@@ -552,6 +553,7 @@ export class AudioEngine {
   async enableMic(deviceId?: string): Promise<void> {
     this.disableMic()
     this.micWarning = null
+    const micGen = ++this.micGeneration
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -561,6 +563,10 @@ export class AudioEngine {
           ...(deviceId ? { deviceId } : {})
         }
       })
+      if (micGen !== this.micGeneration) {
+        for (const track of stream.getTracks()) track.stop()
+        return
+      }
       if (this.disposed) {
         for (const track of stream.getTracks()) track.stop()
         return
@@ -641,6 +647,7 @@ export class AudioEngine {
   }
 
   disableMic(): void {
+    this.micGeneration++
     if (this.micStream) {
       for (const track of this.micStream.getTracks()) track.stop()
       this.micStream = null
