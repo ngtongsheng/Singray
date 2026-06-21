@@ -1,7 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import type { ImportProgress, Language, Settings, SongListItem } from '../../../shared/types'
+import type {
+  ImportProgress,
+  Language,
+  PipelineStatus,
+  Settings,
+  SongListItem
+} from '../../../shared/types'
 import { useImports } from '../hooks/useImports'
 import { useLibrary } from '../hooks/useLibrary'
+import { usePipelineStatus } from '../hooks/usePipelineStatus'
 import { useSettings } from '../hooks/useSettings'
 import { useAppContext } from './AppContext'
 
@@ -42,6 +49,8 @@ interface LibraryContextValue {
   showImport: boolean
   openImport: () => void
   closeImport: () => void
+  /** Fresh (uncached) pipeline status — null until the first fetch resolves. */
+  pipelineStatus: PipelineStatus | null
 }
 
 const LibraryContext = createContext<LibraryContextValue | null>(null)
@@ -61,6 +70,7 @@ export function LibraryProvider({
   const { songs } = useLibrary()
   const { settings, patch } = useSettings()
   const imports = useImports()
+  const pipelineStatus = usePipelineStatus()
   const [query, setQuery] = useState('')
   const [language, setLanguage] = useState<Language | null>(null)
   const [favoritesOnly, setFavoritesOnly] = useState(false)
@@ -162,7 +172,8 @@ export function LibraryProvider({
       confirmDelete,
       showImport,
       openImport,
-      closeImport
+      closeImport,
+      pipelineStatus
     }),
     [
       songs,
@@ -186,7 +197,8 @@ export function LibraryProvider({
       confirmDelete,
       showImport,
       openImport,
-      closeImport
+      closeImport,
+      pipelineStatus
     ]
   )
 

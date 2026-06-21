@@ -68,10 +68,9 @@ function StatusBadge({
 
 const SongCard = memo(function SongCard({ song, importing }: Props): React.JSX.Element {
   const { t } = useTranslation()
-  const { onSing, onArtistClick, requestDelete } = useLibraryContext()
-  const { failed, openable, onActivate, onKeyActivate, toggleFavorite, retry } = useSongCardActions(
-    { song, importing, onSing }
-  )
+  const { onSing, onArtistClick, requestDelete, pipelineStatus } = useLibraryContext()
+  const { failed, openable, onActivate, onKeyActivate, toggleFavorite, retry, retryBlockedReason } =
+    useSongCardActions({ song, importing, onSing, pipelineStatus })
 
   return (
     <Card
@@ -130,7 +129,12 @@ const SongCard = memo(function SongCard({ song, importing }: Props): React.JSX.E
         <StatusBadge song={song} importing={importing} />
         {failed && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/55">
-            <Button variant="primary" onClick={retry} title={t('card.retryTip')}>
+            <Button
+              variant="primary"
+              onClick={retry}
+              disabled={!!retryBlockedReason}
+              title={retryBlockedReason ?? t('card.retryTip')}
+            >
               <RotateCcw className="size-4" strokeWidth={1.5} /> {t('card.retry')}
             </Button>
           </div>
