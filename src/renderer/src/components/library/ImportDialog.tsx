@@ -7,10 +7,10 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { splitArtists } from '../../../../shared/parseTitle'
 import { MEDIA_EXTENSIONS, type SearchResult } from '../../../../shared/types'
+import { useLibraryContext } from '../../context/LibraryContext'
 import { useAsync } from '../../hooks/useAsync'
 import { useLibrary } from '../../hooks/useLibrary'
 import { useMediaProbe } from '../../hooks/useMediaProbe'
-import { usePipelineStatus } from '../../hooks/usePipelineStatus'
 import { useSettings } from '../../hooks/useSettings'
 import { stripIpcError } from '../../lib/stripIpcError'
 import ArtistChips from '../shared/ArtistChips'
@@ -63,7 +63,7 @@ function ImportDialog({ onClose }: Props): React.JSX.Element {
     [songs]
   )
   const languages = settings?.languages ?? []
-  const pipelineStatus = usePipelineStatus()
+  const { pipelineStatus } = useLibraryContext()
   const [submitting, setSubmitting] = useState(false)
   const [query, setQuery] = useState('')
   const search = useAsync((q: string) => window.singray.import.search(q), { resetOnRun: true })
