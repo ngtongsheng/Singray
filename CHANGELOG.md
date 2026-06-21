@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.0.3](https://github.com/ngtongsheng/Singray/compare/singray-v1.0.2...singray-v1.0.3) (2026-06-21)
+
+
+### Bug Fixes
+
+* dev:noscan script not working ([#159](https://github.com/ngtongsheng/Singray/issues/159)) ([bf49d75](https://github.com/ngtongsheng/Singray/commit/bf49d7579401c2b2da9d866ffe15e66573cba477)), closes [#154](https://github.com/ngtongsheng/Singray/issues/154)
+* ErrorBoundary shows untranslated text and a raw stack trace to users ([#161](https://github.com/ngtongsheng/Singray/issues/161)) ([38ecfad](https://github.com/ngtongsheng/Singray/commit/38ecfadba00cc12506868ccb58629f0417e5c3fb)), closes [#146](https://github.com/ngtongsheng/Singray/issues/146)
+* localize hardcoded mic/stream warnings shown in player UI ([#162](https://github.com/ngtongsheng/Singray/issues/162)) ([1c8e0fd](https://github.com/ngtongsheng/Singray/commit/1c8e0fd46d5e5bea9934a018284085a852472487))
+* lyric editor triggers unsaved-changes prompt on back but has no save button ([#160](https://github.com/ngtongsheng/Singray/issues/160)) ([9038c24](https://github.com/ngtongsheng/Singray/commit/9038c2467f6a8fc9e4820badf5354d6439a8586c)), closes [#155](https://github.com/ngtongsheng/Singray/issues/155)
+* pipeline broken on macOS — Windows default pythonPath + pipeline.py unreachable inside app.asar ([#164](https://github.com/ngtongsheng/Singray/issues/164)) ([4a09902](https://github.com/ngtongsheng/Singray/commit/4a09902b915060b1af0ba5e71b3beb9af4e44c10)), closes [#132](https://github.com/ngtongsheng/Singray/issues/132)
+* prevent orphaned mic nodes on rapid enableMic() re-entry ([#156](https://github.com/ngtongsheng/Singray/issues/156)) ([18d5ab4](https://github.com/ngtongsheng/Singray/commit/18d5ab48412c4fe2bf5943b402df34d735068c92))
+* surface artwork fetch errors in EditMetaDialog instead of swallowing ([#157](https://github.com/ngtongsheng/Singray/issues/157)) ([a9c1919](https://github.com/ngtongsheng/Singray/commit/a9c1919568f1937522e482a60341448c52027a89))
+
 ## [1.0.2](https://github.com/ngtongsheng/Singray/compare/singray-v1.0.1...singray-v1.0.2) (2026-06-21)
 
 
