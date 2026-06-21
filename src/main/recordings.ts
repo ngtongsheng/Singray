@@ -26,6 +26,9 @@ async function readDurationCache(dir: string): Promise<DurationCache> {
   }
 }
 
+// No locking around the read-modify-write below: a save and a list for the same
+// song racing can drop one update, but a dropped entry is just treated as an
+// unprobed legacy take next time and gets backfilled — self-healing, not corrupt.
 async function writeDurationCache(dir: string, cache: DurationCache): Promise<void> {
   await writeFile(join(dir, DURATIONS_FILE), JSON.stringify(cache), 'utf-8').catch(() => {})
 }
