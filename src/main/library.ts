@@ -38,46 +38,54 @@ export function songDir(id: string): string {
   return join(getSettings().libraryDir, id)
 }
 
+async function readSongListItem(libraryDir: string, entry: Dirent): Promise<SongListItem | null> {
+  const dir = join(libraryDir, entry.name)
+  try {
+    const raw = JSON.parse(await readFile(join(dir, 'meta.json'), 'utf-8')) as SongMeta & {
+      artist?: string
+    }
+    const { artist: legacyArtist, ...meta } = raw
+    const [thumbVersion, hasLyrics, error, hasFlac, hasM4a] = await Promise.all([
+      stat(join(dir, 'thumb.jpg')).then(
+        (info) => info.mtimeMs,
+        () => 0 // no thumb yet
+      ),
+      exists(join(dir, 'lyrics.json')),
+      readImportError(dir),
+      exists(join(dir, 'original.flac')),
+      exists(join(dir, 'original.m4a'))
+    ])
+    return {
+      ...meta,
+      artists: meta.artists ?? (legacyArtist ? [legacyArtist] : []), // pre-#63 metas have a single `artist` string
+      sings: meta.sings ?? [], // pre-R1.5 metas have no sings array
+      sourceFile: meta.sourceFile ?? null, // pre-R3.7 metas have no sourceFile
+      id: entry.name, // folder name is the id authority
+      hasLyrics,
+      error,
+      ready: hasFlac || hasM4a,
+      thumbVersion
+    }
+  } catch {
+    return null // no/corrupt meta.json → not a song folder, skip
+  }
+}
+
 export async function listSongs(): Promise<SongListItem[]> {
+  const libraryDir = getSettings().libraryDir
   let entries: Dirent[]
   try {
-    entries = await readdir(getSettings().libraryDir, { withFileTypes: true })
+    entries = await readdir(libraryDir, { withFileTypes: true })
   } catch {
     return [] // library dir missing → empty library
   }
 
-  const songs: SongListItem[] = []
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue
-    const dir = join(getSettings().libraryDir, entry.name)
-    try {
-      const raw = JSON.parse(await readFile(join(dir, 'meta.json'), 'utf-8')) as SongMeta & {
-        artist?: string
-      }
-      const { artist: legacyArtist, ...meta } = raw
-      let thumbVersion = 0
-      try {
-        const info = await stat(join(dir, 'thumb.jpg'))
-        thumbVersion = info.mtimeMs
-      } catch {
-        // no thumb yet
-      }
-      songs.push({
-        ...meta,
-        artists: meta.artists ?? (legacyArtist ? [legacyArtist] : []), // pre-#63 metas have a single `artist` string
-        sings: meta.sings ?? [], // pre-R1.5 metas have no sings array
-        sourceFile: meta.sourceFile ?? null, // pre-R3.7 metas have no sourceFile
-        id: entry.name, // folder name is the id authority
-        hasLyrics: await exists(join(dir, 'lyrics.json')),
-        error: await readImportError(dir),
-        ready:
-          (await exists(join(dir, 'original.flac'))) || (await exists(join(dir, 'original.m4a'))),
-        thumbVersion
-      })
-    } catch {
-      // no/corrupt meta.json → not a song folder, skip
-    }
-  }
+  const results = await Promise.all(
+    entries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => readSongListItem(libraryDir, entry))
+  )
+  const songs = results.filter((song): song is SongListItem => song !== null)
   songs.sort((a, b) => b.addedAt.localeCompare(a.addedAt))
   return songs
 }
@@ -121,16 +129,40 @@ export async function uploadThumb(id: string, bytes: ArrayBuffer): Promise<void>
   notifyLibraryChanged()
 }
 
+/** Artwork host / iTunes search are best-effort lookups, not core pipeline work —
+ *  a short timeout keeps a hung host from blocking the IPC handler indefinitely. */
+const ARTWORK_FETCH_TIMEOUT_MS = 6000
+
+function fetchArtwork(url: string): Promise<Response> {
+  return fetch(url, { signal: AbortSignal.timeout(ARTWORK_FETCH_TIMEOUT_MS) })
+}
+
+function isTimeout(err: unknown): boolean {
+  return err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')
+}
+
 export async function fetchArtworkBytes(url: string): Promise<ArrayBuffer> {
-  const res = await fetch(url)
+  let res: Response
+  try {
+    res = await fetchArtwork(url)
+  } catch (err) {
+    throw isTimeout(err)
+      ? new Error(`Artwork download timed out after ${ARTWORK_FETCH_TIMEOUT_MS / 1000}s`)
+      : err
+  }
   if (!res.ok) throw new Error(`Artwork download failed: ${res.status}`)
   return res.arrayBuffer()
 }
 
 export async function searchArtwork(query: string): Promise<ArtworkResult[]> {
-  const res = await fetch(
-    `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=12&media=music`
-  )
+  let res: Response
+  try {
+    res = await fetchArtwork(
+      `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=12&media=music`
+    )
+  } catch {
+    return [] // network error / timeout → no results, same as a non-ok response
+  }
   if (!res.ok) return []
   const data = (await res.json()) as {
     results: { artworkUrl100: string; trackName: string; artistName: string }[]
