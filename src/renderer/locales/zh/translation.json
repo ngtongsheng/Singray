@@ -154,7 +154,19 @@
     "micLatencyHint": "软件监听可能有延迟 — 建议使用硬件监听（如 AG06）",
     "micFxLabel": "效果",
     "micFxAmountTip": "湿/干比例",
-    "micWarning": "麦克风：{{message}}",
+    "micWarning": {
+      "permissionDenied": "麦克风：权限被拒绝",
+      "deviceNotFound": "麦克风：未找到设备",
+      "deviceUnavailable": "麦克风：设备不可用",
+      "unknown": "麦克风：未知错误"
+    },
+    "streamWarning": {
+      "noDevice": "未设置独立的串流输出设备 — 仅广播到监听设备。录音文件仍正常生成。",
+      "permissionDenied": "串流输出不可用（权限被拒绝）— 仅播放到监听设备。",
+      "deviceNotFound": "串流输出不可用（未找到设备）— 仅播放到监听设备。",
+      "deviceUnavailable": "串流输出不可用（设备不可用）— 仅播放到监听设备。",
+      "unknown": "串流输出不可用（未知错误）— 仅播放到监听设备。"
+    },
     "micPreset": {
       "off": "效果关",
       "room": "房间",

@@ -21,6 +21,27 @@ import { setSink } from './sinkable'
 // user's key change adds on top. Master clock scales: position advances at
 // tempo × wall rate.
 
+/** Friendly classification of a getUserMedia/setSinkId failure — avoids leaking
+ *  raw DOMException names, which aren't consumer-friendly in any language. */
+export type MediaWarningReason =
+  | 'permissionDenied'
+  | 'deviceNotFound'
+  | 'deviceUnavailable'
+  | 'unknown'
+
+function classifyMediaError(err: unknown): MediaWarningReason {
+  const name = err instanceof DOMException ? err.name : undefined
+  if (name === 'NotAllowedError') return 'permissionDenied'
+  if (name === 'NotFoundError') return 'deviceNotFound'
+  if (name === 'NotReadableError') return 'deviceUnavailable'
+  return 'unknown'
+}
+
+/** Dual-mode stream-leg degradation (SPEC §9.2): no distinct device set, or the device failed. */
+export type RoutingWarning =
+  | { kind: 'noDevice' }
+  | { kind: 'unavailable'; reason: MediaWarningReason }
+
 /** Seconds of gain ramp on vocal toggle / volume moves — click-free, still feels instant. */
 const RAMP = 0.03
 /** Scheduling headroom, single mode — both sources start on the same render quantum. */
@@ -129,7 +150,7 @@ export class AudioEngine {
   /** Fired once when playback reaches the end of the song naturally. */
   onEnded: (() => void) | null = null
   /** Non-fatal routing problem (e.g. saved stream device gone → degraded to single). */
-  routingWarning: string | null = null
+  routingWarning: RoutingWarning | null = null
   /** Last watchdog drift estimate, stream minus monitor, ms. */
   lastDriftMs: number | null = null
   /** Drift trace + resync count, kept for diagnostics/verification. */
@@ -189,7 +210,7 @@ export class AudioEngine {
   static async load(songId: string, routing?: AudioRouting): Promise<AudioEngine> {
     const ctx = new AudioContext({ latencyHint: 'interactive' })
     let streamCtx: AudioContext | null = null
-    let warning: string | null = null
+    let warning: RoutingWarning | null = null
     try {
       if (routing?.mode === 'dual') {
         await setSink(ctx, routing.monitorDeviceId)
@@ -207,11 +228,10 @@ export class AudioEngine {
           } catch (err) {
             await streamCtx.close()
             streamCtx = null
-            warning = `Stream output unavailable (${err instanceof Error ? err.message : String(err)}) — playing on monitor only.`
+            warning = { kind: 'unavailable', reason: classifyMediaError(err) }
           }
         } else {
-          warning =
-            'No distinct stream device set — broadcasting to monitor only. Recording to file still works.'
+          warning = { kind: 'noDevice' }
         }
       }
       const [instrBuf, vocalBuf] = await Promise.all(
@@ -480,7 +500,7 @@ export class AudioEngine {
   private _micFxPreset: MicFxPreset = 'off'
   private _micFxAmount = 0.3
   /** Non-fatal mic problem (permission denied, no device). */
-  micWarning: string | null = null
+  micWarning: MediaWarningReason | null = null
   /** Set by dispose() — lets a pending enableMic() (getUserMedia) resolving after
    *  teardown stop its tracks immediately instead of wiring nodes onto a closed context. */
   private disposed = false
@@ -619,7 +639,7 @@ export class AudioEngine {
         ).fxNodes
       }
     } catch (err) {
-      this.micWarning = `Mic unavailable: ${err instanceof Error ? err.message : String(err)}`
+      this.micWarning = classifyMediaError(err)
     }
   }
 
