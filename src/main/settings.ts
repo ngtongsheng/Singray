@@ -7,7 +7,10 @@ import type { Settings } from '../shared/types'
 function defaults(): Settings {
   return {
     libraryDir: join(app.getPath('home'), 'Karaoke'),
-    pythonPath: join(app.getAppPath(), 'pipeline', '.venv', 'Scripts', 'python.exe'),
+    // Blank = use the app-managed venv (pipelineEnv.ts); effectivePythonPath() falls
+    // back to it. A hardcoded path here is wrong on every platform but the one it
+    // names, and stale even on Windows (pre-R4.3 in-repo pipeline/.venv).
+    pythonPath: '',
     monitorDeviceId: '',
     streamDeviceId: '',
     audioOutputMode: 'single',
