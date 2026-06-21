@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAudioDevices } from '../../hooks/useAudioDevices'
 import { useSettings } from '../../hooks/useSettings'
-import type { AudioEngine } from '../../lib/audioEngine'
+import type { AudioEngine, MediaWarningReason } from '../../lib/audioEngine'
 import { Button, Dialog, Field, Segmented, Select, Stack, Text } from '../ui'
 
 interface Props {
@@ -51,7 +51,7 @@ function PreRecordDialog({ engine, onStart, onClose }: Props): React.JSX.Element
   const [countdown, setCountdown] = useState<number>(3)
   const [count, setCount] = useState<number | null>(null)
   const [micAnalyser, setMicAnalyser] = useState<AnalyserNode | null>(engine.micAnalyser)
-  const [micWarning, setMicWarning] = useState<string | null>(engine.micWarning)
+  const [micWarning, setMicWarning] = useState<MediaWarningReason | null>(engine.micWarning)
 
   // Always (re)enable the mic for the prep check — recording needs it whether
   // or not the user has left "mic enabled" on in Settings. enableMic mutates
@@ -115,7 +115,7 @@ function PreRecordDialog({ engine, onStart, onClose }: Props): React.JSX.Element
               />
             </Field>
             <LevelMeter analyser={micAnalyser} />
-            {micWarning && <Text variant="error">{micWarning}</Text>}
+            {micWarning && <Text variant="error">{t(`player.micWarning.${micWarning}`)}</Text>}
             <Field label={t('player.recordPrep.countdown')}>
               <Segmented
                 value={String(countdown)}

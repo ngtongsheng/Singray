@@ -13,7 +13,10 @@ directories:
 files:
   - '!**/.vscode/*'
   - '!src/*'
-  - '!pipeline/*'
+  - '!pipeline/.venv'
+  - '!pipeline/.gitignore'
+  - '!pipeline/ruff.toml'
+  - '!pipeline/setup.{ps1,sh}'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{biome.json,dev-app-update.yml,CHANGELOG.md,README.md,SPEC.md,CLAUDE.md}'
   - '!docs/**'
@@ -21,6 +24,9 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
+  # pipeline.py is spawned as a real file by an external Python process — asar
+  # archives are a single file, so a path *through* one is unreachable to it (#132).
+  - pipeline/**
 win:
   executableName: singray
 nsis:
