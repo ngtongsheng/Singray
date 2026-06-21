@@ -36,6 +36,30 @@ VR_PARAMS = {
 AUDIO_EXTS = {".m4a", ".webm", ".opus", ".mp3", ".mp4", ".ogg", ".flac", ".wav"}
 IMAGE_EXTS = {".webp", ".jpg", ".jpeg", ".png"}
 
+# Browser cookie fallback order per platform (for bot-detection retry)
+_BROWSER_ORDER: list[str] = {
+    "darwin": ["safari", "chrome", "chromium", "firefox"],
+    "win32": ["chrome", "chromium", "firefox"],
+}.get(sys.platform, ["firefox", "chrome", "chromium"])
+_BOT_HINT = "Sign in to confirm"
+
+
+def _yt_extract(opts: dict, url: str, *, download: bool = False):
+    """Run yt-dlp extract_info; on bot-detection, retry with each installed browser's cookies."""
+    last_exc: Exception | None = None
+    for browser in [None, *_BROWSER_ORDER]:
+        cookie = {"cookiesfrombrowser": (browser, None, None, None)} if browser else {}
+        try_opts = {**opts, **cookie}
+        try:
+            with yt_dlp.YoutubeDL(try_opts) as ydl:
+                return ydl.extract_info(url, download=download)
+        except Exception as exc:
+            last_exc = exc
+            if _BOT_HINT not in str(exc):
+                raise
+    raise last_exc  # type: ignore[misc]
+
+
 # Languages where alignment is consumed per character (matches the app's
 # CJK-char-equals-unit tokenization rule, SPEC §4.4).
 CHAR_ALIGN_LANGS = {"zh", "ja", "ko"}
@@ -133,8 +157,7 @@ def cmd_probe(args: argparse.Namespace) -> int:
             return 1
     try:
         opts = {"quiet": True, "no_warnings": True, "noprogress": True, "noplaylist": True}
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(args.url, download=False)
+        info = _yt_extract(opts, args.url)
         artists = info.get("artists") or ([info.get("artist")] if info.get("artist") else [])
         print(
             json.dumps(
@@ -170,8 +193,7 @@ def cmd_search(args: argparse.Namespace) -> int:
             "extract_flat": True,
             "skip_download": True,
         }
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(f"ytsearch10:{args.query}", download=False)
+        info = _yt_extract(opts, f"ytsearch10:{args.query}")
         for entry in info.get("entries") or []:
             if not entry:
                 continue
@@ -222,8 +244,7 @@ def _download(url: str, dl_dir: Path) -> tuple[Path, Path | None, float]:
         "noprogress": True,
         "progress_hooks": [hook],
     }
-    with yt_dlp.YoutubeDL(opts) as ydl:
-        info = ydl.extract_info(url, download=True)
+    info = _yt_extract(opts, url, download=True)
 
     audio = next((f for f in dl_dir.iterdir() if f.suffix.lower() in AUDIO_EXTS), None)
     thumb = next((f for f in dl_dir.iterdir() if f.suffix.lower() in IMAGE_EXTS), None)
