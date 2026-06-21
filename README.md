@@ -70,7 +70,7 @@ you want to run from source, follow the steps below.
 
 ### Prerequisites
 
-- **Node.js** 20+ and npm
+- **Node.js** 24+ and npm
 - **Python** 3.13 or 3.11, reachable via the `py` launcher
 - **ffmpeg** on `PATH` (`winget install ffmpeg`)
 - **NVIDIA GPU** with recent drivers for GPU separation (CPU works but is slow).
