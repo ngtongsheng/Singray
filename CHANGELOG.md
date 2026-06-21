@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/ngtongsheng/Singray/compare/singray-v1.0.0...singray-v1.0.1) (2026-06-21)
+
+
+### Bug Fixes
+
+* ad-hoc sign macOS app so it isn't "damaged" on launch ([#126](https://github.com/ngtongsheng/Singray/issues/126)) ([c8141f8](https://github.com/ngtongsheng/Singray/commit/c8141f863a8bb3882481b6c16f0144a1ef3f2343)), closes [#125](https://github.com/ngtongsheng/Singray/issues/125)
+
 ## [1.0.0](https://github.com/ngtongsheng/Singray/compare/singray-v0.3.0...singray-v1.0.0) (2026-06-20)
 
 
