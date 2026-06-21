@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { app } from 'electron'
+import { app, safeStorage } from 'electron'
 import { LlmProviderSchema, MicFxPresetSchema } from '../shared/schemas'
 import type { Settings } from '../shared/types'
 
@@ -41,6 +41,30 @@ function settingsPath(): string {
   return join(app.getPath('userData'), 'settings.json')
 }
 
+/** Decrypts an at-rest llmApiKey. A failed decrypt is treated as a legacy
+ *  plaintext key (written before safeStorage support) rather than an error. */
+function decryptApiKey(stored: string): { value: string; wasEncrypted: boolean } {
+  try {
+    return { value: safeStorage.decryptString(Buffer.from(stored, 'base64')), wasEncrypted: true }
+  } catch {
+    return { value: stored, wasEncrypted: false }
+  }
+}
+
+function encryptApiKey(plain: string): string {
+  // No OS keychain available (e.g. some headless Linux) — fall back to plaintext
+  // rather than losing the key.
+  return plain && safeStorage.isEncryptionAvailable()
+    ? safeStorage.encryptString(plain).toString('base64')
+    : plain
+}
+
+function writeToDisk(settings: Settings): void {
+  mkdirSync(app.getPath('userData'), { recursive: true })
+  const onDisk: Settings = { ...settings, llmApiKey: encryptApiKey(settings.llmApiKey) }
+  writeFileSync(settingsPath(), JSON.stringify(onDisk, null, 2), 'utf-8')
+}
+
 let cache: Settings | null = null
 
 export function getSettings(): Settings {
@@ -63,16 +87,25 @@ export function getSettings(): Settings {
   ) {
     delete stored.llmProvider
   }
+
+  let migrateApiKey = false
+  if (stored.llmApiKey) {
+    const decrypted = decryptApiKey(stored.llmApiKey)
+    stored.llmApiKey = decrypted.value
+    // Only migrate when encryption is available now — a decrypt failure while
+    // encryption is unavailable means "can't read it yet", not "it's plaintext",
+    // and rewriting would clobber the real (still-encrypted) key on disk.
+    if (!decrypted.wasEncrypted && safeStorage.isEncryptionAvailable()) migrateApiKey = true
+  }
+
   cache = { ...defaults(), ...stored }
+  if (migrateApiKey) writeToDisk(cache) // upgrade a legacy plaintext key to encrypted-at-rest
   return cache
 }
 
 export function setSettings(patch: Partial<Settings>): Settings {
   const next = { ...getSettings(), ...patch }
   cache = next
-  mkdirSync(app.getPath('userData'), { recursive: true })
-  // ponytail: llmApiKey stored plaintext — safeStorage deferred (personal app, single user,
-  // no multi-user threat model; add if user requests it).
-  writeFileSync(settingsPath(), JSON.stringify(next, null, 2), 'utf-8')
+  writeToDisk(next)
   return next
 }

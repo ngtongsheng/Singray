@@ -160,3 +160,15 @@ Verified: `npm install` + `npm run check` (exit 0) + `npm run build:unpack` all 
 | **`mise install` documented in README**, not CONTRIBUTING | Added as the first line of the `### App` source-build steps. | `CONTRIBUTING.md` has no existing Node-setup section to hook into; README's "Develop (run from source)" prerequisites is where a new contributor already looks. |
 
 Verified: `mise install` resolves/installs Node 24.17.0 from `.tool-versions`; `npm install` + `npm run check` (exit 0) green under the mise-activated Node.
+
+## Round 7 — backlog bug/perf sweep
+
+### #139 — protect stored llmApiKey with safeStorage
+
+| Choice | Decision | Why |
+|---|---|---|
+| **Ciphertext stored under the same `llmApiKey` field, base64-encoded** | No new field added to `Settings`. `writeToDisk()` swaps in `safeStorage.encryptString(plain).toString('base64')` only at the disk-write boundary; the in-memory cache (and what's exposed to the renderer over IPC) stays plaintext, exactly as before. | Keeps `Settings` as one shape everywhere except the on-disk JSON, which already diverges from the type for other legacy-migration fields (e.g. the old `artist` string). No IPC/UI changes needed. |
+| **Migration heuristic: a failed decrypt = legacy plaintext, but only rewrite when `safeStorage.isEncryptionAvailable()` is true** | `decryptApiKey()` treats any thrown error from `decryptString` as "this was never encrypted." `getSettings()` only persists the migrated (now-encrypted) value back to disk if encryption is *currently* available. | Distinguishes "this key predates safeStorage" from "this key is real ciphertext but the OS keychain is temporarily unavailable" — the second case must never trigger a rewrite, or the real encrypted key would be permanently clobbered with garbage decoded-as-plaintext. Since safeStorage's encryption key is tied to the local OS user account, a decrypt failure while encryption *is* available on the same machine reliably means "not actually ciphertext." |
+| **Graceful degradation = write plaintext, not refuse to save** | `encryptApiKey()` falls back to returning the plaintext key as-is when `isEncryptionAvailable()` is false (e.g. some headless/no-keyring Linux). | Per the issue's fix sketch. Losing the user's typed-in API key because the OS has no keychain backend would be worse than the plaintext-at-rest risk this issue is reducing. |
+
+Verified against the real Electron `safeStorage` API (macOS Keychain-backed, run via the project's own `electron` binary, not a stub — `safeStorage` has no meaningful behavior under plain Node): a freshly-set key round-trips through encrypt → on-disk base64 ciphertext (confirmed plaintext never appears in `settings.json`) → decrypt-on-read; a hand-written legacy plaintext `settings.json` is migrated to ciphertext on first `getSettings()` call, resolves to the correct plaintext key in memory, and stays correct (without re-migrating) on a subsequent fresh read.
