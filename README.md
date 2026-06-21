@@ -70,7 +70,8 @@ you want to run from source, follow the steps below.
 
 ### Prerequisites
 
-- **Node.js** 24+ and npm
+- **Node.js** 24+ and npm — run `mise install` to get the exact version pinned in
+  `.tool-versions` ([mise](https://mise.jdx.dev/) manages it; install mise itself first).
 - **Python** 3.13 or 3.11, reachable via the `py` launcher
 - **ffmpeg** on `PATH` (`winget install ffmpeg`)
 - **NVIDIA GPU** with recent drivers for GPU separation (CPU works but is slow).
@@ -79,6 +80,7 @@ you want to run from source, follow the steps below.
 ### App
 
 ```powershell
+mise install       # one-time: installs the Node version pinned in .tool-versions
 npm install
 npm run dev        # launch with HMR
 npm run check      # Biome + tsc --noEmit (pre-commit hook runs this)
