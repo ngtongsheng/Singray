@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { mkdir, readdir, stat, unlink, writeFile } from 'node:fs/promises'
-import { join, resolve, sep } from 'node:path'
+import { mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
+import { basename, dirname, join, resolve, sep } from 'node:path'
 import { promisify } from 'node:util'
 import { shell } from 'electron'
 import type { RecordingItem } from '../shared/types'
@@ -12,6 +12,23 @@ import { getSettings } from './settings'
 const execFileAsync = promisify(execFile)
 const EXT = /^[a-z0-9]+$/i
 const REC_EXT = /\.(webm|wav)$/i
+/** Recording filenames are unique timestamps and files are write-once, so a
+ *  filename → durationSec cache never goes stale and needs no invalidation. */
+const DURATIONS_FILE = 'durations.json'
+
+type DurationCache = Record<string, number>
+
+async function readDurationCache(dir: string): Promise<DurationCache> {
+  try {
+    return JSON.parse(await readFile(join(dir, DURATIONS_FILE), 'utf-8')) as DurationCache
+  } catch {
+    return {}
+  }
+}
+
+async function writeDurationCache(dir: string, cache: DurationCache): Promise<void> {
+  await writeFile(join(dir, DURATIONS_FILE), JSON.stringify(cache), 'utf-8').catch(() => {})
+}
 
 function ffprobePath(): string {
   const name = process.platform === 'win32' ? 'ffprobe.exe' : 'ffprobe'
@@ -43,8 +60,16 @@ export async function saveRecording(
   if (!EXT.test(ext)) throw new Error(`invalid recording extension: ${ext}`)
   const dir = join(songDir(songId), 'recordings')
   await mkdir(dir, { recursive: true })
-  const file = join(dir, `${new Date().toISOString().replace(/[:.]/g, '-')}.${ext}`)
+  const filename = `${new Date().toISOString().replace(/[:.]/g, '-')}.${ext}`
+  const file = join(dir, filename)
   await writeFile(file, Buffer.from(bytes))
+  // Probe once here so listSongRecordings() never has to ffprobe this file.
+  const durationSec = await probeDurationSec(file)
+  if (durationSec !== null) {
+    const cache = await readDurationCache(dir)
+    cache[filename] = durationSec
+    await writeDurationCache(dir, cache)
+  }
   return file
 }
 
@@ -56,13 +81,20 @@ async function listSongRecordings(songId: string): Promise<RecordingItem[]> {
   } catch {
     return []
   }
-  return Promise.all(
+  const cache = await readDurationCache(dir)
+  let cacheDirty = false
+  const items = await Promise.all(
     files.map(async (filename) => {
       const path = join(dir, filename)
+      const cached = cache[filename]
       const [info, durationSec] = await Promise.all([
         stat(path).catch(() => null),
-        probeDurationSec(path)
+        cached !== undefined ? cached : probeDurationSec(path) // legacy take, no cache entry yet
       ])
+      if (cached === undefined && durationSec !== null) {
+        cache[filename] = durationSec
+        cacheDirty = true
+      }
       return {
         path,
         songId,
@@ -73,6 +105,8 @@ async function listSongRecordings(songId: string): Promise<RecordingItem[]> {
       }
     })
   )
+  if (cacheDirty) await writeDurationCache(dir, cache)
+  return items
 }
 
 /** Lists recordings for a song (or all songs). Sorted newest first. */
@@ -104,6 +138,13 @@ function assertRecordingPath(filePath: string): void {
 export async function deleteRecording(path: string): Promise<void> {
   assertRecordingPath(path)
   await unlink(path)
+  const dir = dirname(path)
+  const filename = basename(path)
+  const cache = await readDurationCache(dir)
+  if (filename in cache) {
+    delete cache[filename]
+    await writeDurationCache(dir, cache)
+  }
 }
 
 /** Opens the folder containing a recording in the system file manager. */
