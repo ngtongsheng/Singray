@@ -77,6 +77,7 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
   const [artworkResults, setArtworkResults] = useState<ArtworkResult[]>([])
   const [thumbSearching, setThumbSearching] = useState(false)
   const [thumbUpdating, setThumbUpdating] = useState(false)
+  const [artworkError, setArtworkError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Staged thumbnail edit: nothing here is persisted until Save is clicked.
@@ -282,9 +283,14 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
 
   const pickArtwork = async (url: string): Promise<void> => {
     setThumbUpdating(true)
+    setArtworkError(null)
     try {
       const bytes = await window.singray.library.fetchArtworkBytes(url)
       stagePendingImage(bytes, url)
+    } catch (err) {
+      setArtworkError(
+        (err as Error).message.replace(/^Error invoking remote method '[^']+': Error: /, '')
+      )
     } finally {
       setThumbUpdating(false)
     }
@@ -488,6 +494,7 @@ function EditMetaDialog({ song, onClose }: Props): React.JSX.Element {
                   ))}
                 </div>
               )}
+              {artworkError && <Text variant="error">{artworkError}</Text>}
             </Stack>
           )}
 
