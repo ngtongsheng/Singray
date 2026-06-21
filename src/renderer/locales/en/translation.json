@@ -19,6 +19,12 @@
     "back": "Back to library",
     "backEsc": "Back to library (Esc)"
   },
+  "error": {
+    "title": "Something went wrong",
+    "dismiss": "Dismiss",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details"
+  },
   "stage": {
     "queued": "Queued",
     "download": "Downloading",

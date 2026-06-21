@@ -19,6 +19,12 @@
     "back": "返回曲库",
     "backEsc": "返回曲库（Esc）"
   },
+  "error": {
+    "title": "出问题了",
+    "dismiss": "关闭",
+    "showDetails": "显示详情",
+    "hideDetails": "隐藏详情"
+  },
   "stage": {
     "queued": "排队中",
     "download": "下载中",
