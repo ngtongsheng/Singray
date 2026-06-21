@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "electron-vite dev",
-    "dev:noscan": "set VITE_NO_SCAN=1 && electron-vite dev",
+    "dev:noscan": "cross-env VITE_NO_SCAN=1 electron-vite dev",
     "start": "electron-vite preview",
     "check": "biome check . && npm run typecheck && node scripts/check-design.mjs",
     "check:fix": "biome check --write .",
@@ -67,6 +67,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
+    "cross-env": "^7.0.3",
     "electron": "^42.4.1",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",

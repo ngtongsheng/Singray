@@ -7,8 +7,14 @@ import { songDir } from './library'
 import { effectivePythonPath, pipelineEnvDir, pipelineSpawnOptions } from './pipelineEnv'
 import { lastStderrLine, spawnLines } from './spawnLines'
 
+/**
+ * pipeline.py is spawned by an external Python process, which can't open a path
+ * through the single-file asar archive — packaged builds ship it asarUnpack'd
+ * (electron-builder.yml) under app.asar.unpacked instead (#132).
+ */
 export function pipelineScript(): string {
-  return join(app.getAppPath(), 'pipeline', 'pipeline.py')
+  const root = app.isPackaged ? join(process.resourcesPath, 'app.asar.unpacked') : app.getAppPath()
+  return join(root, 'pipeline', 'pipeline.py')
 }
 
 /** Runs `pipeline.py probe --url <url>`, resolves with the one-line JSON result. */

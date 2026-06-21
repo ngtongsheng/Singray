@@ -16,10 +16,9 @@ interface Props {
 /** Compact list row (HOME1): thumb, title/artist, favorite — list-view counterpart to SongCard. */
 const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Element {
   const { t } = useTranslation()
-  const { onSing, onArtistClick, requestDelete } = useLibraryContext()
-  const { failed, openable, onActivate, onKeyActivate, toggleFavorite, retry } = useSongCardActions(
-    { song, importing, onSing }
-  )
+  const { onSing, onArtistClick, requestDelete, pipelineStatus } = useLibraryContext()
+  const { failed, openable, onActivate, onKeyActivate, toggleFavorite, retry, retryBlockedReason } =
+    useSongCardActions({ song, importing, onSing, pipelineStatus })
 
   return (
     <Card
@@ -66,7 +65,8 @@ const SongRow = memo(function SongRow({ song, importing }: Props): React.JSX.Ele
             variant="ghost"
             size="sm"
             onClick={retry}
-            title={t('card.retryTip')}
+            disabled={!!retryBlockedReason}
+            title={retryBlockedReason ?? t('card.retryTip')}
             className="shrink-0 text-destructive"
           >
             <RotateCcw className="size-4" strokeWidth={1.5} />

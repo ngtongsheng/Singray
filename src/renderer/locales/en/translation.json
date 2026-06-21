@@ -19,6 +19,12 @@
     "back": "Back to library",
     "backEsc": "Back to library (Esc)"
   },
+  "error": {
+    "title": "Something went wrong",
+    "dismiss": "Dismiss",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details"
+  },
   "stage": {
     "queued": "Queued",
     "download": "Downloading",
@@ -76,7 +82,10 @@
     "fromFile": "From file…",
     "dropHint": "or drop an audio/video file here",
     "unsupportedFile": "Unsupported file type",
-    "add": "Add"
+    "add": "Add",
+    "pythonMissing": "Python environment isn't set up — importing will fail.",
+    "ffmpegMissing": "ffmpeg is missing — downloading and stem separation will fail.",
+    "gpuMissing": "No GPU detected — stem separation will run on CPU (slow)."
   },
   "editMeta": {
     "title": "Edit details",
@@ -150,7 +159,19 @@
     "micLatencyHint": "Software monitor may lag — prefer hardware monitoring (e.g. AG06)",
     "micFxLabel": "FX",
     "micFxAmountTip": "Wet/dry amount",
-    "micWarning": "Mic: {{message}}",
+    "micWarning": {
+      "permissionDenied": "Mic: permission denied",
+      "deviceNotFound": "Mic: no device found",
+      "deviceUnavailable": "Mic: device unavailable",
+      "unknown": "Mic: unknown error"
+    },
+    "streamWarning": {
+      "noDevice": "No distinct stream device set — broadcasting to monitor only. Recording to file still works.",
+      "permissionDenied": "Stream output unavailable (permission denied) — playing on monitor only.",
+      "deviceNotFound": "Stream output unavailable (device not found) — playing on monitor only.",
+      "deviceUnavailable": "Stream output unavailable (device unavailable) — playing on monitor only.",
+      "unknown": "Stream output unavailable (unknown error) — playing on monitor only."
+    },
     "micPreset": {
       "off": "FX off",
       "room": "Room",
@@ -187,7 +208,7 @@
     "lyricsLabel": "Lyrics",
     "align": "Align",
     "aligning": "Aligning…",
-    "alignTip": "Auto-time units with forced alignment (whisperx on the vocals stem)",
+    "alignTip": "Auto-time words to the vocals using the alignment tool",
     "hint": "One lyric line per row · empty row = instrumental break",
     "hintTimed": " · editing a timed line clears its timing",
     "alignFailed": "Alignment failed: {{message}} — continue to tap timing by hand.",
@@ -250,13 +271,13 @@
     "title": "Settings",
     "interface": "Interface",
     "uiLanguage": "Interface language",
-    "uiLanguageHelp": "Add a folder under src/renderer/locales to contribute a new translation.",
+    "uiLanguageHelp": "Don't see your language? It can be added by a contributor to the project.",
     "followSystem": "Follow system",
     "library": "Library",
     "libraryFolder": "Library folder",
     "libraryFolderHelp": "Where downloaded songs are stored. One folder per song.",
     "languages": "Languages",
-    "languagesHelp": "Offered in the import form and library filters; the code is what alignment passes to whisperx. Removing a language keeps existing songs intact.",
+    "languagesHelp": "Offered in the import form and library filters; the code is what's used for lyric alignment. Removing a language keeps existing songs intact.",
     "langCode": "Language code",
     "langLabel": "Language label",
     "add": "Add",
@@ -333,7 +354,7 @@
     "micDevice": "Mic device",
     "micDeviceHelp": "Microphone for self-monitoring and recording. Saved here; activated per song in the player.",
     "micEnable": "Enable mic in player",
-    "micEnableHelp": "When on, the mic graph starts automatically when you open a song. Disable to skip getUserMedia permission prompt.",
+    "micEnableHelp": "When on, the mic starts automatically when you open a song. Disable to skip the microphone permission prompt.",
     "inputN": "Input {{id}}",
     "countdownLead": "Lead-in countdown",
     "countdownLeadHelp": "Seconds of countdown before the first lyric word when starting a song from the beginning.",

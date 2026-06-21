@@ -19,6 +19,12 @@
     "back": "返回曲库",
     "backEsc": "返回曲库（Esc）"
   },
+  "error": {
+    "title": "出问题了",
+    "dismiss": "关闭",
+    "showDetails": "显示详情",
+    "hideDetails": "隐藏详情"
+  },
   "stage": {
     "queued": "排队中",
     "download": "下载中",
@@ -75,7 +81,10 @@
     "fromFile": "从文件…",
     "dropHint": "或将音频/视频文件拖到此处",
     "unsupportedFile": "不支持的文件类型",
-    "add": "添加"
+    "add": "添加",
+    "pythonMissing": "Python 环境尚未配置 — 导入将失败。",
+    "ffmpegMissing": "缺少 ffmpeg — 下载和人声分离将失败。",
+    "gpuMissing": "未检测到 GPU — 人声分离将使用 CPU（较慢）。"
   },
   "editMeta": {
     "title": "编辑信息",
@@ -148,7 +157,19 @@
     "micLatencyHint": "软件监听可能有延迟 — 建议使用硬件监听（如 AG06）",
     "micFxLabel": "效果",
     "micFxAmountTip": "湿/干比例",
-    "micWarning": "麦克风：{{message}}",
+    "micWarning": {
+      "permissionDenied": "麦克风：权限被拒绝",
+      "deviceNotFound": "麦克风：未找到设备",
+      "deviceUnavailable": "麦克风：设备不可用",
+      "unknown": "麦克风：未知错误"
+    },
+    "streamWarning": {
+      "noDevice": "未设置独立的串流输出设备 — 仅广播到监听设备。录音文件仍正常生成。",
+      "permissionDenied": "串流输出不可用（权限被拒绝）— 仅播放到监听设备。",
+      "deviceNotFound": "串流输出不可用（未找到设备）— 仅播放到监听设备。",
+      "deviceUnavailable": "串流输出不可用（设备不可用）— 仅播放到监听设备。",
+      "unknown": "串流输出不可用（未知错误）— 仅播放到监听设备。"
+    },
     "micPreset": {
       "off": "效果关",
       "room": "房间",
@@ -184,7 +205,7 @@
     "lyricsLabel": "歌词",
     "align": "对齐",
     "aligning": "对齐中…",
-    "alignTip": "用强制对齐自动打轴（whisperx 跑人声音轨）",
+    "alignTip": "使用对齐工具根据人声自动打轴",
     "hint": "每行一句歌词 · 空行 = 间奏",
     "hintTimed": " · 修改已打轴的行会清除该行时间",
     "alignFailed": "对齐失败：{{message}} — 可以继续手动打轴。",
@@ -231,7 +252,7 @@
   },
   "recordings": {
     "title": "录音",
-    "empty": "还没有录音——在播放器中开始录制。",
+    "empty": "还没有录音 — 在播放器中开始录制。",
     "emptyHint": "打开一首歌，启用麦克风，然后点击录制。",
     "delete": "删除录音",
     "reveal": "在文件夹中显示",
@@ -246,13 +267,13 @@
     "title": "设置",
     "interface": "界面",
     "uiLanguage": "界面语言",
-    "uiLanguageHelp": "在 src/renderer/locales 下新建文件夹即可贡献新翻译。",
+    "uiLanguageHelp": "没有你的语言？欢迎项目贡献者添加。",
     "followSystem": "跟随系统",
     "library": "曲库",
     "libraryFolder": "曲库文件夹",
     "libraryFolderHelp": "下载的歌曲存放位置，每首歌一个文件夹。",
     "languages": "歌曲语言",
-    "languagesHelp": "用于导入表单和曲库筛选；代码会作为对齐语言传给 whisperx。移除语言不会影响已有歌曲。",
+    "languagesHelp": "用于导入表单和曲库筛选；该语言代码用于歌词打轴。移除语言不会影响已有歌曲。",
     "langCode": "语言代码",
     "langLabel": "语言名称",
     "add": "添加",
@@ -329,7 +350,7 @@
     "micDevice": "麦克风设备",
     "micDeviceHelp": "用于自我监听和录音的麦克风。在此保存；在播放器中每首歌启用。",
     "micEnable": "在播放器中启用麦克风",
-    "micEnableHelp": "开启后，打开歌曲时自动启动麦克风。关闭可跳过 getUserMedia 权限提示。",
+    "micEnableHelp": "开启后，打开歌曲时自动启动麦克风。关闭可跳过麦克风权限提示。",
     "inputN": "输入 {{id}}",
     "countdownLead": "前导倒计时",
     "countdownLeadHelp": "从头播放歌曲时，在第一个歌词字之前显示的倒计时秒数。",
