@@ -59,6 +59,7 @@ def _yt_extract(opts: dict, url: str, *, download: bool = False):
                 raise
     raise last_exc  # type: ignore[misc]
 
+
 # Languages where alignment is consumed per character (matches the app's
 # CJK-char-equals-unit tokenization rule, SPEC §4.4).
 CHAR_ALIGN_LANGS = {"zh", "ja", "ko"}
