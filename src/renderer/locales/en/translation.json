@@ -156,7 +156,19 @@
     "micLatencyHint": "Software monitor may lag — prefer hardware monitoring (e.g. AG06)",
     "micFxLabel": "FX",
     "micFxAmountTip": "Wet/dry amount",
-    "micWarning": "Mic: {{message}}",
+    "micWarning": {
+      "permissionDenied": "Mic: permission denied",
+      "deviceNotFound": "Mic: no device found",
+      "deviceUnavailable": "Mic: device unavailable",
+      "unknown": "Mic: unknown error"
+    },
+    "streamWarning": {
+      "noDevice": "No distinct stream device set — broadcasting to monitor only. Recording to file still works.",
+      "permissionDenied": "Stream output unavailable (permission denied) — playing on monitor only.",
+      "deviceNotFound": "Stream output unavailable (device not found) — playing on monitor only.",
+      "deviceUnavailable": "Stream output unavailable (device unavailable) — playing on monitor only.",
+      "unknown": "Stream output unavailable (unknown error) — playing on monitor only."
+    },
     "micPreset": {
       "off": "FX off",
       "room": "Room",

@@ -140,3 +140,10 @@ Verified live against real Anthropic/Gemini endpoints with a throwaway key (both
 ## Round 6 — (scope TBD, opened 2026-06-21)
 
 No issues filed yet. GitHub milestone "Round 6" created (#3, open) for tracking; no release-gate wired to it — the Round 5 gate in `release.yml` is now a permanent pass-through and needs no Round 6 equivalent.
+
+### #145 — localize hardcoded mic/stream warnings shown in player UI
+
+| Choice | Decision | Why |
+|---|---|---|
+| **Reason codes, not formatted strings** | `audioEngine.ts` now stores `MediaWarningReason` (`permissionDenied` \| `deviceNotFound` \| `deviceUnavailable` \| `unknown`) on `micWarning`/`routingWarning` instead of a pre-formatted English sentence; components resolve the full localized message per code via `player.micWarning.*` / `player.streamWarning.*`. | The issue's own fix sketch asked for exactly this split (engine emits a stable code, rendering picks the localized string) — needed since the engine has no i18n access and string concatenation was the actual source of the mixed-language/raw-DOMException-name bug. |
+| **Wired `routingWarning` into ControlBar (new UI surface)** | Previously `routingWarning` was only `console.warn`'d (`useAudioEngine.ts`), never rendered — so "having no stream device shows...warnings" in the acceptance criteria was untestable as written. Added a `Text variant="error"` line in `ControlBar.tsx` reusing the same reason-code pattern as `micWarning`. | SPEC §14 already says mic-permission warnings should "mirror `routingWarning`" surfacing — the spec assumed it was visible. Surfacing it (instead of just localizing dead console text) is what actually satisfies the issue's acceptance criteria. |
