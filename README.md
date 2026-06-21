@@ -132,11 +132,20 @@ warning on first run. To proceed: click **More info**, then **Run anyway**.
 This is expected for unsigned software; it appears once, not on later launches.
 
 **macOS builds are community-tested** —
-the release workflow produces an **unsigned** `.dmg`, so on first launch macOS
-will refuse to open it: right-click the app → **Open** → confirm, or run
-`xattr -dr com.apple.quarantine /Applications/Singray.app`. Separation runs on
-Apple Silicon (MPS) or CPU. Linux is supported for the pipeline/dev but has no
-packaged build yet.
+the release workflow produces an **unsigned** (ad-hoc signed) `.dmg`, so on first
+launch macOS refuses to open it: right-click the app → **Open** → confirm, or run
+`xattr -dr com.apple.quarantine /Applications/Singray.app`.
+
+> Got **"Singray is damaged and can't be opened"**? That was a broken signature in
+> the v1.0.0 `.dmg` (fixed in later builds). Repair an already-installed copy with:
+>
+> ```sh
+> xattr -dr com.apple.quarantine /Applications/Singray.app
+> codesign --force --deep --sign - /Applications/Singray.app
+> ```
+
+Separation runs on Apple Silicon (MPS) or CPU. Linux is supported for the
+pipeline/dev but has no packaged build yet.
 
 ## Third-party tools & usage notice
 
