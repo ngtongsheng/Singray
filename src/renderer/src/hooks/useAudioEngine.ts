@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Lyrics, Settings, SongListItem } from '../../../shared/types'
-import type { MicFxPreset } from '../lib/audioEngine'
+import type { MediaWarningReason, MicFxPreset } from '../lib/audioEngine'
 import { AudioEngine, encodeRecordingAsWav } from '../lib/audioEngine'
 
 export interface MicBootstrapState {
@@ -9,7 +9,7 @@ export interface MicBootstrapState {
   vol: number
   fxPreset: MicFxPreset
   fxAmount: number
-  warning: string | null
+  warning: MediaWarningReason | null
 }
 
 interface Options {
@@ -85,7 +85,7 @@ export function useAudioEngine({ song, settings, onMicReady }: Options): Result 
         }
         setState({ status: 'ready', engine: e })
         setLyrics(l)
-        if (e.routingWarning) console.warn(e.routingWarning)
+        if (e.routingWarning) console.warn('[audio routing]', e.routingWarning)
         if (import.meta.env.DEV) {
           ;(window as Window & { __playerEngine?: AudioEngine }).__playerEngine = e
         }

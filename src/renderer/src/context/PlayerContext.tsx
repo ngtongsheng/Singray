@@ -5,7 +5,7 @@ import { useAutoHideBar } from '../hooks/useAutoHideBar'
 import { useLeadInCountdown } from '../hooks/useLeadInCountdown'
 import { usePlaybackClock } from '../hooks/usePlaybackClock'
 import { useSettings } from '../hooks/useSettings'
-import type { AudioEngine, MicFxPreset } from '../lib/audioEngine'
+import type { AudioEngine, MediaWarningReason, MicFxPreset } from '../lib/audioEngine'
 import { useAppContext } from './AppContext'
 
 interface PlayerContextValue {
@@ -68,7 +68,7 @@ interface PlayerContextValue {
   micFxPreset: MicFxPreset
   micFxAmount: number
   setMicFx: (preset: MicFxPreset, amount: number) => void
-  micWarning: string | null
+  micWarning: MediaWarningReason | null
 
   recording: boolean
   recordPrepOpen: boolean
@@ -113,7 +113,7 @@ export function PlayerProvider({ song, children }: ProviderProps): React.JSX.Ele
   const [micVol, setMicVol] = useState(1)
   const [micFxPreset, setMicFxPreset] = useState<MicFxPreset>('off')
   const [micFxAmount, setMicFxAmount] = useState(0.3)
-  const [micWarning, setMicWarning] = useState<string | null>(null)
+  const [micWarning, setMicWarning] = useState<MediaWarningReason | null>(null)
   const [recording, setRecording] = useState(false)
   const [recordPrepOpen, setRecordPrepOpen] = useState(false)
   const { settings, patch } = useSettings()
